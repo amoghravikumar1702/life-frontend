@@ -1,3 +1,6 @@
+import StatCard from "./StatCard";
+import ActionCenter from "../ActionCenter/ActionCenter";
+
 export default function Dashboard() {
   return (
     <main className="min-h-screen bg-[#030712] text-white pt-28 px-8">
@@ -10,26 +13,17 @@ export default function Dashboard() {
           Here's your business today.
         </p>
 
+        {/* KPI Cards */}
         <div className="mt-10 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
-            <p className="text-gray-400">Money to Collect</p>
-            <h2 className="mt-2 text-3xl font-bold">₹2,45,000</h2>
-          </div>
+          <StatCard title="Money to Collect" value="₹2,45,000" />
+          <StatCard title="Bills Due" value="₹48,000" />
+          <StatCard title="Cash Position" value="₹8,72,000" />
+          <StatCard title="Alerts" value="3" />
+        </div>
 
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
-            <p className="text-gray-400">Bills Due</p>
-            <h2 className="mt-2 text-3xl font-bold">₹48,000</h2>
-          </div>
-
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
-            <p className="text-gray-400">Cash Position</p>
-            <h2 className="mt-2 text-3xl font-bold">₹8,72,000</h2>
-          </div>
-
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
-            <p className="text-gray-400">Alerts</p>
-            <h2 className="mt-2 text-3xl font-bold text-red-400">3</h2>
-          </div>
+        {/* Action Center */}
+        <div className="mt-10">
+          <ActionCenter />
         </div>
       </div>
     </main>
