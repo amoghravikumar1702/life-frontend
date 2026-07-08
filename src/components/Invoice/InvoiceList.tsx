@@ -6,11 +6,14 @@ import Link from "next/link";
 import { Invoice } from "@/types/invoice";
 import {
   getInvoices,
+  getInvoiceById,
+  getInvoiceItems,
   deleteInvoice,
 } from "@/services/invoiceService";
 
 import InvoiceSearch from "./InvoiceSearch";
 import InvoiceTable from "./InvoiceTable";
+import InvoiceViewModal from "./InvoiceViewModal";
 
 const formatCurrency = (amount: number) =>
   new Intl.NumberFormat("en-IN", {
@@ -19,10 +22,25 @@ const formatCurrency = (amount: number) =>
     maximumFractionDigits: 2,
   }).format(amount);
 
+type InvoiceItemRow = {
+  id?: number;
+  invoice_id: number;
+  item_name: string;
+  quantity: number;
+  price: number;
+  total: number;
+};
+
 export default function InvoiceList() {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+
+  const [selectedInvoice, setSelectedInvoice] =
+    useState<Invoice | null>(null);
+
+  const [selectedItems, setSelectedItems] =
+    useState<InvoiceItemRow[]>([]);
 
   async function loadInvoices() {
     try {
@@ -58,8 +76,17 @@ export default function InvoiceList() {
     }
   }
 
-  function handleView(id: number) {
-    alert(`View Invoice ${id} (Coming Soon)`);
+  async function handleView(id: number) {
+    try {
+      const invoice = await getInvoiceById(id);
+      const items = await getInvoiceItems(id);
+
+      setSelectedInvoice(invoice);
+      setSelectedItems(items ?? []);
+    } catch (error) {
+      console.error(error);
+      alert("Failed to load invoice.");
+    }
   }
 
   function handleEdit(id: number) {
@@ -78,48 +105,62 @@ export default function InvoiceList() {
   }, [invoices, search]);
 
   return (
-    <section className="rounded-3xl border border-white/10 bg-gradient-to-br from-[#111827] to-[#0B1220] p-8 shadow-2xl">
+    <>
+      <section className="rounded-3xl border border-white/10 bg-gradient-to-br from-[#111827] to-[#0B1220] p-8 shadow-2xl">
 
-      <div className="mb-8 flex items-center justify-between">
+        <div className="mb-8 flex items-center justify-between">
 
-        <div>
-          <h2 className="text-3xl font-bold">
-            All Invoices
-          </h2>
+          <div>
+            <h2 className="text-3xl font-bold">
+              All Invoices
+            </h2>
 
-          <p className="mt-2 text-gray-400">
-            Manage all your customer invoices.
-          </p>
+            <p className="mt-2 text-gray-400">
+              Manage all your customer invoices.
+            </p>
+          </div>
+
+          <Link
+            href="/invoices/new"
+            className="rounded-xl bg-cyan-500 px-6 py-3 font-semibold text-black hover:bg-cyan-400"
+          >
+            + New Invoice
+          </Link>
+
         </div>
 
-        <Link
-          href="/invoices/new"
-          className="rounded-xl bg-cyan-500 px-6 py-3 font-semibold text-black hover:bg-cyan-400"
-        >
-          + New Invoice
-        </Link>
+        <InvoiceSearch
+          value={search}
+          onChange={setSearch}
+        />
 
-      </div>
+        {loading ? (
+          <div className="py-20 text-center text-gray-400">
+            Loading invoices...
+          </div>
+        ) : (
+          <InvoiceTable
+            invoices={filteredInvoices}
+            formatCurrency={formatCurrency}
+            onView={handleView}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+          />
+        )}
 
-      <InvoiceSearch
-        value={search}
-        onChange={setSearch}
-      />
+      </section>
 
-      {loading ? (
-        <div className="py-20 text-center text-gray-400">
-          Loading invoices...
-        </div>
-      ) : (
-        <InvoiceTable
-          invoices={filteredInvoices}
+      {selectedInvoice && (
+        <InvoiceViewModal
+          invoice={selectedInvoice}
+          items={selectedItems}
           formatCurrency={formatCurrency}
-          onView={handleView}
-          onEdit={handleEdit}
-          onDelete={handleDelete}
+          onClose={() => {
+            setSelectedInvoice(null);
+            setSelectedItems([]);
+          }}
         />
       )}
-
-    </section>
+    </>
   );
 }
