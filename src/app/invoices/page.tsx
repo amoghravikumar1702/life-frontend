@@ -1,4 +1,4 @@
-import InvoiceList from "@/components/Invoices/InvoiceList";
+import InvoiceList from "@/components/Invoice/InvoiceList";
 
 export default function InvoicesPage() {
   return (

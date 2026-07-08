@@ -66,14 +66,21 @@ export default function InvoiceForm() {
 
   const handleSaveInvoice = async () => {
     try {
-      await createInvoice({
-        customer,
-        invoice_number: invoiceNumber,
-        invoice_date: invoiceDate,
-        due_date: dueDate,
-        total,
-        status: "Pending",
-      });
+      await createInvoice(
+  {
+    customer,
+    invoice_number: invoiceNumber,
+    invoice_date: invoiceDate,
+    due_date: dueDate,
+    total,
+    status: "Pending",
+  },
+  items.map((item) => ({
+    name: item.name,
+    quantity: item.quantity,
+    price: item.price,
+  }))
+);
 
       alert("✅ Invoice Saved Successfully!");
 
