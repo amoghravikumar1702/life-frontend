@@ -19,6 +19,7 @@ export async function createInvoice(
     .single();
 
   if (invoiceError) {
+    console.error("Invoice Error:", invoiceError);
     throw invoiceError;
   }
 
@@ -37,6 +38,7 @@ export async function createInvoice(
       .insert(invoiceItems);
 
     if (itemsError) {
+      console.error("Invoice Items Error:", itemsError);
       throw itemsError;
     }
   }
@@ -80,8 +82,10 @@ export async function getInvoiceItems(invoiceId: number) {
 
 export async function updateInvoice(
   id: number,
-  invoice: Partial<Invoice>
+  invoice: Partial<Invoice>,
+  items?: InvoiceItem[]
 ) {
+  // Update invoice
   const { data, error } = await supabase
     .from("invoices")
     .update(invoice)
@@ -89,15 +93,47 @@ export async function updateInvoice(
     .select()
     .single();
 
-  if (error) throw error;
+  if (error) {
+    console.error("Update Invoice Error:", error);
+    throw error;
+  }
+
+  // If items are provided, replace all existing items
+  if (items) {
+    // Delete old items
+    const { error: deleteError } = await supabase
+      .from("invoice_items")
+      .delete()
+      .eq("invoice_id", id);
+
+    if (deleteError) {
+      console.error("Delete Invoice Items Error:", deleteError);
+      throw deleteError;
+    }
+
+    // Insert new items
+    const invoiceItems = items.map((item) => ({
+      invoice_id: id,
+      item_name: item.name,
+      quantity: item.quantity,
+      price: item.price,
+      total: item.quantity * item.price,
+    }));
+
+    const { error: insertError } = await supabase
+      .from("invoice_items")
+      .insert(invoiceItems);
+
+    if (insertError) {
+      console.error("Insert Invoice Items Error:", insertError);
+      throw insertError;
+    }
+  }
 
   return data;
 }
 
 export async function deleteInvoice(id: number) {
-  // invoice_items are deleted automatically
-  // because of ON DELETE CASCADE
-
   const { error } = await supabase
     .from("invoices")
     .delete()

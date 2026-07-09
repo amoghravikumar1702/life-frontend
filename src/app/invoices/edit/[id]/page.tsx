@@ -26,12 +26,15 @@ export default async function EditInvoicePage({
           </h1>
 
           <p className="mt-2 text-gray-400">
-            Editing Invoice #{id}
+            Update the invoice details below.
           </p>
 
         </div>
 
-        <InvoiceForm />
+        <InvoiceForm
+          mode="edit"
+          invoiceId={Number(id)}
+        />
 
       </div>
     </main>

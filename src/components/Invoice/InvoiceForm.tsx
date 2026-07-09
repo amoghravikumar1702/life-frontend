@@ -1,7 +1,12 @@
 "use client";
 
-import { useState } from "react";
-import { createInvoice } from "@/services/invoiceService";
+import { useState, useEffect } from "react";
+import {
+  createInvoice,
+  getInvoiceById,
+  getInvoiceItems,
+  updateInvoice,
+} from "@/services/invoiceService";
 
 type InvoiceItem = {
   id: number;
@@ -17,7 +22,15 @@ const formatCurrency = (amount: number) =>
     maximumFractionDigits: 2,
   }).format(amount);
 
-export default function InvoiceForm() {
+type InvoiceFormProps = {
+  mode?: "create" | "edit";
+  invoiceId?: number;
+};
+
+export default function InvoiceForm({
+  mode = "create",
+  invoiceId,
+}: InvoiceFormProps) {
   const [customer, setCustomer] = useState("");
   const [invoiceNumber, setInvoiceNumber] = useState("INV-1001");
   const [invoiceDate, setInvoiceDate] = useState("");
@@ -56,17 +69,80 @@ export default function InvoiceForm() {
     ]);
   };
 
-  const subtotal = items.reduce(
-    (sum, item) => sum + item.quantity * item.price,
-    0
-  );
+ const subtotal = items.reduce(
+  (sum, item) => sum + item.quantity * item.price,
+  0
+);
 
-  const tax = subtotal * 0.18;
-  const total = subtotal + tax;
+const tax = subtotal * 0.18;
+const total = subtotal + tax;
+
+const isEdit = mode === "edit";
+
+  useEffect(() => {
+    let mounted = true;
+    const loadInvoice = async () => {
+        console.log("Loading invoice...", invoiceId);
+        const inv = await getInvoiceById(invoiceId);
+        console.log("Invoice:", inv);
+        const invItems = await getInvoiceItems(invoiceId);
+    console.log("Items:", invItems);
+      if (!isEdit || !invoiceId) return;
+      try {
+        const inv = await getInvoiceById(invoiceId);
+        const invItems = await getInvoiceItems(invoiceId);
+        if (!mounted) return;
+        setCustomer(inv.customer || "");
+        setInvoiceNumber(inv.invoice_number || `INV-${Math.floor(Math.random() * 9000 + 1000)}`);
+        setInvoiceDate(inv.invoice_date || "");
+        setDueDate(inv.due_date || "");
+        setItems(
+          invItems && invItems.length
+            ? invItems.map((it: any) => ({
+                id: it.id || Date.now() + Math.random(),
+              name: it.item_name || "",
+                quantity: it.quantity || 0,
+                price: it.price || 0,
+              }))
+            : [
+                {
+                  id: 1,
+                  name: "",
+                  quantity: 0,
+                  price: 0,
+                },
+              ]
+        );
+      }catch (error: any) {
+  console.error("SAVE ERROR:", error);
+
+  alert(
+    JSON.stringify(
+      {
+        message: error?.message,
+        code: error?.code,
+        details: error?.details,
+        hint: error?.hint,
+      },
+      null,
+      2
+    )
+  );
+}
+    };
+
+    loadInvoice();
+
+    return () => {
+      mounted = false;
+    };
+  }, [isEdit, invoiceId]);
 
   const handleSaveInvoice = async () => {
     try {
-      await createInvoice(
+      if (isEdit && invoiceId) {
+      await updateInvoice(
+  invoiceId,
   {
     customer,
     invoice_number: invoiceNumber,
@@ -81,6 +157,23 @@ export default function InvoiceForm() {
     price: item.price,
   }))
 );
+      } else {
+        await createInvoice(
+          {
+            customer,
+            invoice_number: invoiceNumber,
+            invoice_date: invoiceDate,
+            due_date: dueDate,
+            total,
+            status: "Pending",
+          },
+          items.map((item) => ({
+            name: item.name,
+            quantity: item.quantity,
+            price: item.price,
+          }))
+        );
+      }
 
       alert("✅ Invoice Saved Successfully!");
 
@@ -97,17 +190,23 @@ export default function InvoiceForm() {
           price: 0,
         },
       ]);
-    } catch (error) {
-      console.error(error);
-      alert("❌ Failed to save invoice.");
-    }
+    } catch (error: any) {
+  console.error(error);
+
+  alert(
+    `Message: ${error?.message}
+Code: ${error?.code}
+Details: ${error?.details}
+Hint: ${error?.hint}`
+  );
+}
   };
 
   return (
     <section className="mt-10 rounded-3xl border border-white/10 bg-gradient-to-br from-[#111827] to-[#0B1220] p-8 shadow-2xl">
       <h2 className="mb-8 text-2xl font-bold">
-        Invoice Details
-      </h2>
+  {isEdit ? "Edit Invoice" : "Invoice Details"}
+</h2>
 
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
 
