@@ -5,6 +5,8 @@ type Props = {
   invoice: Invoice;
   formatCurrency: (amount: number) => string;
   onView: (id: number) => void;
+  onPDF: (id: number) => void;
+  onPrint: (id: number) => void;
   onEdit: (id: number) => void;
   onDelete: (id: number) => void;
 };
@@ -13,12 +15,13 @@ export default function InvoiceRow({
   invoice,
   formatCurrency,
   onView,
+  onPDF,
+  onPrint,
   onEdit,
   onDelete,
 }: Props) {
   return (
     <tr className="border-b border-white/10 hover:bg-white/5 transition">
-
       <td className="px-6 py-5 font-semibold">
         {invoice.invoice_number}
       </td>
@@ -46,6 +49,20 @@ export default function InvoiceRow({
           </button>
 
           <button
+            onClick={() => onPDF(invoice.id!)}
+            className="text-purple-400 hover:text-purple-300"
+          >
+            PDF
+          </button>
+
+          <button
+            onClick={() => onPrint(invoice.id!)}
+            className="text-orange-400 hover:text-orange-300"
+          >
+            Print
+          </button>
+
+          <button
             onClick={() => onEdit(invoice.id!)}
             className="text-green-400 hover:text-green-300"
           >
@@ -61,7 +78,6 @@ export default function InvoiceRow({
 
         </div>
       </td>
-
     </tr>
   );
 }

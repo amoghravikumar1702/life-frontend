@@ -5,6 +5,8 @@ type Props = {
   invoices: Invoice[];
   formatCurrency: (amount: number) => string;
   onView: (id: number) => void;
+  onPDF: (id: number) => void;
+  onPrint: (id: number) => void;
   onEdit: (id: number) => void;
   onDelete: (id: number) => void;
 };
@@ -13,6 +15,8 @@ export default function InvoiceTable({
   invoices,
   formatCurrency,
   onView,
+  onPDF,
+  onPrint,
   onEdit,
   onDelete,
 }: Props) {
@@ -26,44 +30,34 @@ export default function InvoiceTable({
 
   return (
     <div className="overflow-x-auto rounded-2xl border border-white/10">
-
       <table className="w-full">
 
         <thead className="bg-white/5">
-
           <tr className="text-left text-gray-400">
-
             <th className="px-6 py-4">Invoice</th>
-
             <th className="px-6 py-4">Customer</th>
-
             <th className="px-6 py-4">Amount</th>
-
             <th className="px-6 py-4">Status</th>
-
             <th className="px-6 py-4">Actions</th>
-
           </tr>
-
         </thead>
 
         <tbody>
-
           {invoices.map((invoice) => (
             <InvoiceRow
               key={invoice.id}
               invoice={invoice}
               formatCurrency={formatCurrency}
               onView={onView}
+              onPDF={onPDF}
+              onPrint={onPrint}
               onEdit={onEdit}
               onDelete={onDelete}
             />
           ))}
-
         </tbody>
 
       </table>
-
     </div>
   );
 }

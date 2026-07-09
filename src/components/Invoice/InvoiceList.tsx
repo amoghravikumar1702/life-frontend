@@ -14,6 +14,7 @@ import {
 import InvoiceSearch from "./InvoiceSearch";
 import InvoiceTable from "./InvoiceTable";
 import InvoiceViewModal from "./InvoiceViewModal";
+import { generateInvoicePDF } from "@/lib/pdf";
 
 const formatCurrency = (amount: number) =>
   new Intl.NumberFormat("en-IN", {
@@ -93,6 +94,34 @@ export default function InvoiceList() {
     window.location.href = `/invoices/edit/${id}`;
   }
 
+  async function handlePDF(id: number) {
+    try {
+      const invoice = await getInvoiceById(id);
+      const items = await getInvoiceItems(id);
+
+      generateInvoicePDF({
+        invoiceNumber: invoice.invoice_number,
+        customer: invoice.customer,
+        invoiceDate: invoice.invoice_date,
+        dueDate: invoice.due_date,
+        status: invoice.status,
+        items: (items ?? []).map((item: any) => ({
+          name: item.item_name,
+          quantity: item.quantity,
+          price: item.price,
+        })),
+      });
+    } catch (error) {
+      console.error(error);
+      alert("Failed to generate PDF.");
+    }
+  }
+
+  // ✅ THIS WAS MISSING
+  function handlePrint(id: number) {
+    window.open(`/invoices/print/${id}`, "_blank");
+  }
+
   const filteredInvoices = useMemo(() => {
     return invoices.filter((invoice) => {
       const query = search.toLowerCase();
@@ -107,9 +136,7 @@ export default function InvoiceList() {
   return (
     <>
       <section className="rounded-3xl border border-white/10 bg-gradient-to-br from-[#111827] to-[#0B1220] p-8 shadow-2xl">
-
         <div className="mb-8 flex items-center justify-between">
-
           <div>
             <h2 className="text-3xl font-bold">
               All Invoices
@@ -126,7 +153,6 @@ export default function InvoiceList() {
           >
             + New Invoice
           </Link>
-
         </div>
 
         <InvoiceSearch
@@ -143,11 +169,12 @@ export default function InvoiceList() {
             invoices={filteredInvoices}
             formatCurrency={formatCurrency}
             onView={handleView}
+            onPDF={handlePDF}
+            onPrint={handlePrint}
             onEdit={handleEdit}
             onDelete={handleDelete}
           />
         )}
-
       </section>
 
       {selectedInvoice && (
