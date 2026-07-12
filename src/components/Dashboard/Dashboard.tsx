@@ -1,3 +1,5 @@
+"use client";
+
 import HeroSection from "../HeroSection/HeroSection";
 import AICFO from "../AICFO/AICFO";
 import HealthScore from "../HealthScore/HealthScore";
@@ -6,19 +8,41 @@ import QuickActions from "../QuickActions/QuickActions";
 import TodayTasks from "../TodayTasks/TodayTasks";
 import StatCard from "./StatCard";
 
-import { getDashboardStats } from "@/services/dashboardService";
+import { useDashboard } from "./queries/dashboardQueries";
 
-export default async function Dashboard() {
-  const stats = await getDashboardStats();
+export default function Dashboard() {
+  const {
+    data: stats,
+    isLoading,
+    error,
+  } = useDashboard();
+
+  if (isLoading) {
+    return (
+      <main className="min-h-screen bg-[#030712] px-8 py-8 text-white flex items-center justify-center">
+        <h2 className="text-xl text-gray-400">
+          Loading Dashboard...
+        </h2>
+      </main>
+    );
+  }
+
+  if (error || !stats) {
+    return (
+      <main className="min-h-screen bg-[#030712] px-8 py-8 text-white flex items-center justify-center">
+        <h2 className="text-xl text-red-400">
+          Failed to load dashboard.
+        </h2>
+      </main>
+    );
+  }
 
   return (
     <main className="min-h-screen bg-[#030712] px-8 py-8 text-white">
       <div className="mx-auto max-w-7xl space-y-8">
 
-        {/* Hero */}
         <HeroSection />
 
-        {/* KPI Cards */}
         <section className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4">
 
           <StatCard
@@ -47,22 +71,21 @@ export default async function Dashboard() {
 
         </section>
 
-        {/* Quick Actions */}
         <QuickActions />
 
-        {/* AI CFO + Health */}
         <section className="grid grid-cols-1 gap-8 xl:grid-cols-2">
           <AICFO />
           <HealthScore />
         </section>
 
-        {/* Cash Flow + Today's Tasks */}
         <section className="grid grid-cols-1 gap-8 xl:grid-cols-3">
+
           <div className="xl:col-span-2">
             <CashFlow />
           </div>
 
           <TodayTasks />
+
         </section>
 
       </div>
