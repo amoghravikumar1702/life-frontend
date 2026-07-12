@@ -1,19 +1,29 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 
 import { Invoice } from "@/types/invoice";
+
 import {
-  getInvoices,
   getInvoiceById,
   getInvoiceItems,
-  deleteInvoice,
 } from "@/services/invoiceService";
+
+import { getCompany } from "@/services/companyService";
+
+import {
+  useInvoices,
+} from "./queries/invoiceQueries";
+
+import {
+  useDeleteInvoice,
+} from "./mutations/invoiceMutations";
 
 import InvoiceSearch from "./InvoiceSearch";
 import InvoiceTable from "./InvoiceTable";
 import InvoiceViewModal from "./InvoiceViewModal";
+
 import { generateInvoicePDF } from "@/lib/pdf";
 
 const formatCurrency = (amount: number) =>
@@ -33,9 +43,17 @@ type InvoiceItemRow = {
 };
 
 export default function InvoiceList() {
-  const [invoices, setInvoices] = useState<Invoice[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState("");
+
+  const {
+    data: invoices = [],
+    isLoading,
+  } = useInvoices();
+
+  const deleteMutation =
+    useDeleteInvoice();
+
+  const [search, setSearch] =
+    useState("");
 
   const [selectedInvoice, setSelectedInvoice] =
     useState<Invoice | null>(null);
@@ -58,30 +76,25 @@ export default function InvoiceList() {
     }
   }
 
-  useEffect(() => {
-    loadInvoices();
-  }, []);
 
-  async function handleDelete(id: number) {
-    if (!window.confirm("Delete this invoice?")) return;
+ async function handleDelete(id: number) {
+  if (!window.confirm("Delete this invoice?")) return;
 
-    try {
-      await deleteInvoice(id);
+  try {
+    await deleteMutation.mutateAsync(id);
 
-      setInvoices((prev) =>
-        prev.filter((invoice) => invoice.id !== id)
-      );
-    } catch (error) {
-      console.error(error);
-      alert("Failed to delete invoice");
-    }
+    alert("✅ Invoice deleted successfully!");
+  } catch (error) {
+    console.error(error);
+    alert("Failed to delete invoice.");
   }
+}
 
   async function handleView(id: number) {
     try {
       const invoice = await getInvoiceById(id);
       const items = await getInvoiceItems(id);
-
+const company = await getCompany();
       setSelectedInvoice(invoice);
       setSelectedItems(items ?? []);
     } catch (error) {
@@ -95,27 +108,34 @@ export default function InvoiceList() {
   }
 
   async function handlePDF(id: number) {
-    try {
-      const invoice = await getInvoiceById(id);
-      const items = await getInvoiceItems(id);
+  try {
+    const invoice = await getInvoiceById(id);
 
-      generateInvoicePDF({
-        invoiceNumber: invoice.invoice_number,
-        customer: invoice.customer,
-        invoiceDate: invoice.invoice_date,
-        dueDate: invoice.due_date,
-        status: invoice.status,
-        items: (items ?? []).map((item: any) => ({
-          name: item.item_name,
-          quantity: item.quantity,
-          price: item.price,
-        })),
-      });
-    } catch (error) {
-      console.error(error);
-      alert("Failed to generate PDF.");
-    }
+    const items = await getInvoiceItems(id);
+
+    const company = await getCompany();   // <-- THIS LINE
+
+    generateInvoicePDF({
+      company,
+
+      invoiceNumber: invoice.invoice_number,
+      customer: invoice.customer,
+      invoiceDate: invoice.invoice_date,
+      dueDate: invoice.due_date,
+      status: invoice.status,
+
+      items: (items ?? []).map((item: any) => ({
+        name: item.item_name,
+        quantity: item.quantity,
+        price: item.price,
+      })),
+    });
+
+  } catch (error) {
+    console.error(error);
+    alert("Failed to generate PDF.");
   }
+}
 
   // ✅ THIS WAS MISSING
   function handlePrint(id: number) {
@@ -160,7 +180,7 @@ export default function InvoiceList() {
           onChange={setSearch}
         />
 
-        {loading ? (
+        {isLoading ? (
           <div className="py-20 text-center text-gray-400">
             Loading invoices...
           </div>

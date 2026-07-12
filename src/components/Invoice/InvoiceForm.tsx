@@ -1,26 +1,18 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
+
+import { Customer } from "@/types/customer";
+
 import {
-  createInvoice,
-  getInvoiceById,
-  getInvoiceItems,
-  updateInvoice,
-} from "@/services/invoiceService";
+  useCreateInvoice,
+  useUpdateInvoice,
+} from "./mutations/invoiceMutations";
 
-type InvoiceItem = {
-  id: number;
-  name: string;
-  quantity: number;
-  price: number;
-};
+import { useInvoiceForm } from "./hooks/useInvoiceForm";
+import { useInvoiceLoader } from "./hooks/useInvoiceLoader";
 
-const formatCurrency = (amount: number) =>
-  new Intl.NumberFormat("en-IN", {
-    style: "currency",
-    currency: "INR",
-    maximumFractionDigits: 2,
-  }).format(amount);
+import { formatCurrency } from "./utils/invoiceCalculations";
 
 type InvoiceFormProps = {
   mode?: "create" | "edit";
@@ -31,215 +23,115 @@ export default function InvoiceForm({
   mode = "create",
   invoiceId,
 }: InvoiceFormProps) {
-  const [customer, setCustomer] = useState("");
-  const [invoiceNumber, setInvoiceNumber] = useState("INV-1001");
-  const [invoiceDate, setInvoiceDate] = useState("");
-  const [dueDate, setDueDate] = useState("");
+  const isEdit = mode === "edit";
 
-  const [items, setItems] = useState<InvoiceItem[]>([
-    {
-      id: 1,
-      name: "",
-      quantity: 0,
-      price: 0,
-    },
-  ]);
+  const createMutation = useCreateInvoice();
+  const updateMutation = useUpdateInvoice();
 
-  const updateItem = (
-    id: number,
-    field: keyof InvoiceItem,
-    value: string | number
-  ) => {
-    setItems((prev) =>
-      prev.map((item) =>
-        item.id === id ? { ...item, [field]: value } : item
-      )
-    );
-  };
+  const [customers, setCustomers] = useState<Customer[]>([]);
 
-  const addItem = () => {
-    setItems((prev) => [
-      ...prev,
-      {
-        id: Date.now(),
-        name: "",
-        quantity: 0,
-        price: 0,
-      },
-    ]);
-  };
-
- const subtotal = items.reduce(
-  (sum, item) => sum + item.quantity * item.price,
-  0
-);
-
-const tax = subtotal * 0.18;
-const total = subtotal + tax;
-
-const isEdit = mode === "edit";
-
-  useEffect(() => {
-    let mounted = true;
-    const loadInvoice = async () => {
-        console.log("Loading invoice...", invoiceId);
-        const inv = await getInvoiceById(invoiceId);
-        console.log("Invoice:", inv);
-        const invItems = await getInvoiceItems(invoiceId);
-    console.log("Items:", invItems);
-      if (!isEdit || !invoiceId) return;
-      try {
-        const inv = await getInvoiceById(invoiceId);
-        const invItems = await getInvoiceItems(invoiceId);
-        if (!mounted) return;
-        setCustomer(inv.customer || "");
-        setInvoiceNumber(inv.invoice_number || `INV-${Math.floor(Math.random() * 9000 + 1000)}`);
-        setInvoiceDate(inv.invoice_date || "");
-        setDueDate(inv.due_date || "");
-        setItems(
-          invItems && invItems.length
-            ? invItems.map((it: any) => ({
-                id: it.id || Date.now() + Math.random(),
-              name: it.item_name || "",
-                quantity: it.quantity || 0,
-                price: it.price || 0,
-              }))
-            : [
-                {
-                  id: 1,
-                  name: "",
-                  quantity: 0,
-                  price: 0,
-                },
-              ]
-        );
-      }catch (error: any) {
-  console.error("SAVE ERROR:", error);
-
-  alert(
-    JSON.stringify(
-      {
-        message: error?.message,
-        code: error?.code,
-        details: error?.details,
-        hint: error?.hint,
-      },
-      null,
-      2
-    )
-  );
-}
-    };
-
-    loadInvoice();
-
-    return () => {
-      mounted = false;
-    };
-  }, [isEdit, invoiceId]);
-
-  const handleSaveInvoice = async () => {
-    try {
-      if (isEdit && invoiceId) {
-      await updateInvoice(
-  invoiceId,
-  {
+  const {
     customer,
-    invoice_number: invoiceNumber,
-    invoice_date: invoiceDate,
-    due_date: dueDate,
+    setCustomer,
+
+    invoiceNumber,
+    setInvoiceNumber,
+
+    invoiceDate,
+    setInvoiceDate,
+
+    dueDate,
+    setDueDate,
+
+    items,
+    setItems,
+
+    updateItem,
+    addItem,
+
+    subtotal,
+    tax,
     total,
-    status: "Pending",
-  },
-  items.map((item) => ({
-    name: item.name,
-    quantity: item.quantity,
-    price: item.price,
-  }))
-);
-      } else {
-        await createInvoice(
-          {
-            customer,
-            invoice_number: invoiceNumber,
-            invoice_date: invoiceDate,
-            due_date: dueDate,
-            total,
-            status: "Pending",
-          },
-          items.map((item) => ({
-            name: item.name,
-            quantity: item.quantity,
-            price: item.price,
-          }))
-        );
-      }
 
-      alert("✅ Invoice Saved Successfully!");
+    resetForm,
+  } = useInvoiceForm();
 
-      setCustomer("");
-      setInvoiceNumber(`INV-${Math.floor(Math.random() * 9000 + 1000)}`);
-      setInvoiceDate("");
-      setDueDate("");
+  useInvoiceLoader({
+    isEdit,
+    invoiceId,
 
-      setItems([
-        {
-          id: 1,
-          name: "",
-          quantity: 0,
-          price: 0,
-        },
-      ]);
-    } catch (error: any) {
-  console.error(error);
+    setCustomers,
 
-  alert(
-    `Message: ${error?.message}
-Code: ${error?.code}
-Details: ${error?.details}
-Hint: ${error?.hint}`
-  );
-}
-  };
+    setCustomer,
+    setInvoiceNumber,
+    setInvoiceDate,
+    setDueDate,
+    setItems,
+  });
 
   return (
     <section className="mt-10 rounded-3xl border border-white/10 bg-gradient-to-br from-[#111827] to-[#0B1220] p-8 shadow-2xl">
+
       <h2 className="mb-8 text-2xl font-bold">
-  {isEdit ? "Edit Invoice" : "Invoice Details"}
-</h2>
+        {isEdit ? "Edit Invoice" : "Invoice Details"}
+      </h2>
 
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
 
-        <input
-          placeholder="Customer Name"
+        <select
           value={customer}
           onChange={(e) => setCustomer(e.target.value)}
           className="rounded-xl border border-white/10 bg-[#0B1220] p-4 outline-none focus:border-cyan-400"
-        />
+        >
+
+          <option value="">
+            Select Customer
+          </option>
+
+          {customers.map((customer) => (
+
+            <option
+              key={customer.id}
+              value={customer.customer_name}
+            >
+              {customer.customer_name}
+              {customer.business_name
+                ? ` • ${customer.business_name}`
+                : ""}
+            </option>
+
+          ))}
+
+        </select>
 
         <input
           value={invoiceNumber}
-          onChange={(e) => setInvoiceNumber(e.target.value)}
+          onChange={(e) =>
+            setInvoiceNumber(e.target.value)
+          }
           className="rounded-xl border border-white/10 bg-[#0B1220] p-4 outline-none focus:border-cyan-400"
         />
 
         <input
           type="date"
           value={invoiceDate}
-          onChange={(e) => setInvoiceDate(e.target.value)}
+          onChange={(e) =>
+            setInvoiceDate(e.target.value)
+          }
           className="rounded-xl border border-white/10 bg-[#0B1220] p-4 outline-none focus:border-cyan-400"
         />
 
         <input
           type="date"
           value={dueDate}
-          onChange={(e) => setDueDate(e.target.value)}
+          onChange={(e) =>
+            setDueDate(e.target.value)
+          }
           className="rounded-xl border border-white/10 bg-[#0B1220] p-4 outline-none focus:border-cyan-400"
         />
 
       </div>
-
-      <div className="mt-10">
+            <div className="mt-10">
 
         <h2 className="mb-6 text-2xl font-bold">
           Invoice Items
@@ -256,7 +148,11 @@ Hint: ${error?.hint}`
               placeholder="Item Name"
               value={item.name}
               onChange={(e) =>
-                updateItem(item.id, "name", e.target.value)
+                updateItem(
+                  item.id,
+                  "name",
+                  e.target.value
+                )
               }
               className="rounded-xl border border-white/10 bg-[#0B1220] p-4 outline-none focus:border-cyan-400"
             />
@@ -264,12 +160,18 @@ Hint: ${error?.hint}`
             <input
               type="number"
               placeholder="Qty"
-              value={item.quantity === 0 ? "" : item.quantity}
+              value={
+                item.quantity === 0
+                  ? ""
+                  : item.quantity
+              }
               onChange={(e) =>
                 updateItem(
                   item.id,
                   "quantity",
-                  e.target.value === "" ? 0 : Number(e.target.value)
+                  e.target.value === ""
+                    ? 0
+                    : Number(e.target.value)
                 )
               }
               className="rounded-xl border border-white/10 bg-[#0B1220] p-4 outline-none focus:border-cyan-400"
@@ -278,19 +180,27 @@ Hint: ${error?.hint}`
             <input
               type="number"
               placeholder="Price"
-              value={item.price === 0 ? "" : item.price}
+              value={
+                item.price === 0
+                  ? ""
+                  : item.price
+              }
               onChange={(e) =>
                 updateItem(
                   item.id,
                   "price",
-                  e.target.value === "" ? 0 : Number(e.target.value)
+                  e.target.value === ""
+                    ? 0
+                    : Number(e.target.value)
                 )
               }
               className="rounded-xl border border-white/10 bg-[#0B1220] p-4 outline-none focus:border-cyan-400"
             />
 
             <div className="flex items-center rounded-xl border border-cyan-500/20 bg-cyan-500/10 px-6 text-lg font-semibold text-cyan-300">
-              {formatCurrency(item.quantity * item.price)}
+              {formatCurrency(
+                item.quantity * item.price
+              )}
             </div>
 
           </div>
@@ -303,9 +213,9 @@ Hint: ${error?.hint}`
         >
           + Add Item
         </button>
-              </div>
 
-      {/* Summary */}
+      </div>
+            {/* Summary */}
 
       <div className="mt-12 rounded-2xl border border-white/10 bg-white/5 p-6">
 
@@ -320,34 +230,87 @@ Hint: ${error?.hint}`
         </div>
 
         <div className="mt-4 flex justify-between border-t border-white/10 pt-4 text-2xl font-bold">
+
           <span>Grand Total</span>
 
           <span className="text-cyan-400">
             {formatCurrency(total)}
           </span>
+
         </div>
 
       </div>
 
-      {/* Save Button */}
-
       <div className="mt-8 flex justify-end">
 
         <button
-          onClick={handleSaveInvoice}
           disabled={
+            createMutation.isPending ||
+            updateMutation.isPending ||
             !customer ||
             !invoiceDate ||
             !dueDate ||
             total <= 0
           }
+          onClick={async () => {
+            try {
+
+              const invoice = {
+                customer,
+                invoice_number: invoiceNumber,
+                invoice_date: invoiceDate,
+                due_date: dueDate,
+                total,
+                amount_paid: 0,
+                balance_due: total,
+                status: "Pending",
+              };
+
+              const invoiceItems = items.map((item) => ({
+                name: item.name,
+                quantity: item.quantity,
+                price: item.price,
+              }));
+
+              if (isEdit && invoiceId) {
+
+                await updateMutation.mutateAsync({
+                  id: invoiceId,
+                  invoice,
+                  items: invoiceItems,
+                });
+
+              } else {
+
+                await createMutation.mutateAsync({
+                  invoice,
+                  items: invoiceItems,
+                });
+
+              }
+
+              alert("✅ Invoice Saved Successfully!");
+
+              resetForm();
+
+            } catch (error) {
+
+              console.error(error);
+
+              alert("Failed to save invoice.");
+
+            }
+          }}
           className="rounded-xl bg-emerald-500 px-8 py-4 text-lg font-semibold text-white transition hover:bg-emerald-400 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          💾 Save Invoice
+
+          {createMutation.isPending || updateMutation.isPending
+            ? "Saving..."
+            : "💾 Save Invoice"}
+
         </button>
 
       </div>
-
-    </section>
+          </section>
   );
 }

@@ -3,6 +3,8 @@ import {
   getInvoiceItems,
 } from "@/services/invoiceService";
 
+import { getCompany } from "@/services/companyService";
+
 import PrintInvoice from "@/components/Invoice/PrintInvoice";
 
 type Props = {
@@ -18,9 +20,11 @@ export default async function PrintInvoicePage({
 
   const invoice = await getInvoiceById(Number(id));
   const items = await getInvoiceItems(Number(id));
+  const company = await getCompany();
 
   return (
     <PrintInvoice
+      company={company}
       invoice={invoice}
       items={items ?? []}
     />

@@ -6,9 +6,13 @@ import QuickActions from "../QuickActions/QuickActions";
 import TodayTasks from "../TodayTasks/TodayTasks";
 import StatCard from "./StatCard";
 
-export default function Dashboard() {
+import { getDashboardStats } from "@/services/dashboardService";
+
+export default async function Dashboard() {
+  const stats = await getDashboardStats();
+
   return (
-    <main className="min-h-screen bg-[#030712] text-white px-8 py-8">
+    <main className="min-h-screen bg-[#030712] px-8 py-8 text-white">
       <div className="mx-auto max-w-7xl space-y-8">
 
         {/* Hero */}
@@ -16,10 +20,31 @@ export default function Dashboard() {
 
         {/* KPI Cards */}
         <section className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4">
-          <StatCard title="Money to Collect" value="₹2,45,000" />
-          <StatCard title="Bills Due" value="₹48,000" />
-          <StatCard title="Cash Position" value="₹8,72,000" />
-          <StatCard title="Alerts" value="3" />
+
+          <StatCard
+            title="Money to Collect"
+            value={stats.formatted.moneyToCollect}
+            href="/invoices"
+          />
+
+          <StatCard
+            title="Bills Due"
+            value={`${stats.overdueInvoices}`}
+            href="/invoices"
+          />
+
+          <StatCard
+            title="Cash Position"
+            value={stats.formatted.revenue}
+            href="/customers"
+          />
+
+          <StatCard
+            title="Alerts"
+            value={`${stats.customerCount}`}
+            href="/customers"
+          />
+
         </section>
 
         {/* Quick Actions */}
