@@ -1,6 +1,7 @@
 import { supabase } from "@/lib/supabase";
 import { Payment } from "@/types/payment";
 import { getInvoiceById } from "./invoiceService";
+
 export async function createPayment(payment: Payment) {
   const { data, error } = await supabase
     .from("payments")
@@ -12,15 +13,15 @@ export async function createPayment(payment: Payment) {
 
   return data;
 }
-export async function recordPayment(payment: Payment) {
-  // 1. Save payment
-  await createPayment(payment);
 
-  // 2. Read invoice
-  const invoice = await getInvoiceById(payment.invoice_id);
+async function updateInvoicePaymentStatus(
+  invoiceId: number,
+  paymentAmount: number
+) {
+  const invoice = await getInvoiceById(invoiceId);
 
   const amountPaid =
-    Number(invoice.amount_paid) + Number(payment.amount);
+    Number(invoice.amount_paid) + Number(paymentAmount);
 
   const balanceDue =
     Number(invoice.total) - amountPaid;
@@ -33,7 +34,6 @@ export async function recordPayment(payment: Payment) {
     status = "Partially Paid";
   }
 
-  // 3. Update invoice
   const { error } = await supabase
     .from("invoices")
     .update({
@@ -41,15 +41,27 @@ export async function recordPayment(payment: Payment) {
       balance_due: Math.max(balanceDue, 0),
       status,
     })
-    .eq("id", payment.invoice_id);
+    .eq("id", invoiceId);
 
   if (error) throw error;
 }
+
+export async function recordPayment(payment: Payment) {
+  // Save payment
+  await createPayment(payment);
+
+  // Update invoice
+  await updateInvoicePaymentStatus(
+    payment.invoice_id,
+    Number(payment.amount)
+  );
+}
+
 export async function getPayments() {
   const { data, error } = await supabase
     .from("payments")
     .select("*")
-    .order("payment_date", { ascending: false });
+    .order("paid_at", { ascending: false });
 
   if (error) throw error;
 
@@ -63,9 +75,7 @@ export async function getPaymentsByInvoice(
     .from("payments")
     .select("*")
     .eq("invoice_id", invoiceId)
-    .order("payment_date", {
-      ascending: false,
-    });
+    .order("paid_at", { ascending: false });
 
   if (error) throw error;
 
@@ -80,7 +90,7 @@ export async function deletePayment(id: number) {
 
   if (error) throw error;
 
-return {
-  success: true,
-};
+  return {
+    success: true,
+  };
 }

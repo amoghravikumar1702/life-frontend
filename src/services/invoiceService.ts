@@ -11,10 +11,14 @@ export async function createInvoice(
   invoice: Invoice,
   items: InvoiceItem[]
 ) {
-  // Save Invoice
+  const invoiceToSave = {
+  ...invoice,
+  amount_paid: 0,
+  balance_due: invoice.total,
+};// Save Invoice
   const { data: invoiceData, error: invoiceError } = await supabase
     .from("invoices")
-    .insert([invoice])
+    .insert([invoiceToSave])
     .select()
     .single();
 

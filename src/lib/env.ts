@@ -4,9 +4,10 @@ const envSchema = z.object({
   NEXT_PUBLIC_SUPABASE_URL: z.string().url(),
   NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(1),
 
-  SUPABASE_SERVICE_ROLE_KEY: z.string().min(1).optional(),
-  RAZORPAY_KEY_ID: z.string().min(1).optional(),
-  RAZORPAY_KEY_SECRET: z.string().min(1).optional(),
+  SUPABASE_SERVICE_ROLE_KEY: z.string().optional(),
+
+  RAZORPAY_KEY_ID: z.string().min(1),
+  RAZORPAY_KEY_SECRET: z.string().min(1),
 });
 
 const result = envSchema.safeParse({
@@ -18,7 +19,22 @@ const result = envSchema.safeParse({
 });
 
 if (!result.success) {
+  console.log("NEXT_PUBLIC_SUPABASE_URL =", process.env.NEXT_PUBLIC_SUPABASE_URL);
+  console.log(
+    "NEXT_PUBLIC_SUPABASE_ANON_KEY exists =",
+    !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  );
+  console.log(
+    "RAZORPAY_KEY_ID =",
+    process.env.RAZORPAY_KEY_ID
+  );
+  console.log(
+    "RAZORPAY_KEY_SECRET exists =",
+    !!process.env.RAZORPAY_KEY_SECRET
+  );
+
   console.error(result.error.format());
+
   throw new Error("Environment validation failed.");
 }
 

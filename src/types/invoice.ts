@@ -15,6 +15,9 @@ export interface Invoice {
   discount: number;
   total: number;
 
+  amount_paid?: number;
+balance_due?: number;
+
   currency: string;
 
   payment_terms?: string;
