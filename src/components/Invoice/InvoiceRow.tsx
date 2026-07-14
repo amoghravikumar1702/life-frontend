@@ -1,5 +1,6 @@
 import InvoiceStatus from "./InvoiceStatus";
 import { Invoice } from "@/types/invoice";
+import { collectPayment } from "@/services/collectPaymentService";
 
 type Props = {
   invoice: Invoice;
@@ -20,6 +21,20 @@ export default function InvoiceRow({
   onEdit,
   onDelete,
 }: Props) {
+
+  async function handleCollectPayment() {
+    try {
+      const order = await collectPayment(invoice.id!);
+
+      console.log("Razorpay Order:", order);
+
+      alert("✅ Payment order created successfully!");
+    } catch (error) {
+      console.error(error);
+      alert("❌ Failed to create payment order.");
+    }
+  }
+
   return (
     <tr className="border-b border-white/10 hover:bg-white/5 transition">
       <td className="px-6 py-5 font-semibold">
@@ -39,7 +54,7 @@ export default function InvoiceRow({
       </td>
 
       <td className="px-6 py-5">
-        <div className="flex gap-4">
+        <div className="flex flex-wrap gap-3">
 
           <button
             onClick={() => onView(invoice.id!)}
@@ -67,6 +82,13 @@ export default function InvoiceRow({
             className="text-green-400 hover:text-green-300"
           >
             Edit
+          </button>
+
+          <button
+            onClick={handleCollectPayment}
+            className="rounded-lg bg-cyan-500 px-3 py-1 text-sm font-semibold text-black hover:bg-cyan-400"
+          >
+            Collect Payment
           </button>
 
           <button
