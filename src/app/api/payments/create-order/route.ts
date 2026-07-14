@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-
+import crypto from "crypto";
 import { ApiResponse } from "@/lib/api-response";
 import { handleApiError } from "@/lib/error-handler";
 import { razorpay } from "@/lib/server/razorpay";
@@ -30,7 +30,22 @@ export async function POST(request: NextRequest) {
         400
       );
     }
+// Generate secure payment token
+const paymentToken = `fz_${crypto.randomBytes(16).toString("hex")}`;
+// Save payment token to invoice
+const { error: updateError } = await supabase
+  .from("invoices")
+  .update({
+    payment_token: paymentToken,
+  })
+  .eq("id", invoice.id);
 
+if (updateError) {
+  return ApiResponse.error(
+    "Failed to generate payment link",
+    500
+  );
+}
     // Create Razorpay Order
     const order = await razorpay.orders.create({
       amount: Math.round(Number(invoice.balance_due) * 100),
@@ -42,7 +57,10 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    return ApiResponse.success(order);
+    return ApiResponse.success({
+  order,
+  paymentUrl: `${process.env.NEXT_PUBLIC_APP_URL}/pay/${paymentToken}`,
+});
   } catch (error) {
     return handleApiError(error);
   }

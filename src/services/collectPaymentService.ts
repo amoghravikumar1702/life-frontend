@@ -15,7 +15,8 @@ export async function collectPayment(invoiceId: number) {
 
   const result = await response.json();
 
-  console.log("STEP 3: Response Body", result);
+  console.log("STEP 3: Response Body");
+console.dir(result, { depth: null });
 
   if (!response.ok) {
     throw new Error(result.message || "Failed to create payment order.");
