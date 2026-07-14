@@ -79,4 +79,8 @@ export async function deletePayment(id: number) {
     .eq("id", id);
 
   if (error) throw error;
+
+return {
+  success: true,
+};
 }
