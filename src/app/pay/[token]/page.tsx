@@ -88,7 +88,13 @@ export default async function PaymentPage({
           </span>
         </div>
 
-        <PayButton amount={Number(invoice.balance_due)} />
+        <PayButton
+  invoiceId={invoice.id}
+  amount={Number(invoice.balance_due)}
+  customerName={invoice.customer}
+  customerEmail={invoice.customer_email}
+  customerPhone={invoice.customer_phone}
+/>
 
       </div>
     </main>

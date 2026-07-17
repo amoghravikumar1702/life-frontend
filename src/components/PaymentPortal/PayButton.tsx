@@ -1,14 +1,34 @@
 "use client";
 
+import { openRazorpayCheckout } from "@/services/paymentCheckoutService";
+
 type PayButtonProps = {
+  invoiceId: number;
   amount: number;
+  customerName: string;
+  customerEmail?: string;
+  customerPhone?: string;
 };
 
 export default function PayButton({
-  amount,
+  invoiceId,
+  customerName,
+  customerEmail,
+  customerPhone,
 }: PayButtonProps) {
-  function handlePayment() {
-    alert(`Razorpay Checkout will open.\n\nAmount: ₹${amount}`);
+  async function handlePayment() {
+    try {
+      await openRazorpayCheckout({
+        invoiceId,
+        customerName,
+        customerEmail,
+        customerPhone,
+      });
+    } catch (error) {
+      console.error(error);
+
+      alert("❌ Failed to open payment gateway.");
+    }
   }
 
   return (

@@ -1,9 +1,9 @@
 import { NextRequest } from "next/server";
+import crypto from "crypto";
 
 import { ApiResponse } from "@/lib/api-response";
 import { handleApiError } from "@/lib/error-handler";
-import { razorpay } from "@/lib/server/razorpay";
-import { supabaseAdmin } from "@/lib/server/supabase";
+import { supabase } from "@/lib/supabase";
 
 export async function POST(request: NextRequest) {
   try {
@@ -13,14 +13,14 @@ export async function POST(request: NextRequest) {
       return ApiResponse.error("Invoice ID is required", 400);
     }
 
-    const { data: invoice, error } = await supabaseAdmin
+    // Fetch invoice
+    const { data: invoice, error } = await supabase
       .from("invoices")
       .select("*")
-      .eq("id", Number(invoiceId))
-      .maybeSingle();
+      .eq("id", invoiceId)
+      .single();
 
     if (error || !invoice) {
-      console.error("Invoice lookup failed:", error);
       return ApiResponse.error("Invoice not found", 404);
     }
 
@@ -31,35 +31,28 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const order = await razorpay.orders.create({
-      amount: Math.round(Number(invoice.balance_due) * 100),
-      currency: invoice.currency ?? "INR",
-      receipt: `invoice_${invoice.id}`,
-      notes: {
-        invoiceId: String(invoice.id),
-        customer: String(invoice.customer),
-      },
-    });
+    // Generate secure payment token
+    const paymentToken = `fz_${crypto.randomBytes(16).toString("hex")}`;
 
-    const { error: updateError } = await supabaseAdmin
+    // Save token
+    const { error: updateError } = await supabase
       .from("invoices")
       .update({
-        razorpay_order_id: order.id,
+        payment_token: paymentToken,
       })
       .eq("id", invoice.id);
 
     if (updateError) {
-      console.error(updateError);
       return ApiResponse.error(
-        "Failed to save Razorpay order",
+        "Failed to generate payment link",
         500
       );
     }
 
-    return ApiResponse.success(order);
+    return ApiResponse.success({
+      paymentUrl: `${process.env.NEXT_PUBLIC_APP_URL}/pay/${paymentToken}`,
+    });
   } catch (error) {
-    console.error("CREATE ORDER ERROR:", error);
     return handleApiError(error);
   }
 }
-

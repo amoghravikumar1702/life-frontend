@@ -22,18 +22,23 @@ export default function InvoiceRow({
   onDelete,
 }: Props) {
 
-  async function handleCollectPayment() {
-    try {
-      const order = await collectPayment(invoice.id!);
+ async function handleCollectPayment() {
+  try {
+    const result = await collectPayment(invoice.id!);
 
-      console.log("Razorpay Order:", order);
+    console.log("Payment Link:", result.paymentUrl);
 
-      alert("✅ Payment order created successfully!");
-    } catch (error) {
-      console.error(error);
-      alert("❌ Failed to create payment order.");
-    }
+    await navigator.clipboard.writeText(result.paymentUrl);
+
+    alert(
+      `✅ Payment Link Created!\n\nThe payment link has been copied to your clipboard.\n\n${result.paymentUrl}`
+    );
+  } catch (error) {
+    console.error(error);
+
+    alert("❌ Failed to create payment link.");
   }
+}
 
   return (
     <tr className="border-b border-white/10 hover:bg-white/5 transition">
