@@ -1,3 +1,4 @@
+"use client";
 type Props = {
   customer: string;
   setCustomer: (value: string) => void;
@@ -38,6 +39,7 @@ export default function InvoiceDetails({
         />
 
         <input
+          placeholder="Invoice Number"
           value={invoiceNumber}
           onChange={(e) => setInvoiceNumber(e.target.value)}
           className="rounded-xl border border-white/10 bg-[#0B1220] p-4 outline-none focus:border-cyan-400"

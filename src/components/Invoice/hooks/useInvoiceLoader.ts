@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { Dispatch, SetStateAction, useEffect } from "react";
 
 import { getCustomers } from "@/services/customerService";
 import {
@@ -8,7 +8,7 @@ import {
   getInvoiceItems,
 } from "@/services/invoiceService";
 
-import { Customer } from "@/types/customer";
+import type { Customer } from "@/types/customer";
 
 type InvoiceItem = {
   id: number;
@@ -21,29 +21,12 @@ type Props = {
   isEdit: boolean;
   invoiceId?: number;
 
-  setCustomers: React.Dispatch<
-    React.SetStateAction<Customer[]>
-  >;
-
-  setCustomer: React.Dispatch<
-    React.SetStateAction<string>
-  >;
-
-  setInvoiceNumber: React.Dispatch<
-    React.SetStateAction<string>
-  >;
-
-  setInvoiceDate: React.Dispatch<
-    React.SetStateAction<string>
-  >;
-
-  setDueDate: React.Dispatch<
-    React.SetStateAction<string>
-  >;
-
-  setItems: React.Dispatch<
-    React.SetStateAction<InvoiceItem[]>
-  >;
+  setCustomers: Dispatch<SetStateAction<Customer[]>>;
+  setCustomer: Dispatch<SetStateAction<string>>;
+  setInvoiceNumber: Dispatch<SetStateAction<string>>;
+  setInvoiceDate: Dispatch<SetStateAction<string>>;
+  setDueDate: Dispatch<SetStateAction<string>>;
+  setItems: Dispatch<SetStateAction<InvoiceItem[]>>;
 };
 
 export function useInvoiceLoader({
@@ -115,8 +98,14 @@ export function useInvoiceLoader({
                 },
               ]
         );
-      } catch (error) {
-        console.error(error);
+      } catch (error: any) {
+        console.error("loadInvoice failed:", {
+          message: error?.message,
+          code: error?.code,
+          details: error?.details,
+          hint: error?.hint,
+          invoiceId,
+        });
       }
     }
 

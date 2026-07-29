@@ -69,7 +69,9 @@ useEffect(() => {
         return;
       }
 
-      setCompanyId(company.id);
+      if (company.id != null) {
+  setCompanyId(company.id);
+}
 
       setForm({
         company_name: company.company_name ?? "",

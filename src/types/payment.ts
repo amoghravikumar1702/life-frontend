@@ -5,13 +5,17 @@ export interface Payment {
 
   amount: number;
 
-  payment_date: string;
-
   payment_method: string;
 
-  reference_number?: string;
+  payment_reference?: string;
 
-  notes?: string;
+  payment_status?: string;
+
+  paid_at?: string;
+
+  razorpay_order_id?: string;
+
+  owner_id?: string;
 
   created_at?: string;
 }

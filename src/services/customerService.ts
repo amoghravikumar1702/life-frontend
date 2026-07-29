@@ -1,38 +1,100 @@
-import { supabase } from "@/lib/supabase";
+import { createClient } from "@/lib/supabase/client";
 import { Customer } from "@/types/customer";
 
-// Create Customer
+// Initialize supabase client
+const supabase = createClient();
+
+
+// ============================
+// CREATE CUSTOMER
+// ============================
 export async function createCustomer(customer: Customer) {
+  // Check browser session
+  const sessionResult = await supabase.auth.getSession();
+
+  console.log("=================================");
+  console.log("SESSION:", sessionResult.data.session);
+  console.log("SESSION ERROR:", sessionResult.error);
+  console.log("=================================");
+
+  // Get authenticated user
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+
+  console.log("USER:", user);
+  console.log("USER ERROR:", userError);
+
+  if (userError) {
+    throw userError;
+  }
+
+  if (!user) {
+    throw new Error("No authenticated user found.");
+  }
+
+  const payload = {
+    ...customer,
+    owner_id: user.id,
+  };
+
+  console.log("INSERT PAYLOAD:", payload);
+
   const { data, error } = await supabase
     .from("customers")
-    .insert([customer])
+    .insert(payload)
     .select()
     .single();
 
   if (error) {
-    console.error("Create Customer Error:", error);
+    console.error("SUPABASE INSERT ERROR:", error);
     throw error;
   }
+
+  console.log("CUSTOMER CREATED:", data);
 
   return data;
 }
 
-// Get All Customers
+// ============================
+// GET ALL CUSTOMERS
+// ============================
 export async function getCustomers() {
+  const {
+    data: { session },
+    error: sessionError,
+  } = await supabase.auth.getSession();
+
+  console.log("GET CUSTOMERS SESSION:", session);
+  console.log("GET CUSTOMERS SESSION ERROR:", sessionError);
+
+  if (sessionError) {
+    throw sessionError;
+  }
+
+  if (!session) {
+    throw new Error("No active session found.");
+  }
+
   const { data, error } = await supabase
     .from("customers")
     .select("*")
+    .eq("owner_id", session.user.id)
     .order("created_at", { ascending: false });
 
+  console.log("CUSTOMERS DATA:", data);
+  console.log("CUSTOMERS ERROR:", error);
+
   if (error) {
-    console.error("Get Customers Error:", error);
     throw error;
   }
 
   return data;
 }
-
-// Get Customer By ID
+// ============================
+// GET CUSTOMER BY ID
+// ============================
 export async function getCustomerById(id: number) {
   const { data, error } = await supabase
     .from("customers")
@@ -41,14 +103,16 @@ export async function getCustomerById(id: number) {
     .single();
 
   if (error) {
-    console.error("Get Customer Error:", error);
+    console.error("GET CUSTOMER ERROR:", error);
     throw error;
   }
 
   return data;
 }
 
-// Update Customer
+// ============================
+// UPDATE CUSTOMER
+// ============================
 export async function updateCustomer(
   id: number,
   customer: Partial<Customer>
@@ -61,14 +125,16 @@ export async function updateCustomer(
     .single();
 
   if (error) {
-    console.error("Update Customer Error:", error);
+    console.error("UPDATE CUSTOMER ERROR:", error);
     throw error;
   }
 
   return data;
 }
 
-// Delete Customer
+// ============================
+// DELETE CUSTOMER
+// ============================
 export async function deleteCustomer(id: number) {
   const { error } = await supabase
     .from("customers")
@@ -76,7 +142,7 @@ export async function deleteCustomer(id: number) {
     .eq("id", id);
 
   if (error) {
-    console.error("Delete Customer Error:", error);
+    console.error("DELETE CUSTOMER ERROR:", error);
     throw error;
   }
 }

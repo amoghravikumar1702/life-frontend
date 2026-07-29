@@ -1,5 +1,7 @@
-import { supabase } from "@/lib/supabase";
+import { createClient } from "@/lib/supabase/client";
 import { Invoice } from "@/types/invoice";
+
+const supabase = createClient();
 
 export type InvoiceItem = {
   name: string;
@@ -11,11 +13,23 @@ export async function createInvoice(
   invoice: Invoice,
   items: InvoiceItem[]
 ) {
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+
+  if (userError || !user) {
+    throw new Error("No authenticated user found.");
+  }
+
   const invoiceToSave = {
-  ...invoice,
-  amount_paid: 0,
-  balance_due: invoice.total,
-};// Save Invoice
+    ...invoice,
+    amount_paid: 0,
+    balance_due: invoice.total,
+    owner_id: user.id,
+  };
+
+  // Save Invoice
   const { data: invoiceData, error: invoiceError } = await supabase
     .from("invoices")
     .insert([invoiceToSave])
@@ -98,6 +112,14 @@ export async function updateInvoice(
     .single();
 
   if (error) {
+    alert(
+      "REAL UPDATE ERROR: " +
+        String(error?.message) +
+        " | code: " +
+        String(error?.code) +
+        " | details: " +
+        String(error?.details)
+    );
     console.error("Update Invoice Error:", error);
     throw error;
   }

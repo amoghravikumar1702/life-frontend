@@ -1,6 +1,7 @@
-import { NextRequest } from "next/server";
 import crypto from "crypto";
-
+import { NextRequest } from "next/server";
+import { revalidatePath } from "next/cache";
+import { createEvent } from "@/lib/events";
 import { ApiResponse } from "@/lib/api-response";
 import { handleApiError } from "@/lib/error-handler";
 import { supabaseAdmin } from "@/lib/server/supabase";
@@ -22,6 +23,7 @@ export async function POST(request: NextRequest) {
       return ApiResponse.error("Missing payment details", 400);
     }
 
+    // Verify Razorpay signature
     const generatedSignature = crypto
       .createHmac(
         "sha256",
@@ -81,20 +83,34 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Insert payment
+    if (
+      invoice.status === "Paid" ||
+      Number(invoice.balance_due) <= 0
+    ) {
+      return ApiResponse.success({
+        verified: true,
+        message: "Invoice already settled",
+      });
+    }
+
+    const paymentAmount = Number(invoice.balance_due);
+    const totalPaid =
+      Number(invoice.amount_paid ?? 0) + paymentAmount;
+
+    // Record payment
     const { error: paymentError } =
-      await supabaseAdmin
-        .from("payments")
-        .insert({
-          invoice_id: invoice.id,
-          amount: invoice.total,
-          payment_method: "Razorpay",
-          payment_reference:
-            razorpay_payment_id,
-          payment_status: "Completed",
-          razorpay_order_id,
-          paid_at: new Date().toISOString(),
-        });
+  await supabaseAdmin
+    .from("payments")
+    .insert({
+      invoice_id: invoice.id,
+      owner_id: invoice.owner_id,
+      amount: paymentAmount,
+      payment_method: "Razorpay",
+      payment_reference: razorpay_payment_id,
+      payment_status: "Completed",
+      razorpay_order_id,
+      paid_at: new Date().toISOString(),
+    });
 
     if (paymentError) {
       throw paymentError;
@@ -106,8 +122,10 @@ export async function POST(request: NextRequest) {
         .from("invoices")
         .update({
           status: "Paid",
-          amount_paid: invoice.total,
+          amount_paid: totalPaid,
           balance_due: 0,
+          payment_token: null,
+          payment_token_expires_at: null,
         })
         .eq("id", invoice.id);
 
@@ -115,19 +133,57 @@ export async function POST(request: NextRequest) {
       throw invoiceUpdateError;
     }
 
-    // Notification
-    await createNotification({
-      title: "Payment Received",
-      message: `Invoice ${invoice.invoice_number} has been paid successfully.`,
-      type: "payment",
-    });
+    // Create notification
+    // Create notification
+    // Create notification
+await createNotification({
+  ownerId: invoice.owner_id,
+  title: "Payment Received",
+  message: `Invoice ${invoice.invoice_number} has been paid successfully.`,
+  type: "payment",
+});
 
+    // Create event (non-blocking)
+    try {
+      await createEvent({
+        ownerId: invoice.owner_id,
+        type: "payment_received",
+        title: "Payment Received",
+        description: `₹${paymentAmount.toLocaleString(
+          "en-IN"
+        )} received for Invoice ${invoice.invoice_number}.`,
+        entityType: "payment",
+        entityId: razorpay_payment_id,
+        severity: "success",
+        metadata: {
+          invoiceId: invoice.id,
+          invoiceNumber: invoice.invoice_number,
+          paymentReference: razorpay_payment_id,
+          amount: paymentAmount,
+        },
+      });
+    } catch (eventError) {
+      console.error(
+        "Failed to create payment event:",
+        eventError
+      );
+    }
+revalidatePath("/dashboard");
+revalidatePath("/invoices");
     return ApiResponse.success({
       verified: true,
       invoiceId: invoice.id,
       paymentId: razorpay_payment_id,
+      amount: paymentAmount,
+      message: "Payment verified successfully",
     });
+
   } catch (error) {
+    console.error(
+      "========== PAYMENT VERIFY ERROR =========="
+    );
+    console.error(error);
+
     return handleApiError(error);
   }
 }

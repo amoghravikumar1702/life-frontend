@@ -2,10 +2,12 @@ import { NextRequest } from "next/server";
 
 import { ApiResponse } from "@/lib/api-response";
 import { handleApiError } from "@/lib/error-handler";
-import { supabase } from "@/lib/supabase";
+import { createClient } from "@/lib/supabase/server";
 
 export async function GET() {
   try {
+    const supabase = await createClient();
+
     const { data, error } = await supabase
       .from("notifications")
       .select("*")
@@ -26,6 +28,8 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
+    const supabase = await createClient();
+
     const body = await request.json();
 
     const { error } = await supabase

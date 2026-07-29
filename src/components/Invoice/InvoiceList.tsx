@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 import { Invoice } from "@/types/invoice";
 
@@ -10,7 +11,6 @@ import {
   getInvoiceItems,
 } from "@/services/invoiceService";
 
-import { getCompany } from "@/services/companyService";
 
 import {
   useInvoices,
@@ -44,6 +44,8 @@ type InvoiceItemRow = {
 
 export default function InvoiceList() {
 
+  const router = useRouter();
+
   const {
     data: invoices = [],
     isLoading,
@@ -61,40 +63,23 @@ export default function InvoiceList() {
   const [selectedItems, setSelectedItems] =
     useState<InvoiceItemRow[]>([]);
 
-  async function loadInvoices() {
+  async function handleDelete(id: number) {
+    if (!window.confirm("Delete this invoice?")) return;
+
     try {
-      setLoading(true);
+      await deleteMutation.mutateAsync(id);
 
-      const data = await getInvoices();
-
-      setInvoices(data ?? []);
+      alert("✅ Invoice deleted successfully!");
     } catch (error) {
       console.error(error);
-      alert("Failed to load invoices");
-    } finally {
-      setLoading(false);
+      alert("Failed to delete invoice.");
     }
   }
-
-
- async function handleDelete(id: number) {
-  if (!window.confirm("Delete this invoice?")) return;
-
-  try {
-    await deleteMutation.mutateAsync(id);
-
-    alert("✅ Invoice deleted successfully!");
-  } catch (error) {
-    console.error(error);
-    alert("Failed to delete invoice.");
-  }
-}
 
   async function handleView(id: number) {
     try {
       const invoice = await getInvoiceById(id);
       const items = await getInvoiceItems(id);
-const company = await getCompany();
       setSelectedInvoice(invoice);
       setSelectedItems(items ?? []);
     } catch (error) {
@@ -104,40 +89,35 @@ const company = await getCompany();
   }
 
   function handleEdit(id: number) {
-    window.location.href = `/invoices/edit/${id}`;
+    router.push(`/invoices/edit/${id}`);
   }
 
   async function handlePDF(id: number) {
-  try {
-    const invoice = await getInvoiceById(id);
+    try {
+      const invoice = await getInvoiceById(id);
 
-    const items = await getInvoiceItems(id);
+      const items = await getInvoiceItems(id);
+      generateInvoicePDF({
+        // company removed: InvoicePDFData does not accept a company property
+        invoiceNumber: invoice.invoice_number,
+        customer: invoice.customer,
+        invoiceDate: invoice.invoice_date,
+        dueDate: invoice.due_date,
+        status: invoice.status,
 
-    const company = await getCompany();   // <-- THIS LINE
+        items: (items ?? []).map((item: any) => ({
+          name: item.item_name,
+          quantity: item.quantity,
+          price: item.price,
+        })),
+      });
 
-    generateInvoicePDF({
-      company,
-
-      invoiceNumber: invoice.invoice_number,
-      customer: invoice.customer,
-      invoiceDate: invoice.invoice_date,
-      dueDate: invoice.due_date,
-      status: invoice.status,
-
-      items: (items ?? []).map((item: any) => ({
-        name: item.item_name,
-        quantity: item.quantity,
-        price: item.price,
-      })),
-    });
-
-  } catch (error) {
-    console.error(error);
-    alert("Failed to generate PDF.");
+    } catch (error) {
+      console.error(error);
+      alert("Failed to generate PDF.");
+    }
   }
-}
 
-  // ✅ THIS WAS MISSING
   function handlePrint(id: number) {
     window.open(`/invoices/print/${id}`, "_blank");
   }

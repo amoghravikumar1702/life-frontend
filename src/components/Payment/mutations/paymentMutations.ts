@@ -14,7 +14,7 @@ export function useRecordPayment() {
     onSuccess: async () => {
       await Promise.all([
         queryClient.invalidateQueries({
-          queryKey: ["invoices"],
+          queryKey: ["payments"],
         }),
 
         queryClient.invalidateQueries({
@@ -22,7 +22,15 @@ export function useRecordPayment() {
         }),
 
         queryClient.invalidateQueries({
-          queryKey: ["payments"],
+          queryKey: ["invoices"],
+        }),
+
+        queryClient.invalidateQueries({
+          queryKey: ["customers"],
+        }),
+
+        queryClient.invalidateQueries({
+          queryKey: ["pending-invoices"],
         }),
       ]);
     },

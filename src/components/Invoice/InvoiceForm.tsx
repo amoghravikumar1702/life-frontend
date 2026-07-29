@@ -255,16 +255,22 @@ export default function InvoiceForm({
           onClick={async () => {
             try {
 
-              const invoice = {
-                customer,
-                invoice_number: invoiceNumber,
-                invoice_date: invoiceDate,
-                due_date: dueDate,
-                total,
-                amount_paid: 0,
-                balance_due: total,
-                status: "Pending",
-              };
+              const selectedCustomer = customers.find(
+  (c) => c.customer_name === customer
+);
+
+const invoice = {
+  customer,
+  customer_phone: selectedCustomer?.phone || null,
+  customer_email: selectedCustomer?.email || null,
+  invoice_number: invoiceNumber,
+  invoice_date: invoiceDate,
+  due_date: dueDate,
+  total,
+  amount_paid: 0,
+  balance_due: total,
+  status: "Pending",
+};
 
               const invoiceItems = items.map((item) => ({
                 name: item.name,
@@ -297,7 +303,7 @@ export default function InvoiceForm({
 
               console.error(error);
 
-              alert("Failed to save invoice.");
+              alert("Failed to save invoice. Please try again.");
 
             }
           }}

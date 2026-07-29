@@ -3,7 +3,7 @@ import crypto from "crypto";
 
 import { ApiResponse } from "@/lib/api-response";
 import { handleApiError } from "@/lib/error-handler";
-import { supabase } from "@/lib/supabase";
+import { supabaseAdmin } from "@/lib/server/supabase";
 
 export async function POST(request: NextRequest) {
   try {
@@ -13,8 +13,7 @@ export async function POST(request: NextRequest) {
       return ApiResponse.error("Invoice ID is required", 400);
     }
 
-    // Fetch invoice
-    const { data: invoice, error } = await supabase
+    const { data: invoice, error } = await supabaseAdmin
       .from("invoices")
       .select("*")
       .eq("id", invoiceId)
@@ -31,11 +30,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Generate secure payment token
     const paymentToken = `fz_${crypto.randomBytes(16).toString("hex")}`;
 
-    // Save token
-    const { error: updateError } = await supabase
+    const { error: updateError } = await supabaseAdmin
       .from("invoices")
       .update({
         payment_token: paymentToken,

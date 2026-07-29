@@ -32,14 +32,14 @@ export async function openRazorpayCheckout({
   const result = await response.json();
 
   if (!response.ok) {
-    throw new Error(result.message);
+    throw new Error(result.message ?? "Failed to create payment order.");
   }
 
   const order = result.data;
 
   const Razorpay = (window as any).Razorpay;
 
-  const options = {
+  const paymentObject = new Razorpay({
     key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
 
     amount: order.amount,
@@ -48,7 +48,7 @@ export async function openRazorpayCheckout({
 
     name: "FINZURA",
 
-    description: "Invoice Payment",
+    description: `Invoice ${order.receipt ?? ""}`,
 
     order_id: order.id,
 
@@ -62,33 +62,58 @@ export async function openRazorpayCheckout({
       color: "#06b6d4",
     },
 
-    handler: async function (response: any) {
-      console.log("🎉 Razorpay Success");
-      console.dir(response);
-
-      const verifyResponse = await fetch("/api/payments/verify", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(response),
-      });
-
-      const verifyResult = await verifyResponse.json();
-
-      console.log("Verification Result");
-      console.dir(verifyResult);
-
-      if (!verifyResponse.ok) {
-        alert("❌ Payment verification failed.");
-        return;
-      }
-
-      alert("✅ Payment verified successfully!");
+    modal: {
+      ondismiss() {
+        console.log("Payment cancelled.");
+      },
     },
-  };
 
-  const paymentObject = new Razorpay(options);
+    handler: async (paymentResponse: any) => {
+      try {
+        const verifyResponse = await fetch(
+          "/api/payments/verify",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(paymentResponse),
+          }
+        );
+
+        const verifyResult = await verifyResponse.json();
+
+        if (!verifyResponse.ok) {
+          throw new Error(
+            verifyResult.message ??
+              "Payment verification failed."
+          );
+        }
+
+        alert("Payment Successful!");
+
+        window.location.reload();
+      } catch (error) {
+        console.error(error);
+
+        alert(
+          error instanceof Error
+            ? error.message
+            : "Payment verification failed."
+        );
+      }
+    },
+  });
+
+  paymentObject.on("payment.failed", function (response: any) {
+    console.error(response);
+
+    const description =
+      response?.error?.description ??
+      "Your payment could not be completed.";
+
+    alert(`Payment Failed\n\n${description}`);
+  });
 
   paymentObject.open();
 }

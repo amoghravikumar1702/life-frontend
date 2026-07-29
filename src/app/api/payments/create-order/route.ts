@@ -24,11 +24,27 @@ export async function POST(request: NextRequest) {
       return ApiResponse.error("Invoice not found", 404);
     }
 
-    if (Number(invoice.balance_due) <= 0) {
+    if (
+      invoice.status === "Paid" ||
+      Number(invoice.balance_due) <= 0
+    ) {
       return ApiResponse.error(
         "Invoice is already fully paid",
         400
       );
+    }
+
+    if (
+      invoice.payment_token_expires_at &&
+      new Date(invoice.payment_token_expires_at) < new Date()
+    ) {
+      await supabaseAdmin
+        .from("invoices")
+        .update({
+          payment_token: null,
+          payment_token_expires_at: null,
+        })
+        .eq("id", invoice.id);
     }
 
     const order = await razorpay.orders.create({
@@ -50,6 +66,7 @@ export async function POST(request: NextRequest) {
 
     if (updateError) {
       console.error(updateError);
+
       return ApiResponse.error(
         "Failed to save Razorpay order",
         500
@@ -62,4 +79,3 @@ export async function POST(request: NextRequest) {
     return handleApiError(error);
   }
 }
-

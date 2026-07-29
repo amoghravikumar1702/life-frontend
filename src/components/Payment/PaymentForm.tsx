@@ -15,8 +15,7 @@ export default function PaymentForm() {
 
   const paymentMutation = useRecordPayment();
 
-  const [selectedInvoice, setSelectedInvoice] =
-    useState("");
+  const [selectedInvoice, setSelectedInvoice] = useState("");
 
   const [selectedInvoiceData, setSelectedInvoiceData] =
     useState<Invoice | null>(null);
@@ -29,11 +28,9 @@ export default function PaymentForm() {
   const [referenceNumber, setReferenceNumber] =
     useState("");
 
-  const [notes, setNotes] = useState("");
+  const [saving, setSaving] = useState(false);
 
-  const [saving, setSaving] =
-    useState(false);
-      function handleInvoiceChange(
+  function handleInvoiceChange(
     e: React.ChangeEvent<HTMLSelectElement>
   ) {
     const id = Number(e.target.value);
@@ -51,26 +48,22 @@ export default function PaymentForm() {
     }
 
     setSelectedInvoiceData(invoice);
-
     setAmount(String(invoice.balance_due));
   }
 
   return (
     <section className="mt-10 rounded-3xl border border-white/10 bg-gradient-to-br from-[#111827] to-[#0B1220] p-8 shadow-2xl">
-
       <h2 className="mb-8 text-3xl font-bold">
         Record Payment
       </h2>
 
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-
         <select
           value={selectedInvoice}
           onChange={handleInvoiceChange}
           disabled={isLoading}
           className="rounded-xl border border-white/10 bg-[#0B1220] p-4 outline-none focus:border-cyan-400"
         >
-
           <option value="">
             {isLoading
               ? "Loading invoices..."
@@ -78,7 +71,6 @@ export default function PaymentForm() {
           </option>
 
           {invoices.map((invoice) => (
-
             <option
               key={invoice.id}
               value={invoice.id}
@@ -90,19 +82,17 @@ export default function PaymentForm() {
                 "en-IN"
               )}
             </option>
-
           ))}
-
         </select>
 
         <input
           type="number"
           value={amount}
-          onChange={(e) =>
-            setAmount(e.target.value)
-          }
+          disabled={!selectedInvoice}
+          max={selectedInvoiceData?.balance_due}
+          onChange={(e) => setAmount(e.target.value)}
           placeholder="Amount Received"
-          className="rounded-xl border border-white/10 bg-[#0B1220] p-4 outline-none focus:border-cyan-400"
+          className="rounded-xl border border-white/10 bg-[#0B1220] p-4 outline-none focus:border-cyan-400 disabled:cursor-not-allowed disabled:opacity-50"
         />
 
         <select
@@ -112,13 +102,11 @@ export default function PaymentForm() {
           }
           className="rounded-xl border border-white/10 bg-[#0B1220] p-4 outline-none focus:border-cyan-400"
         >
-
           <option>Cash</option>
           <option>UPI</option>
           <option>Bank Transfer</option>
           <option>Cheque</option>
           <option>Card</option>
-
         </select>
 
         <input
@@ -129,27 +117,15 @@ export default function PaymentForm() {
           placeholder="Reference Number (Optional)"
           className="rounded-xl border border-white/10 bg-[#0B1220] p-4 outline-none focus:border-cyan-400"
         />
-
-        <textarea
-          rows={4}
-          value={notes}
-          onChange={(e) =>
-            setNotes(e.target.value)
-          }
-          placeholder="Notes (Optional)"
-          className="rounded-xl border border-white/10 bg-[#0B1220] p-4 outline-none focus:border-cyan-400 md:col-span-2"
-        />
-
       </div>
-            {selectedInvoiceData && (
-        <div className="mt-8 rounded-2xl border border-cyan-500/20 bg-cyan-500/5 p-6">
 
+      {selectedInvoiceData && (
+        <div className="mt-8 rounded-2xl border border-cyan-500/20 bg-cyan-500/5 p-6">
           <h3 className="mb-4 text-lg font-semibold text-cyan-400">
             Invoice Summary
           </h3>
 
           <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-
             <div>
               <p className="text-sm text-gray-400">
                 Invoice Total
@@ -188,14 +164,11 @@ export default function PaymentForm() {
                 ).toLocaleString("en-IN")}
               </p>
             </div>
-
           </div>
-
         </div>
       )}
 
       <div className="mt-8 flex justify-end">
-
         <button
           onClick={async () => {
             if (!selectedInvoice) {
@@ -208,18 +181,32 @@ export default function PaymentForm() {
               return;
             }
 
+            if (
+              selectedInvoiceData &&
+              Number(amount) >
+                Number(selectedInvoiceData.balance_due)
+            ) {
+              alert(
+                "Payment cannot exceed the outstanding balance."
+              );
+              return;
+            }
+
             try {
               setSaving(true);
 
               await paymentMutation.mutateAsync({
                 invoice_id: Number(selectedInvoice),
                 amount: Number(amount),
-                payment_date: new Date()
-                  .toISOString()
-                  .split("T")[0],
                 payment_method: paymentMethod,
-                reference_number: referenceNumber,
-                notes,
+                payment_reference:
+                  referenceNumber.trim() ||
+                  `MAN-${crypto
+                    .randomUUID()
+                    .slice(0, 8)
+                    .toUpperCase()}`,
+                payment_status: "Completed",
+                paid_at: new Date().toISOString(),
               });
 
               alert("✅ Payment recorded successfully!");
@@ -229,15 +216,18 @@ export default function PaymentForm() {
               setAmount("");
               setPaymentMethod("Cash");
               setReferenceNumber("");
-              setNotes("");
+            } catch (error: any) {
+  console.error("Payment Error:", error);
 
-            } catch (error) {
-              console.error(error);
-              alert("Failed to record payment.");
-            } finally {
-              setSaving(false);
-            }
-          }}
+  if (error?.message) {
+    alert(error.message);
+  } else {
+    alert(JSON.stringify(error, null, 2));
+  }
+} finally {
+  setSaving(false);
+}
+}}
           disabled={saving || paymentMutation.isPending}
           className="rounded-xl bg-emerald-500 px-8 py-4 text-lg font-semibold text-white transition hover:bg-emerald-400 disabled:cursor-not-allowed disabled:opacity-50"
         >
@@ -245,8 +235,7 @@ export default function PaymentForm() {
             ? "Recording..."
             : "💰 Record Payment"}
         </button>
-
       </div>
-          </section>
+    </section>
   );
 }
