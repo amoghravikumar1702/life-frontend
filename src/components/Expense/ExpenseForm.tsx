@@ -15,20 +15,34 @@ import Link from "next/link";
 
 import { createExpense } from "@/services/expenseService";
 
+/*
+ * ============================================================
+ * DATABASE-SUPPORTED EXPENSE CATEGORIES
+ * ============================================================
+ *
+ * These values MUST exactly match the expenses_category_check
+ * constraint in Supabase.
+ */
+
 const EXPENSE_CATEGORIES = [
-  "Office",
-  "Software",
-  "Marketing",
-  "Payroll",
-  "Travel",
-  "Utilities",
+  "Salaries & Wages",
   "Rent",
+  "Utilities",
+  "Software & Subscriptions",
+  "Marketing",
+  "Operations",
+  "Travel",
   "Equipment",
   "Professional Services",
   "Taxes",
-  "Inventory",
   "Other",
-];
+] as const;
+
+/*
+ * ============================================================
+ * COMPONENT
+ * ============================================================
+ */
 
 export default function ExpenseForm() {
   const router = useRouter();
@@ -37,13 +51,21 @@ export default function ExpenseForm() {
   const [category, setCategory] = useState("");
   const [description, setDescription] = useState("");
   const [vendor, setVendor] = useState("");
+
   const [expenseDate, setExpenseDate] = useState(
     new Date().toISOString().split("T")[0]
   );
+
   const [isRecurring, setIsRecurring] = useState(false);
 
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+
+  /*
+   * ==========================================================
+   * SUBMIT
+   * ==========================================================
+   */
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -51,6 +73,12 @@ export default function ExpenseForm() {
     setError("");
 
     const numericAmount = Number(amount);
+
+    /*
+     * --------------------------------------------------------
+     * VALIDATION
+     * --------------------------------------------------------
+     */
 
     if (!numericAmount || numericAmount <= 0) {
       setError("Enter a valid expense amount.");
@@ -67,8 +95,29 @@ export default function ExpenseForm() {
       return;
     }
 
+    /*
+     * --------------------------------------------------------
+     * CREATE EXPENSE
+     * --------------------------------------------------------
+     */
+
     try {
       setSaving(true);
+
+      /*
+       * Temporary diagnostic logging.
+       *
+       * This allows us to verify exactly what reaches the
+       * expense service if Supabase rejects the category.
+       */
+      console.log("[ExpenseForm] Creating expense:", {
+        amount: numericAmount,
+        category,
+        categoryLength: category.length,
+        categoryJson: JSON.stringify(category),
+        expenseDate,
+        isRecurring,
+      });
 
       await createExpense({
         amount: numericAmount,
@@ -79,10 +128,19 @@ export default function ExpenseForm() {
         is_recurring: isRecurring,
       });
 
+      /*
+       * ------------------------------------------------------
+       * SUCCESS
+       * ------------------------------------------------------
+       */
+
       router.push("/expenses");
       router.refresh();
     } catch (err) {
-      console.error("[ExpenseForm] Failed to create expense:", err);
+      console.error(
+        "[ExpenseForm] Failed to create expense:",
+        err
+      );
 
       setError(
         err instanceof Error
@@ -94,65 +152,179 @@ export default function ExpenseForm() {
     }
   }
 
+  /*
+   * ==========================================================
+   * RENDER
+   * ==========================================================
+   */
+
   return (
     <div className="mx-auto max-w-4xl">
-      {/* Header */}
+      {/* ======================================================
+          HEADER
+      ====================================================== */}
 
       <div className="mb-8">
         <Link
           href="/expenses"
-          className="mb-6 inline-flex items-center gap-2 text-sm text-zinc-500 transition hover:text-white"
+          className="
+            mb-6
+            inline-flex
+            items-center
+            gap-2
+            text-sm
+            text-zinc-500
+            transition
+            hover:text-white
+          "
         >
           <ArrowLeft size={16} />
+
           Back to Expenses
         </Link>
 
         <div>
-          <p className="text-[11px] uppercase tracking-[0.4em] text-[#D4AF37]">
+          <p
+            className="
+              text-[11px]
+              uppercase
+              tracking-[0.4em]
+              text-[#D4AF37]
+            "
+          >
             EXPENSE MANAGEMENT
           </p>
 
-          <h1 className="mt-3 text-4xl font-semibold tracking-[-0.04em] text-white">
+          <h1
+            className="
+              mt-3
+              text-4xl
+              font-semibold
+              tracking-[-0.04em]
+              text-white
+            "
+          >
             Add Expense
           </h1>
 
-          <p className="mt-3 max-w-2xl text-sm leading-7 text-zinc-500">
-            Record a business expense so ArkenOne can incorporate it into
-            financial health, profitability, cash flow, and CFO analysis.
+          <p
+            className="
+              mt-3
+              max-w-2xl
+              text-sm
+              leading-7
+              text-zinc-500
+            "
+          >
+            Record a business expense so ArkenOne can incorporate
+            it into financial health, profitability, cash flow,
+            and CFO analysis.
           </p>
         </div>
       </div>
 
-      {/* Form */}
+      {/* ======================================================
+          FORM
+      ====================================================== */}
 
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <section className="rounded-[30px] border border-white/[0.06] bg-[#101114] p-8 lg:p-10">
+      <form
+        onSubmit={handleSubmit}
+        className="space-y-6"
+      >
+        {/* ====================================================
+            EXPENSE DETAILS
+        ==================================================== */}
+
+        <section
+          className="
+            rounded-[30px]
+            border
+            border-white/[0.06]
+            bg-[#101114]
+            p-8
+            lg:p-10
+          "
+        >
+          {/* Section Header */}
+
           <div className="flex items-center gap-4">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-[#D4AF37]/20 bg-[#D4AF37]/10">
-              <Wallet size={20} className="text-[#D4AF37]" />
+            <div
+              className="
+                flex
+                h-12
+                w-12
+                items-center
+                justify-center
+                rounded-2xl
+                border
+                border-[#D4AF37]/20
+                bg-[#D4AF37]/10
+              "
+            >
+              <Wallet
+                size={20}
+                className="text-[#D4AF37]"
+              />
             </div>
 
             <div>
-              <p className="text-[10px] uppercase tracking-[0.35em] text-zinc-500">
+              <p
+                className="
+                  text-[10px]
+                  uppercase
+                  tracking-[0.35em]
+                  text-zinc-500
+                "
+              >
                 FINANCIAL RECORD
               </p>
 
-              <h2 className="mt-1 text-xl font-semibold text-white">
+              <h2
+                className="
+                  mt-1
+                  text-xl
+                  font-semibold
+                  text-white
+                "
+              >
                 Expense Details
               </h2>
             </div>
           </div>
 
+          {/* Fields */}
+
           <div className="mt-8 grid gap-6 md:grid-cols-2">
-            {/* Amount */}
+            {/* =================================================
+                AMOUNT
+            ================================================= */}
 
             <div className="md:col-span-2">
-              <label className="mb-2 block text-sm font-medium text-zinc-300">
+              <label
+                className="
+                  mb-2
+                  block
+                  text-sm
+                  font-medium
+                  text-zinc-300
+                "
+              >
                 Amount
               </label>
 
               <div className="relative">
-                <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-lg font-medium text-zinc-500">
+                <span
+                  className="
+                    pointer-events-none
+                    absolute
+                    left-4
+                    top-1/2
+                    -translate-y-1/2
+                    text-lg
+                    font-medium
+                    text-zinc-500
+                  "
+                >
                   ₹
                 </span>
 
@@ -161,7 +333,9 @@ export default function ExpenseForm() {
                   min="0"
                   step="0.01"
                   value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
+                  onChange={(event) =>
+                    setAmount(event.target.value)
+                  }
                   placeholder="0.00"
                   className="
                     w-full
@@ -186,16 +360,28 @@ export default function ExpenseForm() {
               </div>
             </div>
 
-            {/* Category */}
+            {/* =================================================
+                CATEGORY
+            ================================================= */}
 
             <div>
-              <label className="mb-2 block text-sm font-medium text-zinc-300">
+              <label
+                className="
+                  mb-2
+                  block
+                  text-sm
+                  font-medium
+                  text-zinc-300
+                "
+              >
                 Category
               </label>
 
               <select
                 value={category}
-                onChange={(e) => setCategory(e.target.value)}
+                onChange={(event) =>
+                  setCategory(event.target.value)
+                }
                 className="
                   w-full
                   appearance-none
@@ -214,23 +400,42 @@ export default function ExpenseForm() {
                   focus:ring-[#D4AF37]/20
                 "
               >
-                <option value="" disabled>
+                <option
+                  value=""
+                  disabled
+                >
                   Select category
                 </option>
 
-                {EXPENSE_CATEGORIES.map((item) => (
-                  <option key={item} value={item}>
-                    {item}
-                  </option>
-                ))}
+                {EXPENSE_CATEGORIES.map(
+                  (item) => (
+                    <option
+                      key={item}
+                      value={item}
+                    >
+                      {item}
+                    </option>
+                  )
+                )}
               </select>
             </div>
 
-            {/* Vendor */}
+            {/* =================================================
+                VENDOR
+            ================================================= */}
 
             <div>
-              <label className="mb-2 block text-sm font-medium text-zinc-300">
+              <label
+                className="
+                  mb-2
+                  block
+                  text-sm
+                  font-medium
+                  text-zinc-300
+                "
+              >
                 Vendor
+
                 <span className="ml-2 text-xs text-zinc-600">
                   Optional
                 </span>
@@ -239,13 +444,22 @@ export default function ExpenseForm() {
               <div className="relative">
                 <Store
                   size={17}
-                  className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-zinc-600"
+                  className="
+                    pointer-events-none
+                    absolute
+                    left-4
+                    top-1/2
+                    -translate-y-1/2
+                    text-zinc-600
+                  "
                 />
 
                 <input
                   type="text"
                   value={vendor}
-                  onChange={(e) => setVendor(e.target.value)}
+                  onChange={(event) =>
+                    setVendor(event.target.value)
+                  }
                   placeholder="e.g. AWS, Adobe, Landlord"
                   className="
                     w-full
@@ -269,23 +483,44 @@ export default function ExpenseForm() {
               </div>
             </div>
 
-            {/* Date */}
+            {/* =================================================
+                DATE
+            ================================================= */}
 
             <div>
-              <label className="mb-2 block text-sm font-medium text-zinc-300">
+              <label
+                className="
+                  mb-2
+                  block
+                  text-sm
+                  font-medium
+                  text-zinc-300
+                "
+              >
                 Expense Date
               </label>
 
               <div className="relative">
                 <CalendarDays
                   size={17}
-                  className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-zinc-600"
+                  className="
+                    pointer-events-none
+                    absolute
+                    left-4
+                    top-1/2
+                    -translate-y-1/2
+                    text-zinc-600
+                  "
                 />
 
                 <input
                   type="date"
                   value={expenseDate}
-                  onChange={(e) => setExpenseDate(e.target.value)}
+                  onChange={(event) =>
+                    setExpenseDate(
+                      event.target.value
+                    )
+                  }
                   className="
                     w-full
                     rounded-2xl
@@ -307,16 +542,30 @@ export default function ExpenseForm() {
               </div>
             </div>
 
-            {/* Recurring */}
+            {/* =================================================
+                RECURRING
+            ================================================= */}
 
             <div>
-              <label className="mb-2 block text-sm font-medium text-zinc-300">
+              <label
+                className="
+                  mb-2
+                  block
+                  text-sm
+                  font-medium
+                  text-zinc-300
+                "
+              >
                 Expense Type
               </label>
 
               <button
                 type="button"
-                onClick={() => setIsRecurring((value) => !value)}
+                onClick={() =>
+                  setIsRecurring(
+                    (value) => !value
+                  )
+                }
                 className={`
                   flex
                   w-full
@@ -374,17 +623,31 @@ export default function ExpenseForm() {
                   `}
                 >
                   {isRecurring && (
-                    <Check size={14} className="text-black" />
+                    <Check
+                      size={14}
+                      className="text-black"
+                    />
                   )}
                 </div>
               </button>
             </div>
 
-            {/* Description */}
+            {/* =================================================
+                DESCRIPTION
+            ================================================= */}
 
             <div className="md:col-span-2">
-              <label className="mb-2 block text-sm font-medium text-zinc-300">
+              <label
+                className="
+                  mb-2
+                  block
+                  text-sm
+                  font-medium
+                  text-zinc-300
+                "
+              >
                 Description
+
                 <span className="ml-2 text-xs text-zinc-600">
                   Optional
                 </span>
@@ -393,12 +656,22 @@ export default function ExpenseForm() {
               <div className="relative">
                 <FileText
                   size={17}
-                  className="pointer-events-none absolute left-4 top-4 text-zinc-600"
+                  className="
+                    pointer-events-none
+                    absolute
+                    left-4
+                    top-4
+                    text-zinc-600
+                  "
                 />
 
                 <textarea
                   value={description}
-                  onChange={(e) => setDescription(e.target.value)}
+                  onChange={(event) =>
+                    setDescription(
+                      event.target.value
+                    )
+                  }
                   placeholder="What was this expense for?"
                   rows={4}
                   className="
@@ -427,17 +700,40 @@ export default function ExpenseForm() {
           </div>
         </section>
 
-        {/* Error */}
+        {/* ======================================================
+            ERROR
+        ====================================================== */}
 
         {error && (
-          <div className="rounded-2xl border border-red-500/20 bg-red-500/[0.06] px-5 py-4 text-sm text-red-400">
+          <div
+            className="
+              rounded-2xl
+              border
+              border-red-500/20
+              bg-red-500/[0.06]
+              px-5
+              py-4
+              text-sm
+              text-red-400
+            "
+          >
             {error}
           </div>
         )}
 
-        {/* Actions */}
+        {/* ======================================================
+            ACTIONS
+        ====================================================== */}
 
-        <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+        <div
+          className="
+            flex
+            flex-col-reverse
+            gap-3
+            sm:flex-row
+            sm:justify-end
+          "
+        >
           <Link
             href="/expenses"
             className="
@@ -482,7 +778,9 @@ export default function ExpenseForm() {
               disabled:opacity-50
             "
           >
-            {saving ? "Saving..." : "Save Expense"}
+            {saving
+              ? "Saving..."
+              : "Save Expense"}
           </button>
         </div>
       </form>
