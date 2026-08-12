@@ -1,10 +1,11 @@
 import { loadRazorpay } from "@/lib/loadRazorpay";
-
+import { QueryClient } from "@tanstack/react-query";
 type PaymentCheckoutParams = {
   invoiceId: number;
   customerName: string;
   customerEmail?: string;
   customerPhone?: string;
+  queryClient: QueryClient;
 };
 
 export async function openRazorpayCheckout({
@@ -12,6 +13,7 @@ export async function openRazorpayCheckout({
   customerName,
   customerEmail,
   customerPhone,
+  queryClient,
 }: PaymentCheckoutParams) {
   const loaded = await loadRazorpay();
 
@@ -46,7 +48,7 @@ export async function openRazorpayCheckout({
 
     currency: order.currency,
 
-    name: "FINZURA",
+    name: "ArkenOne",
 
     description: `Invoice ${order.receipt ?? ""}`,
 
@@ -92,7 +94,31 @@ export async function openRazorpayCheckout({
 
         alert("Payment Successful!");
 
-        window.location.reload();
+await Promise.all([
+  queryClient.invalidateQueries({
+    queryKey: ["dashboard"],
+  }),
+
+  queryClient.invalidateQueries({
+    queryKey: ["customers"],
+  }),
+
+  queryClient.invalidateQueries({
+    queryKey: ["invoices"],
+  }),
+
+  queryClient.invalidateQueries({
+    queryKey: ["business-health"],
+  }),
+
+  queryClient.invalidateQueries({
+    queryKey: ["financial-analysis"],
+  }),
+
+  queryClient.invalidateQueries({
+    queryKey: ["ai-cfo"],
+  }),
+]);
       } catch (error) {
         console.error(error);
 

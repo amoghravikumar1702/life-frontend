@@ -24,10 +24,9 @@ export default function AppShell({
     useState(false);
 
   useEffect(() => {
-    const saved =
-      localStorage.getItem(
-        "finzura-sidebar-collapsed"
-      );
+    const saved = localStorage.getItem(
+      "ArkenOne-sidebar-collapsed"
+    );
 
     if (saved === "true") {
       setCollapsed(true);
@@ -40,13 +39,14 @@ export default function AppShell({
     setCollapsed(next);
 
     localStorage.setItem(
-      "finzura-sidebar-collapsed",
+      "ArkenOne-sidebar-collapsed",
       String(next)
     );
   }
 
   return (
-    <div className="flex min-h-screen bg-[#050505] text-white">
+    <div className="min-h-screen bg-[#050505] text-white">
+
       <Sidebar
         collapsed={collapsed}
         onToggle={toggleSidebar}
@@ -57,15 +57,36 @@ export default function AppShell({
         onClose={() => setDrawerOpen(false)}
       />
 
-      <div className="flex min-w-0 flex-1 flex-col">
-        <Navbar
-          onOpenMenu={() =>
-            setDrawerOpen(true)
+      <div
+        className={`
+          transition-all
+          duration-500
+          ${
+            collapsed
+              ? "lg:ml-[110px]"
+              : "lg:ml-[275px]"
           }
-        />
+        `}
+      >
 
-        <MainContent>{children}</MainContent>
+        <div className="px-5 pt-5">
+
+          <Navbar
+            onOpenMenu={() =>
+              setDrawerOpen(true)
+            }
+          />
+
+        </div>
+
+        <MainContent>
+
+          {children}
+
+        </MainContent>
+
       </div>
+
     </div>
   );
 }

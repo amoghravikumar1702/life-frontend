@@ -32,6 +32,13 @@ export async function updateSession(request: NextRequest) {
     }
   );
 
+  /*
+   * Refresh / validate the Supabase session.
+   *
+   * getUser() is intentionally used here because it validates
+   * the authenticated user with Supabase rather than trusting
+   * a locally stored session value.
+   */
   await supabase.auth.getUser();
 
   return response;

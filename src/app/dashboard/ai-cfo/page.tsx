@@ -1,101 +1,323 @@
-import AIHeader from "@/components/AI-CFO/AIHeader";
-import TodaysFocus from "@/components/AI-CFO/TodaysFocus";
-import ExecutiveSnapshot from "@/components/AI-CFO/ExecutiveSnapshot";
-import ExecutiveSummary from "@/components/AI-CFO/ExecutiveSummary";
-import FinancialAnalysis from "@/components/AI-CFO/FinancialAnalysis";
-import PriorityList from "@/components/AI-CFO/PriorityList";
-import GrowthOpportunities from "@/components/AI-CFO/GrowthOpportunities";
-import RiskList from "@/components/AI-CFO/RiskList";
-import FinalRecommendation from "@/components/AI-CFO/FinalRecommendation";
+// src/app/dashboard/ai-cfo/page.tsx
 
 import PageContainer from "@/components/ui/PageContainer";
+import DailyCEOBrief from "@/components/AI-CFO/DailyCEOBrief";
+import WorkforceManagement from "@/components/AI-CFO/WorkforceManagement";
+import AskYourCFO from "@/components/AI-CFO/AskYourCFO";
 
 import { buildExecutiveReport } from "@/lib/cfo/report";
-import { runIntelligence } from "@/lib/intelligence";
+import { generateProtectedAICFOBrief } from "@/lib/ai/openaiCFO";
+
+export const dynamic = "force-dynamic";
 
 export default async function AICFOPage() {
   const report = await buildExecutiveReport();
 
-  const intelligence = runIntelligence({
-    revenue: report.finance.revenue,
-    expenses: report.finance.expenses,
-    cash: report.finance.cashFlow,
-    receivables: report.finance.outstandingReceivables,
-    overdueInvoices: 0,
-    customerCount: report.customers.totalCustomers,
-    invoiceCount: 0,
-  });
+  const aiBrief =
+    await generateProtectedAICFOBrief(report);
 
   return (
     <PageContainer>
-      <div className="flex flex-col gap-8">
+      <div className="mx-auto max-w-7xl">
 
-        {/* Executive Header */}
+        {/* =====================================================
+            EXECUTIVE BRIEF + FINANCIAL POSITION
+        ===================================================== */}
 
-        <AIHeader />
+        <DailyCEOBrief
+          greeting={aiBrief.greeting}
+          executiveBrief={aiBrief.executiveBrief}
+          recommendation={aiBrief.recommendation}
+          finance={{
+            revenue:
+              report.finance.revenue ?? 0,
 
-        {/* Today's Focus */}
+            expenses:
+              report.finance.expenses ?? 0,
 
-        <TodaysFocus
-          title="Recover Outstanding Receivables"
-          amount={report.finance.outstandingReceivables}
-          description="Your highest-impact action today is collecting outstanding customer payments. Recovering these funds will improve liquidity, strengthen cash flow, and reduce financial risk."
-          impact={[
-            "Improve cash flow",
-            "Strengthen working capital",
-            "Reduce financial risk",
-          ]}
-          confidence={96}
+            profit:
+              report.finance.profit ?? 0,
+
+            outstandingReceivables:
+              report.finance.outstandingReceivables ?? 0,
+          }}
         />
 
-        {/* Business Pulse */}
+        {/* =====================================================
+            ARKENONE INTELLIGENCE ENGINE
+            MAIN AI CFO FEATURE
+        ===================================================== */}
 
-        <ExecutiveSnapshot
-          healthScore={intelligence.health.overall}
-          cashAvailable={report.finance.cashFlow}
-          revenue={report.finance.revenue}
-          receivables={report.finance.outstandingReceivables}
-          customers={report.customers.totalCustomers}
-        />
+        <div className="mt-10">
+          <AskYourCFO />
+        </div>
 
-        {/* Executive Brief */}
+        {/* =====================================================
+            CFO DECISION
+            SINGLE INSTANCE — BELOW ASK YOUR CFO
+        ===================================================== */}
 
-        <ExecutiveSummary
-          summary={intelligence.reasoning.overall}
-        />
+        <div className="mt-10">
+          <section
+            className="
+              relative
+              overflow-hidden
+              rounded-[32px]
+              border
+              border-[#D4AF37]/12
+              bg-[#111419]
+              px-7
+              py-8
+              sm:px-9
+              sm:py-10
+              lg:px-11
+              lg:py-11
+            "
+          >
 
-        {/* Financial Analysis */}
+            {/* Ambient gold light */}
 
-        <FinancialAnalysis
-          analysis={intelligence.analysis.summary}
-        />
+            <div
+              className="
+                pointer-events-none
+                absolute
+                bottom-[-180px]
+                right-[-100px]
+                h-[340px]
+                w-[340px]
+                rounded-full
+                bg-[#D4AF37]/[0.025]
+                blur-[110px]
+              "
+            />
 
-        {/* Executive Action Plan */}
+            <div className="relative">
 
-        <PriorityList
-          priorities={intelligence.decisions}
-        />
+              {/* Header */}
 
-        {/* Growth Strategy */}
+              <div className="flex items-center gap-3">
 
-        <GrowthOpportunities
-          opportunities={intelligence.opportunities}
-        />
+                <div
+                  className="
+                    flex
+                    h-10
+                    w-10
+                    items-center
+                    justify-center
+                    rounded-xl
+                    border
+                    border-[#D4AF37]/15
+                    bg-[#D4AF37]/[0.07]
+                  "
+                >
+                  <span
+                    className="
+                      text-sm
+                      font-semibold
+                      text-[#D4AF37]
+                    "
+                  >
+                    AI
+                  </span>
+                </div>
 
-        {/* Risk Assessment */}
+                <div>
 
-        <RiskList
-          risks={intelligence.risk.risks}
-        />
+                  <p
+                    className="
+                      text-[10px]
+                      font-medium
+                      uppercase
+                      tracking-[0.38em]
+                      text-[#D4AF37]
+                    "
+                  >
+                    CFO Decision
+                  </p>
 
-        {/* Final Recommendation */}
+                  <p className="mt-1 text-xs text-zinc-500">
+                    Executive recommendation
+                  </p>
 
-        <FinalRecommendation
-          recommendation={
-            intelligence.executiveReport
-              .finalRecommendation
-          }
-        />
+                </div>
+
+              </div>
+
+              {/* Recommendation */}
+
+              <div className="mt-8 max-w-4xl">
+
+                <p
+                  className="
+                    text-[18px]
+                    leading-9
+                    text-zinc-200
+                    sm:text-[19px]
+                  "
+                >
+                  {aiBrief.recommendation}
+                </p>
+
+              </div>
+
+              {/* Decision Framework */}
+
+              <div
+                className="
+                  mt-9
+                  border-t
+                  border-white/[0.05]
+                  pt-7
+                "
+              >
+
+                <p
+                  className="
+                    text-[10px]
+                    font-medium
+                    uppercase
+                    tracking-[0.35em]
+                    text-zinc-500
+                  "
+                >
+                  Decision Framework
+                </p>
+
+                <div className="mt-5 grid gap-5 md:grid-cols-3">
+
+                  <div>
+
+                    <p className="text-xs text-zinc-600">
+                      Decision
+                    </p>
+
+                    <p className="mt-2 text-sm leading-6 text-zinc-300">
+                      Based on current financial and operational evidence.
+                    </p>
+
+                  </div>
+
+                  <div>
+
+                    <p className="text-xs text-zinc-600">
+                      Financial Impact
+                    </p>
+
+                    <p className="mt-2 text-sm leading-6 text-zinc-300">
+                      Prioritizes profitability, cash generation, and sustainability.
+                    </p>
+
+                  </div>
+
+                  <div>
+
+                    <p className="text-xs text-zinc-600">
+                      Growth Impact
+                    </p>
+
+                    <p className="mt-2 text-sm leading-6 text-zinc-300">
+                      Designed to support sustainable business growth.
+                    </p>
+
+                  </div>
+
+                </div>
+
+              </div>
+
+            </div>
+
+          </section>
+        </div>
+
+        {/* =====================================================
+            WORKFORCE MANAGEMENT
+        ===================================================== */}
+
+        <div className="mt-10">
+
+          <WorkforceManagement
+            initialEmployees={
+              report.workforce.currentEmployees
+            }
+
+            recommendedEmployees={
+              report.workforce.recommendedEmployees
+            }
+
+            difference={
+              report.workforce.difference
+            }
+
+            recommendation={
+              aiBrief.capacity?.recommendation ??
+              "Maintain the current workforce until more financial evidence is available."
+            }
+
+            status={
+              aiBrief.capacity?.status ??
+              "Workforce assessment"
+            }
+          />
+
+        </div>
+
+        {/* =====================================================
+            FOOTER
+        ===================================================== */}
+
+        <footer
+          className="
+            mx-auto
+            mt-12
+            flex
+            max-w-7xl
+            flex-col
+            items-center
+            justify-center
+            gap-3
+            border-t
+            border-white/[0.06]
+            pt-10
+            pb-6
+          "
+        >
+
+          <div
+            className="
+              h-px
+              w-24
+              rounded-full
+              bg-[#D4AF37]/40
+            "
+          />
+
+          <p
+            className="
+              text-[11px]
+              uppercase
+              tracking-[0.42em]
+              text-[#D4AF37]
+            "
+          >
+            ArkenOne EXECUTIVE INTELLIGENCE
+          </p>
+
+          <p
+            className="
+              max-w-2xl
+              text-center
+              text-sm
+              leading-7
+              text-zinc-500
+            "
+          >
+            Recommendations are generated from
+            the business&apos;s available financial
+            and operational data.
+          </p>
+
+        </footer>
 
       </div>
     </PageContainer>

@@ -1,4 +1,4 @@
-# FINZURA API Architecture
+# ArkenOne API Architecture
 
 Version 1.0
 
@@ -332,6 +332,6 @@ Every API must be:
 
 # Golden Rule
 
-The API is the nervous system of FINZURA.
+The API is the nervous system of ArkenOne.
 
 Every service communicates through clean, secure, observable interfaces.

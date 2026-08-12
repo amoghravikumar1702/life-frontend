@@ -20,7 +20,7 @@ type Props = {
 };
 
 export function useInvoiceForm({
-  initialInvoiceNumber = `INV-${Math.floor(Math.random() * 9000 + 1000)}`,
+  initialInvoiceNumber = "",
 }: Props = {}) {
   const [customer, setCustomer] = useState("");
 
@@ -71,9 +71,7 @@ export function useInvoiceForm({
   function resetForm() {
     setCustomer("");
 
-    setInvoiceNumber(
-      `INV-${Math.floor(Math.random() * 9000 + 1000)}`
-    );
+    setInvoiceNumber("");
 
     setInvoiceDate("");
 

@@ -17,7 +17,7 @@ export default function ActivitySection({
   if (!activities.length) {
     return (
       <section className="mt-14">
-        <div className="rounded-3xl border border-[var(--gold-border)]/[0.03] p-10 text-center">
+        <div className="rounded-3xl border border-white/10/[0.03] p-10 text-center">
           <h2 className="text-xl font-semibold text-white">
             Recent Activity
           </h2>
@@ -25,7 +25,7 @@ export default function ActivitySection({
           <p className="mt-3 text-[#8A8A8F]">
             Activity will appear here once customers,
             invoices and payments start flowing into
-            FINZURA.
+            ArkenOne.
           </p>
         </div>
       </section>

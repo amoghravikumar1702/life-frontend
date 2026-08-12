@@ -22,41 +22,107 @@ export async function createInvoice(
     throw new Error("No authenticated user found.");
   }
 
+  const year = new Date().getFullYear();
+
+  const { data: latestInvoice } = await supabase
+    .from("invoices")
+    .select("invoice_number")
+    .eq("owner_id", user.id)
+    .like(
+      "invoice_number",
+      `INV-${year}-%`
+    )
+    .order("created_at", {
+      ascending: false,
+    })
+    .limit(1)
+    .maybeSingle();
+
+  let nextNumber = 1;
+
+if (latestInvoice?.invoice_number) {
+  const parts =
+    latestInvoice.invoice_number.split("-");
+
+  const lastNumber =
+    Number(parts.at(-1));
+
+  if (!Number.isNaN(lastNumber)) {
+    nextNumber = lastNumber + 1;
+  }
+}
+
+  const generatedInvoiceNumber =
+    `INV-${year}-${String(
+      nextNumber
+    ).padStart(2, "0")}`;
+
   const invoiceToSave = {
     ...invoice,
-    amount_paid: 0,
-    balance_due: invoice.total,
-    owner_id: user.id,
-  };
 
-  // Save Invoice
-  const { data: invoiceData, error: invoiceError } = await supabase
+    invoice_number:
+      generatedInvoiceNumber,
+
+    amount_paid: 0,
+
+    balance_due:
+      invoice.total,
+
+    owner_id:
+      user.id,
+  };
+    // Save Invoice
+  const {
+    data: invoiceData,
+    error: invoiceError,
+  } = await supabase
     .from("invoices")
     .insert([invoiceToSave])
     .select()
     .single();
 
   if (invoiceError) {
-    console.error("Invoice Error:", invoiceError);
+    console.error(
+      "Invoice Error:",
+      invoiceError
+    );
     throw invoiceError;
   }
 
   // Save Invoice Items
   if (items.length > 0) {
-    const invoiceItems = items.map((item) => ({
-      invoice_id: invoiceData.id,
-      item_name: item.name,
-      quantity: item.quantity,
-      price: item.price,
-      total: item.quantity * item.price,
-    }));
 
-    const { error: itemsError } = await supabase
+    const invoiceItems =
+      items.map((item) => ({
+        invoice_id:
+          invoiceData.id,
+
+        item_name:
+          item.name,
+
+        quantity:
+          item.quantity,
+
+        price:
+          item.price,
+
+        total:
+          item.quantity *
+          item.price,
+      }));
+
+    const {
+      error: itemsError,
+    } = await supabase
       .from("invoice_items")
       .insert(invoiceItems);
 
     if (itemsError) {
-      console.error("Invoice Items Error:", itemsError);
+      console.error(
+        "Invoice Items Error:",
+        itemsError
+      );
+
       throw itemsError;
     }
   }
@@ -65,35 +131,92 @@ export async function createInvoice(
 }
 
 export async function getInvoices() {
-  const { data, error } = await supabase
+  const {
+    data: { session },
+    error: sessionError,
+  } = await supabase.auth.getSession();
+
+  if (sessionError) {
+    throw sessionError;
+  }
+
+  if (!session) {
+    throw new Error(
+      "No active session found."
+    );
+  }
+
+  const {
+    data,
+    error,
+  } = await supabase
     .from("invoices")
     .select("*")
-    .order("created_at", { ascending: false });
+    .eq(
+      "owner_id",
+      session.user.id
+    )
+    .order("created_at", {
+      ascending: false,
+    });
 
-  if (error) throw error;
+  if (error) {
+    throw error;
+  }
 
   return data;
 }
+export async function getInvoiceById(
+  id: number
+) {
+  const {
+    data: { session },
+    error: sessionError,
+  } = await supabase.auth.getSession();
 
-export async function getInvoiceById(id: number) {
-  const { data, error } = await supabase
+  if (sessionError) {
+    throw sessionError;
+  }
+
+  if (!session) {
+    throw new Error(
+      "No active session found."
+    );
+  }
+
+  const {
+    data,
+    error,
+  } = await supabase
     .from("invoices")
     .select("*")
     .eq("id", id)
     .single();
 
-  if (error) throw error;
+  if (error) {
+    throw error;
+  }
 
   return data;
 }
 
-export async function getInvoiceItems(invoiceId: number) {
-  const { data, error } = await supabase
+export async function getInvoiceItems(
+  invoiceId: number
+) {
+  const {
+    data,
+    error,
+  } = await supabase
     .from("invoice_items")
     .select("*")
-    .eq("invoice_id", invoiceId);
+    .eq(
+      "invoice_id",
+      invoiceId
+    );
 
-  if (error) throw error;
+  if (error) {
+    throw error;
+  }
 
   return data;
 }
@@ -103,8 +226,10 @@ export async function updateInvoice(
   invoice: Partial<Invoice>,
   items?: InvoiceItem[]
 ) {
-  // Update invoice
-  const { data, error } = await supabase
+  const {
+    data,
+    error,
+  } = await supabase
     .from("invoices")
     .update(invoice)
     .eq("id", id)
@@ -120,50 +245,108 @@ export async function updateInvoice(
         " | details: " +
         String(error?.details)
     );
-    console.error("Update Invoice Error:", error);
+
+    console.error(
+      "Update Invoice Error:",
+      error
+    );
+
     throw error;
   }
 
-  // If items are provided, replace all existing items
   if (items) {
-    // Delete old items
-    const { error: deleteError } = await supabase
+    const {
+      error: deleteError,
+    } = await supabase
       .from("invoice_items")
       .delete()
-      .eq("invoice_id", id);
+      .eq(
+        "invoice_id",
+        id
+      );
 
     if (deleteError) {
-      console.error("Delete Invoice Items Error:", deleteError);
+      console.error(
+        "Delete Invoice Items Error:",
+        deleteError
+      );
+
       throw deleteError;
     }
 
-    // Insert new items
-    const invoiceItems = items.map((item) => ({
-      invoice_id: id,
-      item_name: item.name,
-      quantity: item.quantity,
-      price: item.price,
-      total: item.quantity * item.price,
-    }));
+    const invoiceItems =
+      items.map((item) => ({
+        invoice_id: id,
 
-    const { error: insertError } = await supabase
+        item_name:
+          item.name,
+
+        quantity:
+          item.quantity,
+
+        price:
+          item.price,
+
+        total:
+          item.quantity *
+          item.price,
+      }));
+          const {
+      error: insertError,
+    } = await supabase
       .from("invoice_items")
       .insert(invoiceItems);
 
     if (insertError) {
-      console.error("Insert Invoice Items Error:", insertError);
+      console.error(
+        "Insert Invoice Items Error:",
+        insertError
+      );
+
       throw insertError;
     }
   }
 
   return data;
 }
+export async function deleteInvoice(
+  id: number
+) {
 
-export async function deleteInvoice(id: number) {
-  const { error } = await supabase
+  // Delete all invoice items first
+  const {
+    error: itemsError,
+  } = await supabase
+    .from("invoice_items")
+    .delete()
+    .eq(
+      "invoice_id",
+      id
+    );
+
+  if (itemsError) {
+    console.error(
+      "Delete Invoice Items Error:",
+      itemsError
+    );
+
+    throw itemsError;
+  }
+
+  // Delete the invoice
+  const {
+    error: invoiceError,
+  } = await supabase
     .from("invoices")
     .delete()
     .eq("id", id);
 
-  if (error) throw error;
+  if (invoiceError) {
+    console.error(
+      "Delete Invoice Error:",
+      invoiceError
+    );
+
+    throw invoiceError;
+  }
 }

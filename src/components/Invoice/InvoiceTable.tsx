@@ -22,23 +22,36 @@ export default function InvoiceTable({
 }: Props) {
   if (invoices.length === 0) {
     return (
-      <div className="rounded-2xl border border-white/10 bg-[#111827] p-12 text-center text-gray-400">
-        No invoices found.
+      <div className="rounded-[26px] border border-dashed border-white/[0.08] bg-[#101214] px-10 py-20 text-center">
+        <div>
+
+  <h3 className="text-xl font-semibold text-white">
+    No invoices yet
+  </h3>
+
+  <p className="mt-3 text-zinc-500">
+    Your invoices will appear here once you create your first invoice.
+  </p>
+
+</div>
       </div>
     );
   }
 
   return (
-    <div className="overflow-x-auto rounded-2xl border border-white/10">
-      <table className="w-full">
+    <div className="overflow-hidden rounded-[26px] border border-white/[0.06] bg-[#0E1013] shadow-[0_10px_40px_rgba(0,0,0,0.35)]">
+      <table className="w-full border-collapse">
 
-        <thead className="bg-white/5">
-          <tr className="text-left text-gray-400">
-            <th className="px-6 py-4">Invoice</th>
-            <th className="px-6 py-4">Customer</th>
-            <th className="px-6 py-4">Amount</th>
-            <th className="px-6 py-4">Status</th>
-            <th className="px-6 py-4">Actions</th>
+        <thead className="border-b border-white/[0.06] bg-[#14171B]">
+          <tr className="text-left text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">
+            <th className="px-8 py-5 font-medium">Invoice</th>
+            <th className="px-8 py-5 font-medium">Customer</th>
+            <th className="px-8 py-5 font-medium">Amount</th>
+           <th className="px-8 py-5 font-medium">Status</th>
+            <th className="px-8 py-5 font-medium">Actions</th>
+            <th className="px-8 py-5 font-medium">
+  Payment
+</th>
           </tr>
         </thead>
 

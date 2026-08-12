@@ -29,7 +29,7 @@ export default function TestPage() {
     <main className="flex min-h-screen items-center justify-center bg-[#030712] text-white">
       <div className="rounded-2xl border border-white/10 bg-[#111827] p-8 text-center">
         <h1 className="mb-4 text-3xl font-bold">
-          FINZURA Database Test
+          ArkenOne Database Test
         </h1>
 
         <p className="text-lg">{status}</p>

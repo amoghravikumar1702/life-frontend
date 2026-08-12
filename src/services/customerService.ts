@@ -142,7 +142,23 @@ export async function deleteCustomer(id: number) {
     .eq("id", id);
 
   if (error) {
-    console.error("DELETE CUSTOMER ERROR:", error);
-    throw error;
+    console.error("DELETE CUSTOMER ERROR:", {
+      message: error.message,
+      details: error.details,
+      hint: error.hint,
+      code: error.code,
+    });
+
+    if (
+      error.message.includes("violates foreign key constraint")
+    ) {
+      throw new Error(
+        "This customer has existing invoices and cannot be deleted. Delete the invoices first or archive the customer."
+      );
+    }
+
+    throw new Error(
+      error.message || "Failed to delete customer."
+    );
   }
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-
+import { useQueryClient } from "@tanstack/react-query";
 import { openRazorpayCheckout } from "@/services/paymentCheckoutService";
 
 type PayButtonProps = {
@@ -20,7 +20,7 @@ export default function PayButton({
   customerPhone,
 }: PayButtonProps) {
   const [loading, setLoading] = useState(false);
-
+const queryClient = useQueryClient();
   async function handlePayment() {
     if (loading) return;
 
@@ -28,11 +28,12 @@ export default function PayButton({
 
     try {
       await openRazorpayCheckout({
-        invoiceId,
-        customerName,
-        customerEmail,
-        customerPhone,
-      });
+  invoiceId,
+  customerName,
+  customerEmail,
+  customerPhone,
+  queryClient,
+});
     } catch (error) {
       console.error("Payment Error:", error);
 

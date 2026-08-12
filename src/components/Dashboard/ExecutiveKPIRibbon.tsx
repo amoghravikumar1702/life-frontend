@@ -1,148 +1,95 @@
-"use client";
+import { ReactNode } from "react";
 
-import { motion } from "framer-motion";
-import {
-  TrendingUp,
-  Wallet,
-  PiggyBank,
-  Receipt,
-} from "lucide-react";
+import BentoCard from "@/components/ui/BentoCard";
+import AnimatedNumber from "@/components/ui/AnimatedNumber";
 
-interface ExecutiveKPIRibbonProps {
-  revenue: number;
-  profit: number;
-  cash: number;
-  receivables: number;
+interface KPI {
+  label: string;
+  value: ReactNode;
+  change?: string;
 }
 
-const formatMoney = (value: number) =>
-  `₹${new Intl.NumberFormat("en-IN", {
-    maximumFractionDigits: 0,
-  }).format(value)}`;
+interface ExecutiveKPIRibbonProps {
+  // New API
+  items?: KPI[];
+
+  // Legacy API
+  revenue?: number;
+  profit?: number;
+  cash?: number;
+  receivables?: number;
+}
 
 export default function ExecutiveKPIRibbon({
+  items,
   revenue,
   profit,
   cash,
   receivables,
 }: ExecutiveKPIRibbonProps) {
-  const cards = [
-    {
-      title: "Revenue",
-      value: formatMoney(revenue),
-      subtitle: "Total Revenue",
-      icon: TrendingUp,
-    },
-    {
-      title: "Profit",
-      value: formatMoney(profit),
-      subtitle: "Net Profit",
-      icon: PiggyBank,
-    },
-    {
-      title: "Cash",
-      value: formatMoney(cash),
-      subtitle: "Available Cash",
-      icon: Wallet,
-    },
-    {
-      title: "Receivables",
-      value: formatMoney(receivables),
-      subtitle: "Outstanding",
-      icon: Receipt,
-    },
-  ];
+  const ribbonItems: KPI[] =
+    items ??
+    ([
+      {
+        label: "Revenue",
+        value: (
+          <AnimatedNumber
+            value={revenue ?? 0}
+            format="currency"
+          />
+        ),
+      },
+      {
+        label: "Profit",
+        value: (
+          <AnimatedNumber
+            value={profit ?? 0}
+            format="currency"
+          />
+        ),
+      },
+      {
+        label: "Cash",
+        value: (
+          <AnimatedNumber
+            value={cash ?? 0}
+            format="currency"
+          />
+        ),
+      },
+      {
+        label: "Receivables",
+        value: (
+          <AnimatedNumber
+            value={receivables ?? 0}
+            format="currency"
+          />
+        ),
+      },
+    ] as KPI[]);
 
   return (
-    <section className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+    <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
+      {ribbonItems.map((item) => (
+        <BentoCard
+          key={item.label}
+          className="p-6"
+        >
+          <p className="text-xs uppercase tracking-[0.25em] text-zinc-500">
+            {item.label}
+          </p>
 
-      {cards.map((card, index) => {
+          <div className="mt-4 text-3xl font-semibold tracking-tight text-white">
+            {item.value}
+          </div>
 
-        const Icon = card.icon;
-
-        return (
-
-          <motion.div
-            key={card.title}
-            initial={{
-              opacity: 0,
-              y: 20,
-            }}
-            animate={{
-              opacity: 1,
-              y: 0,
-            }}
-            transition={{
-              duration: 0.35,
-              delay: index * 0.08,
-            }}
-            className="
-              rounded-[28px]
-              border
-              border-white/10
-              bg-[#111111]
-              p-6
-            "
-          >
-
-            <div className="flex items-center justify-between">
-
-              <div
-                className="
-                  flex
-                  h-12
-                  w-12
-                  items-center
-                  justify-center
-                  rounded-2xl
-                  bg-[#D4AF37]/10
-                "
-              >
-
-                <Icon
-                  size={20}
-                  className="text-[#D4AF37]"
-                />
-
-              </div>
-
-              <span
-                className="
-                  rounded-full
-                  border
-                  border-emerald-500/20
-                  bg-emerald-500/10
-                  px-3
-                  py-1
-                  text-[10px]
-                  uppercase
-                  tracking-[0.25em]
-                  text-emerald-400
-                "
-              >
-                Live
-              </span>
-
-            </div>
-
-            <p className="mt-6 text-[11px] uppercase tracking-[0.3em] text-zinc-500">
-              {card.title}
+          {item.change && (
+            <p className="mt-3 text-sm text-emerald-400">
+              {item.change}
             </p>
-
-            <h2 className="finzura-gold mt-3 text-4xl font-bold">
-              {card.value}
-            </h2>
-
-            <p className="mt-3 text-sm text-zinc-500">
-              {card.subtitle}
-            </p>
-
-          </motion.div>
-
-        );
-
-      })}
-
-    </section>
+          )}
+        </BentoCard>
+      ))}
+    </div>
   );
 }

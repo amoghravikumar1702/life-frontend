@@ -1,4 +1,4 @@
-# FINZURA Scaling Strategy
+# ArkenOne Scaling Strategy
 
 Version 1.0
 

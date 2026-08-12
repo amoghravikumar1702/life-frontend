@@ -1,4 +1,4 @@
-# FINZURA System Architecture
+# ArkenOne System Architecture
 
 **Version:** 1.0
 
@@ -27,7 +27,7 @@ Build the world's first **Autonomous Financial Operating System** that can opera
                               USER
                                 │
                                 ▼
-                     FINZURA EXECUTIVE UI
+                     ArkenOne EXECUTIVE UI
                                 │
           ┌─────────────────────┼─────────────────────┐
           │                     │                     │

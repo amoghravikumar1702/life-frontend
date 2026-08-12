@@ -5,7 +5,7 @@ export default function SignupPage() {
     <main className="flex min-h-screen items-center justify-center bg-[#0B0B0C] px-6">
       <form action={signUp} className="w-full max-w-md rounded-3xl border border-white/10 bg-white/5 p-8 backdrop-blur-xl">
         <h1 className="mb-8 text-3xl font-semibold text-white">
-          Create your FINZURA account
+          Create your ArkenOne account
         </h1>
 
         <div className="space-y-5">

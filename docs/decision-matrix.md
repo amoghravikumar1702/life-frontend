@@ -1,4 +1,4 @@
-# FINZURA Decision Matrix
+# ArkenOne Decision Matrix
 
 Version 1.0
 
@@ -6,7 +6,7 @@ Version 1.0
 
 # Purpose
 
-The Decision Matrix defines which financial decisions FINZURA may:
+The Decision Matrix defines which financial decisions ArkenOne may:
 
 - Inform
 - Recommend
@@ -190,13 +190,13 @@ The following always require approval.
 
 If fraud is suspected
 
-FINZURA may:
+ArkenOne may:
 
 - Freeze workflows
 - Alert the owner
 - Recommend investigation
 
-FINZURA may never:
+ArkenOne may never:
 
 - Delete financial records
 - Close bank accounts
@@ -241,6 +241,6 @@ Every recommendation must include:
 
 # Golden Rule
 
-If a decision could materially affect the business financially, legally, or strategically, FINZURA advises.
+If a decision could materially affect the business financially, legally, or strategically, ArkenOne advises.
 
 The business owner decides.

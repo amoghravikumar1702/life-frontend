@@ -1,4 +1,4 @@
-# FINZURA Knowledge Graph
+# ArkenOne Knowledge Graph
 
 Version 1.0
 
@@ -6,7 +6,7 @@ Version 1.0
 
 # Purpose
 
-The Knowledge Graph is the digital representation of every business using FINZURA.
+The Knowledge Graph is the digital representation of every business using ArkenOne.
 
 It connects every financial entity, relationship, event, document, workflow, and AI decision into one unified financial brain.
 

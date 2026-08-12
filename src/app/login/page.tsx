@@ -13,7 +13,7 @@ export default function LoginPage() {
         </h1>
 
         <p className="mb-8 text-sm text-gray-400">
-          Sign in to continue to FINZURA.
+          Sign in to continue to ArkenOne.
         </p>
 
         <div className="space-y-5">

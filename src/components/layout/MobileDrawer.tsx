@@ -52,7 +52,7 @@ export default function MobileDrawer({
             <div className="flex h-[70px] items-center justify-between border-b border-white/10 px-6">
               <div>
                 <h1 className="text-xl font-semibold text-white">
-                  FINZURA
+                  ArkenOne
                 </h1>
 
                 <p className="text-[11px] uppercase tracking-[0.25em] text-zinc-500">

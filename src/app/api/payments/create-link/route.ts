@@ -1,8 +1,6 @@
-import { NextRequest } from "next/server";
-import crypto from "crypto";
+import { NextRequest, NextResponse } from "next/server";
+import { randomUUID } from "crypto";
 
-import { ApiResponse } from "@/lib/api-response";
-import { handleApiError } from "@/lib/error-handler";
 import { supabaseAdmin } from "@/lib/server/supabase";
 
 export async function POST(request: NextRequest) {
@@ -10,46 +8,63 @@ export async function POST(request: NextRequest) {
     const { invoiceId } = await request.json();
 
     if (!invoiceId) {
-      return ApiResponse.error("Invoice ID is required", 400);
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Invoice ID is required.",
+        },
+        { status: 400 }
+      );
     }
+
+    const token = randomUUID();
+
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 30);
 
     const { data: invoice, error } = await supabaseAdmin
       .from("invoices")
-      .select("*")
+      .update({
+        payment_token: token,
+        payment_token_expires_at: expiresAt.toISOString(),
+      })
       .eq("id", invoiceId)
+      .select()
       .single();
 
-    if (error || !invoice) {
-      return ApiResponse.error("Invoice not found", 404);
-    }
+    if (error) {
+      console.error(error);
 
-    if (Number(invoice.balance_due) <= 0) {
-      return ApiResponse.error(
-        "Invoice is already fully paid",
-        400
+      return NextResponse.json(
+        {
+          success: false,
+          message: error.message,
+        },
+        { status: 500 }
       );
     }
 
-    const paymentToken = `fz_${crypto.randomBytes(16).toString("hex")}`;
+    const baseUrl =
+      process.env.NEXT_PUBLIC_APP_URL ??
+      "http://localhost:3000";
 
-    const { error: updateError } = await supabaseAdmin
-      .from("invoices")
-      .update({
-        payment_token: paymentToken,
-      })
-      .eq("id", invoice.id);
-
-    if (updateError) {
-      return ApiResponse.error(
-        "Failed to generate payment link",
-        500
-      );
-    }
-
-    return ApiResponse.success({
-      paymentUrl: `${process.env.NEXT_PUBLIC_APP_URL}/pay/${paymentToken}`,
+    return NextResponse.json({
+      success: true,
+      data: {
+        paymentUrl: `${baseUrl}/pay/${token}`,
+        token,
+        invoice,
+      },
     });
   } catch (error) {
-    return handleApiError(error);
+    console.error(error);
+
+    return NextResponse.json(
+      {
+        success: false,
+        message: "Failed to create payment link.",
+      },
+      { status: 500 }
+    );
   }
 }

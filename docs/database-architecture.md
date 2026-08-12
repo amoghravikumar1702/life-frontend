@@ -1,4 +1,4 @@
-# FINZURA Database Architecture
+# ArkenOne Database Architecture
 
 Version 1.0
 

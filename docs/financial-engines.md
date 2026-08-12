@@ -1,4 +1,4 @@
-# FINZURA Financial Engines
+# ArkenOne Financial Engines
 
 Version 1.0
 
@@ -6,7 +6,7 @@ Version 1.0
 
 # Purpose
 
-The Financial Intelligence Layer is the heart of FINZURA.
+The Financial Intelligence Layer is the heart of ArkenOne.
 
 Every financial calculation, validation, prediction, recommendation, and automation originates from these engines.
 

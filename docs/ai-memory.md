@@ -1,4 +1,4 @@
-# FINZURA AI Memory
+# ArkenOne AI Memory
 
 Version 1.0
 

@@ -2,37 +2,36 @@
 
 import { ReactNode, useState } from "react";
 
-import TopBar from "./TopBar";
 import Sidebar from "./SideBar";
+import TopBar from "./TopBar";
 
 export default function DashboardShell({
   children,
 }: {
   children: ReactNode;
 }) {
-  const [collapsed, setCollapsed] =
-    useState(false);
+  const [collapsed, setCollapsed] = useState(false);
 
   return (
-    <div className="min-h-screen bg-[#090909]">
-
-      <TopBar />
-
-      <div className="flex h-[calc(100vh-80px)]">
-
+    <div className="min-h-screen bg-[#0B0B0C]">
+      <div className="flex min-h-screen gap-6 p-6">
+        {/* Sidebar */}
         <Sidebar
           collapsed={collapsed}
-          onToggle={() =>
-            setCollapsed((prev) => !prev)
-          }
+          onToggle={() => setCollapsed((prev) => !prev)}
         />
 
-        <main className="flex-1 overflow-y-auto px-8 py-8">
-          {children}
-        </main>
+        {/* Content Area */}
+        <div className="flex min-w-0 flex-1 flex-col">
+          {/* Top Bar */}
+          <TopBar />
 
+          {/* Dashboard Content */}
+          <main className="flex-1">
+            {children}
+          </main>
+        </div>
       </div>
-
     </div>
   );
 }

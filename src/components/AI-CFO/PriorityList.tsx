@@ -25,7 +25,7 @@ export default function PriorityList({
   return (
     <PageSection
       title="Executive Action Plan"
-      subtitle="Highest priority recommendations from FINZURA"
+      subtitle="Highest priority recommendations from ArkenOne"
     >
       <div className="space-y-6">
 

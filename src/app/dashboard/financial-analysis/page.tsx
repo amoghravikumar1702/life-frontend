@@ -47,7 +47,7 @@ export default async function FinancialAnalysisPage() {
                 Intelligence
               </p>
 
-              <h1 className="finzura-gold mt-2 text-5xl font-bold">
+              <h1 className="ArkenOne-gold mt-2 text-5xl font-bold">
                 Financial Analysis
               </h1>
 

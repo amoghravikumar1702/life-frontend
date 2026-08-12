@@ -50,7 +50,7 @@ export default function ExecutiveComparisonChart({
           Performance
         </p>
 
-        <h2 className="finzura-gold mt-2 text-4xl font-bold">
+        <h2 className="ArkenOne-gold mt-2 text-4xl font-bold">
           Revenue vs Expenses
         </h2>
 
@@ -122,7 +122,7 @@ export default function ExecutiveComparisonChart({
 
           </div>
 
-          <h3 className="mt-4 finzura-gold text-3xl font-bold">
+          <h3 className="mt-4 ArkenOne-gold text-3xl font-bold">
             {money(latest?.profit ?? 0)}
           </h3>
 

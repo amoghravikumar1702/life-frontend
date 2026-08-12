@@ -19,14 +19,30 @@ export function useCreateInvoice() {
     }) => createInvoice(invoice, items),
 
     onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ["invoices"],
-      });
+  queryClient.invalidateQueries({
+    queryKey: ["invoices"],
+  });
 
-      queryClient.invalidateQueries({
-        queryKey: ["dashboard"],
-      });
-    },
+  queryClient.invalidateQueries({
+    queryKey: ["dashboard"],
+  });
+
+  queryClient.invalidateQueries({
+    queryKey: ["customers"],
+  });
+
+  queryClient.invalidateQueries({
+    queryKey: ["business-health"],
+  });
+
+  queryClient.invalidateQueries({
+    queryKey: ["financial-analysis"],
+  });
+
+  queryClient.invalidateQueries({
+    queryKey: ["ai-cfo"],
+  });
+},
   });
 }
 
@@ -46,14 +62,30 @@ export function useUpdateInvoice() {
       updateInvoice(id, invoice, items),
 
     onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ["invoices"],
-      });
+  queryClient.invalidateQueries({
+    queryKey: ["invoices"],
+  });
 
-      queryClient.invalidateQueries({
-        queryKey: ["dashboard"],
-      });
-    },
+  queryClient.invalidateQueries({
+    queryKey: ["dashboard"],
+  });
+
+  queryClient.invalidateQueries({
+    queryKey: ["customers"],
+  });
+
+  queryClient.invalidateQueries({
+    queryKey: ["business-health"],
+  });
+
+  queryClient.invalidateQueries({
+    queryKey: ["financial-analysis"],
+  });
+
+  queryClient.invalidateQueries({
+    queryKey: ["ai-cfo"],
+  });
+},
   });
 }
 
@@ -65,13 +97,29 @@ export function useDeleteInvoice() {
       deleteInvoice(id),
 
     onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ["invoices"],
-      });
+  queryClient.invalidateQueries({
+    queryKey: ["invoices"],
+  });
 
-      queryClient.invalidateQueries({
-        queryKey: ["dashboard"],
-      });
-    },
+  queryClient.invalidateQueries({
+    queryKey: ["dashboard"],
+  });
+
+  queryClient.invalidateQueries({
+    queryKey: ["customers"],
+  });
+
+  queryClient.invalidateQueries({
+    queryKey: ["business-health"],
+  });
+
+  queryClient.invalidateQueries({
+    queryKey: ["financial-analysis"],
+  });
+
+  queryClient.invalidateQueries({
+    queryKey: ["ai-cfo"],
+  });
+},
   });
 }

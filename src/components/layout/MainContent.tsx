@@ -8,20 +8,8 @@ export default function MainContent({
   children,
 }: MainContentProps) {
   return (
-    <main className="flex-1 overflow-hidden">
-      <div
-        className="
-          w-full
-          px-4
-          sm:px-6
-          lg:px-8
-          xl:px-10
-          2xl:px-12
-          py-6
-        "
-      >
-        {children}
-      </div>
+    <main className="px-5 pt-5 pb-8 lg:px-5">
+      {children}
     </main>
   );
 }

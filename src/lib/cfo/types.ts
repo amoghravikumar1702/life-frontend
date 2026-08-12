@@ -1,171 +1,259 @@
-export interface CompanyProfile {
-  id: string;
+/*
+ * ============================================================
+ * ARKENONE AI CFO — CORE TYPES
+ * ============================================================
+ *
+ * Shared TypeScript contracts for the CFO intelligence layer.
+ *
+ * IMPORTANT:
+ *
+ * These types describe normalized financial intelligence.
+ * They do not contain OpenAI-specific implementation details.
+ */
 
-  name: string;
-
-  industry: string;
-
-  businessModel: string;
-
-  yearsInBusiness: number;
-
-  employees: number;
-
-  annualRevenue: number;
-
-  monthlyRevenue: number;
-
-  monthlyExpenses: number;
-
-  businessGoal: string;
-
-  growthStage:
-    | "Startup"
-    | "Growing"
-    | "Established";
-
-  riskAppetite:
-    | "Low"
-    | "Medium"
-    | "High";
-}
+/*
+ * ============================================================
+ * FINANCIAL METRICS
+ * ============================================================
+ */
 
 export interface FinancialMetrics {
   revenue: number;
-
   expenses: number;
-
   profit: number;
 
-  grossMargin: number;
-
-  netMargin: number;
-
+  cash: number;
   cashFlow: number;
 
+  grossMargin: number;
+  netMargin: number;
+
   workingCapital: number;
-
   cashRunwayDays: number;
-
-  outstandingReceivables: number;
-
-  outstandingPayables: number;
-
   monthlyBurnRate: number;
 
-  revenueGrowth: number;
+  /*
+   * Legacy/general outstanding value.
+   *
+   * Kept for compatibility with existing ArkenOne code.
+   */
+  outstanding: number;
 
+  outstandingReceivables: number;
+  outstandingPayables: number;
+
+  revenueGrowth: number;
   expenseGrowth: number;
 
   healthScore: number;
 }
 
-export interface CustomerMetrics {
-  totalCustomers: number;
-
-  activeCustomers: number;
-
-  repeatCustomers: number;
-
-  averageInvoiceValue: number;
-
-  averagePaymentTime: number;
-
-  customerConcentration: number;
-
-  topCustomer: string;
-
-  topCustomerRevenue: number;
-
-  highestOutstandingCustomer: string;
-
-  highestOutstandingAmount: number;
-}
-
-export interface BusinessRisk {
-  id: string;
-
-  title: string;
-
-  description: string;
-
-  severity:
-    | "Low"
-    | "Medium"
-    | "High"
-    | "Critical";
-
-  recommendation: string;
-}
+/*
+ * ============================================================
+ * FORECAST
+ * ============================================================
+ */
 
 export interface Forecast {
   next30Revenue: number;
-
   next30Expenses: number;
-
   next30Profit: number;
 
+  /*
+   * This is a modeled position, not a verified bank balance.
+   */
   expectedCashPosition: number;
 
   expectedGrowth: number;
 
+  /*
+   * Confidence is a 0–100 estimate based on the quality and
+   * completeness of the available financial information.
+   */
   confidence: number;
 }
 
-export interface InvestmentSuggestion {
-  category:
-    | "Emergency Reserve"
-    | "Marketing"
-    | "Inventory"
-    | "Hiring"
-    | "Technology"
-    | "Expansion"
-    | "Debt Reduction"
-    | "Owner Draw";
-
-  amount: number;
-
-  reason: string;
-
-  expectedImpact: string;
-
-  priority: number;
-}
-
-export interface ExecutivePriority {
-  priority: number;
-
-  title: string;
-
-  explanation: string;
-
-  expectedImpact: string;
-
-  urgency:
-    | "Low"
-    | "Medium"
-    | "High"
-    | "Critical";
-}
+/*
+ * ============================================================
+ * EXECUTIVE REPORT
+ * ============================================================
+ */
 
 export interface ExecutiveReport {
-  generatedAt: string;
+  company: {
+    name: string;
+    industry: string;
+    businessModel: string;
 
-  company: CompanyProfile;
+    yearsInBusiness: number;
+    employees: number;
+
+    annualRevenue: number;
+
+    businessGoal: string;
+    growthStage: string;
+    riskAppetite: string;
+  };
 
   finance: FinancialMetrics;
 
-  customers: CustomerMetrics;
+  customers: {
+    /*
+     * `total` and `active` are retained because existing
+     * dashboard/report code may use these names.
+     */
 
-  risks: BusinessRisk[];
+    total: number;
+    active: number;
+
+    /*
+     * Canonical customer count.
+     */
+    totalCustomers: number;
+
+    repeatCustomers: number;
+
+    averageInvoiceValue: number;
+    averagePaymentTime: number;
+
+    customerConcentration: number;
+
+    topCustomer: string;
+    topCustomerRevenue: number;
+
+    highestOutstandingCustomer: string;
+    highestOutstandingAmount: number;
+  };
 
   forecast: Forecast;
 
-  investmentSuggestions: InvestmentSuggestion[];
+  /*
+   * Reserved for future deterministic risk detection.
+   */
+  risks: string[];
 
-  priorities: ExecutivePriority[];
+  /*
+   * Financial capacity baseline.
+   *
+   * This is NOT automatically a hiring recommendation.
+   */
+  financiallySustainableEmployees: number;
 
-  executiveSummary: string;
+  workforce: {
+    currentEmployees: number;
 
-  finalRecommendation: string;
+    /*
+     * Financially supported workforce estimate.
+     */
+    recommendedEmployees: number;
+
+    /*
+     * Positive = potential capacity for more employees.
+     * Negative = current workforce exceeds the financial
+     * capacity baseline.
+     */
+    difference: number;
+
+    rationale: string;
+  };
+}
+
+/*
+ * ============================================================
+ * AI CFO BRIEF
+ * ============================================================
+ *
+ * Used by the dashboard/executive CFO experience.
+ *
+ * This is separate from the raw OpenAI response contract.
+ */
+
+export interface AICFOBrief {
+  greeting: string;
+
+  executiveBrief: string;
+
+  health: {
+    score: number;
+    status: string;
+  };
+
+  todaysFocus: {
+    title: string;
+    description: string;
+    amount: number;
+    impact: string;
+  };
+
+  recommendation: string;
+
+  milestone: {
+    title: string;
+    current: number;
+    target: number;
+    remaining: number;
+    progress: number;
+  };
+
+  capacity: {
+    title: string;
+    status: string;
+
+    currentEmployees: number;
+    recommendedEmployees: number;
+    difference: number;
+
+    recommendation: string;
+  };
+}
+
+/*
+ * ============================================================
+ * AI CFO QUESTION RESPONSE
+ * ============================================================
+ *
+ * This is the normalized response returned to the frontend
+ * after the server validates the OpenAI response.
+ */
+
+export interface AICFOQuestionResponse {
+  answer: string;
+
+  decision: string;
+
+  action: string;
+
+  financialImpact: {
+    amount: number;
+    explanation: string;
+  };
+
+  confidence: number;
+}
+
+/*
+ * ============================================================
+ * AI CFO RATE LIMIT INFORMATION
+ * ============================================================
+ */
+
+export interface CFORateLimitInfo {
+  remaining: number;
+  retryAfterSeconds?: number;
+}
+
+/*
+ * ============================================================
+ * AI CFO API RESPONSE
+ * ============================================================
+ */
+
+export interface AICFOQuestionAPIResponse {
+  success: boolean;
+
+  data?: AICFOQuestionResponse;
+
+  rateLimit?: CFORateLimitInfo;
+
+  error?: string;
 }

@@ -1,17 +1,17 @@
 import MissionHero from "./MissionHero";
+import TodaysFocus from "./TodaysFocus";
 import BusinessPulse from "./BusinessPulse";
-import QuickActions from "./QuickActions";
+import ExecutiveSummary from "../ExecutiveSummary";
 import ActivityCenter from "./ActivityCenter";
 
 import { getDashboardData } from "@/lib/dashboard";
 import { getActivityFeed } from "@/lib/server";
 
 export default async function MissionControl() {
-  const [{ snapshot }, activityFeed] =
-    await Promise.all([
-      getDashboardData(),
-      getActivityFeed(),
-    ]);
+  const [{ snapshot }, activityFeed] = await Promise.all([
+    getDashboardData(),
+    getActivityFeed(),
+  ]);
 
   const activity = activityFeed.filter(
     (
@@ -19,40 +19,39 @@ export default async function MissionControl() {
     ): item is Extract<
       (typeof activityFeed)[number],
       {
-        type:
-          | "payment"
-          | "customer"
-          | "invoice";
+        type: "payment" | "customer" | "invoice";
       }
     > => item.type !== "reminder"
   );
 
   return (
-    <div className="mx-auto flex w-full max-w-7xl flex-col gap-8">
-
-      {/* Mission Hero */}
-
+    <div className="space-y-5">
+      {/* HERO */}
       <MissionHero
         revenue={snapshot.revenue}
         receivables={snapshot.outstandingReceivables}
+        healthScore={snapshot.healthScore}
       />
 
-      {/* Business Pulse */}
+      {/* MAIN EXECUTIVE ROW */}
+      <div className="grid gap-5 xl:grid-cols-[0.72fr_1.28fr]">
+        <TodaysFocus
+          receivables={snapshot.outstandingReceivables}
+        />
 
-      <BusinessPulse
-        snapshot={snapshot}
+        <BusinessPulse snapshot={snapshot} />
+      </div>
+
+      {/* EXECUTIVE SUMMARY */}
+      <ExecutiveSummary
+        revenue={snapshot.revenue}
+        cashAvailable={snapshot.cashAvailable}
+        receivables={snapshot.outstandingReceivables}
+        healthScore={snapshot.healthScore}
       />
 
-      {/* Quick Actions */}
-
-      <QuickActions />
-
-      {/* Recent Activity */}
-
-      <ActivityCenter
-        activity={activity}
-      />
-
+      {/* ACTIVITY */}
+      <ActivityCenter activity={activity} />
     </div>
   );
 }

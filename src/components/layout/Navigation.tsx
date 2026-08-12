@@ -2,19 +2,19 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { motion } from "framer-motion";
 
 import {
-  LayoutDashboard,
-  Users,
-  FileText,
-  Brain,
   Activity,
   BarChart3,
-  TrendingUp,
-  Target,
-  FileBarChart2,
+  Brain,
   Building2,
+  FileBarChart2,
+  FileText,
+  LayoutDashboard,
+  Receipt,
   Settings,
+  Users,
 } from "lucide-react";
 
 interface NavigationProps {
@@ -25,7 +25,7 @@ interface NavigationProps {
 
 const sections = [
   {
-    title: "MISSION",
+    title: "Workspace",
     items: [
       {
         label: "Mission Control",
@@ -36,7 +36,7 @@ const sections = [
   },
 
   {
-    title: "OPERATIONS",
+    title: "Operations",
     items: [
       {
         label: "Customers",
@@ -48,11 +48,16 @@ const sections = [
         href: "/invoices",
         icon: FileText,
       },
+      {
+        label: "Expenses",
+        href: "/expenses",
+        icon: Receipt,
+      },
     ],
   },
 
   {
-    title: "INTELLIGENCE",
+    title: "Intelligence",
     items: [
       {
         label: "AI CFO",
@@ -70,16 +75,6 @@ const sections = [
         icon: BarChart3,
       },
       {
-        label: "Forecast",
-        href: "/dashboard/forecast",
-        icon: TrendingUp,
-      },
-      {
-        label: "Decision Center",
-        href: "/dashboard/decision-center",
-        icon: Target,
-      },
-      {
         label: "Executive Reports",
         href: "/dashboard/reports",
         icon: FileBarChart2,
@@ -88,7 +83,7 @@ const sections = [
   },
 
   {
-    title: "COMPANY",
+    title: "Company",
     items: [
       {
         label: "Company",
@@ -111,16 +106,16 @@ export default function Navigation({
   const pathname = usePathname();
 
   return (
-    <nav className="space-y-8">
+    <nav className={collapsed ? "space-y-6" : "space-y-7"}>
       {sections.map((section) => (
-        <div key={section.title}>
+        <section key={section.title}>
           {!collapsed && (
-            <p className="mb-3 px-3 text-[10px] font-semibold uppercase tracking-[0.35em] text-zinc-500">
+            <p className="mb-3 px-4 text-[10px] font-medium uppercase tracking-[0.32em] text-zinc-600">
               {section.title}
             </p>
           )}
 
-          <div className="space-y-2">
+          <div className="space-y-1">
             {section.items.map((item) => {
               const Icon = item.icon;
 
@@ -134,45 +129,108 @@ export default function Navigation({
                   href={item.href}
                   onClick={onNavigate}
                   title={collapsed ? item.label : undefined}
-                  className={`
-                    group
-                    flex
-                    h-12
-                    items-center
-                    rounded-2xl
-                    transition-all
-                    duration-200
-                    ${
-                      collapsed
-                        ? "justify-center"
-                        : "gap-3 px-4"
-                    }
-                    ${
-                      active
-                        ? "border border-[#D4AF37]/20 bg-[#D4AF37]/10 text-[#D4AF37]"
-                        : "border border-transparent text-zinc-400 hover:border-white/10 hover:bg-white/[0.03] hover:text-white"
-                    }
-                  `}
+                  className="block"
                 >
-                  <Icon
-                    size={18}
-                    className={
-                      active
-                        ? "text-[#D4AF37]"
-                        : "text-zinc-500 group-hover:text-white"
-                    }
-                  />
+                  <motion.div
+                    whileHover={{
+                      x: collapsed ? 0 : 3,
+                      scale: 1.01,
+                    }}
+                    whileTap={{
+                      scale: 0.985,
+                    }}
+                    transition={{
+                      duration: 0.26,
+                      ease: "easeOut",
+                    }}
+                    className={`
+                      group
+                      relative
+                      flex
+                      overflow-hidden
+                      rounded-xl
+                      transition-all
+                      duration-300
+                      ${
+                        collapsed
+                          ? "mx-auto h-11 w-11 items-center justify-center"
+                          : "h-11 items-center gap-3 px-4"
+                      }
+                      ${
+                        active
+                          ? `
+                            border
+                            border-[#D4AF37]/12
+                            bg-white/[0.035]
+                            text-white
+                            shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]
+                          `
+                          : `
+                            border
+                            border-transparent
+                            text-zinc-500
+                            hover:border-white/[0.04]
+                            hover:bg-white/[0.025]
+                            hover:text-zinc-100
+                          `
+                      }
+                    `}
+                  >
+                    {active && (
+                      <>
+                        <motion.span
+                          layoutId="ArkenOne-nav-indicator"
+                          className="absolute bottom-[9px] left-0 top-[9px] w-[2px] rounded-r-full bg-[#D4AF37]"
+                        />
 
-                  {!collapsed && (
-                    <span className="text-sm font-medium">
-                      {item.label}
-                    </span>
-                  )}
+                        <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(212,175,55,0.08),transparent_72%)]" />
+                      </>
+                    )}
+
+                    <Icon
+                      size={17}
+                      strokeWidth={1.9}
+                      className={`
+                        relative
+                        z-10
+                        shrink-0
+                        transition-colors
+                        duration-300
+                        ${
+                          active
+                            ? "text-[#D4AF37]"
+                            : "text-zinc-500 group-hover:text-zinc-100"
+                        }
+                      `}
+                    />
+
+                    {!collapsed && (
+                      <span
+                        className={`
+                          relative
+                          z-10
+                          truncate
+                          text-[13.5px]
+                          font-medium
+                          tracking-[0.01em]
+                          transition-colors
+                          duration-300
+                          ${
+                            active
+                              ? "text-white"
+                              : "text-zinc-400 group-hover:text-zinc-100"
+                          }
+                        `}
+                      >
+                        {item.label}
+                      </span>
+                    )}
+                  </motion.div>
                 </Link>
               );
             })}
           </div>
-        </div>
+        </section>
       ))}
     </nav>
   );

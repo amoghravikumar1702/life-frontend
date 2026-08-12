@@ -64,7 +64,7 @@ export default function IndustrySelection() {
   return (
     <div className="w-full max-w-5xl rounded-[32px] border border-white/10 bg-[#121214] p-10 shadow-2xl">
       <p className="text-sm uppercase tracking-[0.35em] text-zinc-500">
-        FINZURA Setup
+        ArkenOne Setup
       </p>
 
       <h1 className="mt-6 text-5xl font-semibold text-white">
@@ -72,7 +72,7 @@ export default function IndustrySelection() {
       </h1>
 
       <p className="mt-4 max-w-2xl text-lg leading-8 text-zinc-400">
-        FINZURA will tailor terminology, financial insights and workflows
+        ArkenOne will tailor terminology, financial insights and workflows
         according to your business sector.
       </p>
 

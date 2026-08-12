@@ -1,5 +1,19 @@
 import { createClient } from "@/lib/supabase/server";
-import { CompanyProfile } from "./types";
+
+type CompanyProfile = {
+  id: string;
+  name: string;
+  industry: string;
+  businessModel: string;
+  yearsInBusiness: number;
+  employees: number;
+  annualRevenue: number;
+  monthlyRevenue: number;
+  monthlyExpenses: number;
+  businessGoal: string;
+  growthStage: string;
+  riskAppetite: string;
+};
 
 export async function getCompanyProfile(): Promise<CompanyProfile> {
   const supabase = await createClient();
@@ -33,28 +47,25 @@ export async function getCompanyProfile(): Promise<CompanyProfile> {
       company.business_model ?? "Unknown",
 
     yearsInBusiness:
-      company.years_in_business ?? 1,
+      Number(company.years_in_business ?? 1),
 
     employees:
-      company.employee_count ?? 1,
+      Number(company.employee_count ?? 0),
 
     annualRevenue:
-      company.annual_revenue ?? 0,
+      Number(company.annual_revenue ?? 0),
 
     monthlyRevenue: 0,
 
     monthlyExpenses: 0,
 
     businessGoal:
-      company.business_goal ??
-      "Grow Revenue",
+      company.business_goal ?? "Grow Revenue",
 
     growthStage:
-      company.growth_stage ??
-      "Startup",
+      company.growth_stage ?? "Startup",
 
     riskAppetite:
-      company.risk_appetite ??
-      "Medium",
+      company.risk_appetite ?? "Medium",
   };
 }

@@ -1,4 +1,4 @@
-# FINZURA Security Framework
+# ArkenOne Security Framework
 
 Version 1.0
 

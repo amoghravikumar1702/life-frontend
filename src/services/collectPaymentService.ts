@@ -1,5 +1,5 @@
 export async function collectPayment(invoiceId: number) {
-  console.log("STEP 1: Creating FINZURA payment link");
+  console.log("STEP 1: Creating ArkenOne payment link");
 
   const response = await fetch("/api/payments/create-link", {
     method: "POST",

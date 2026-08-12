@@ -1,37 +1,43 @@
 export const theme = {
   colors: {
-    background: "var(--background)",
-    surface: "var(--surface)",
-    surfaceElevated: "var(--surface-elevated)",
+    background: "#07090D",
 
-    primary: "var(--primary)",
-    primaryHover: "var(--primary-hover)",
+    surface: "#0D1017",
 
-    text: {
-      primary: "var(--foreground)",
-      secondary: "var(--text-secondary)",
-    },
+    surfaceSecondary: "#131722",
 
-    border: {
-      default: "var(--border)",
-      light: "var(--border-light)",
-    },
+    border: "rgba(255,255,255,.06)",
 
-    status: {
-      success: {
-        text: "text-emerald-400",
-        bg: "bg-emerald-500/10",
-      },
+    text: "#F5F7FA",
 
-      warning: {
-        text: "text-amber-400",
-        bg: "bg-amber-500/10",
-      },
+    textSecondary: "#A1A8B3",
 
-      danger: {
-        text: "text-red-400",
-        bg: "bg-red-500/10",
-      },
-    },
+    gold: "#D4AF37",
+
+    purple: "#6F5BFF",
+
+    blue: "#3B82F6",
+
+    green: "#22C55E",
+
+    orange: "#F59E0B",
+
+    red: "#EF4444",
   },
-} as const;
+
+  radius: {
+    sm: "14px",
+
+    md: "20px",
+
+    lg: "28px",
+
+    xl: "36px",
+  },
+
+  shadow: {
+    soft: "0 10px 40px rgba(0,0,0,.35)",
+
+    glow: "0 0 60px rgba(111,91,255,.20)",
+  },
+};

@@ -1,25 +1,39 @@
 import { ExecutiveReport } from "@/lib/cfo/types";
-
-import { executiveEngine } from "./engines/executive";
-import { buildFallbackExecutiveAnalysis } from "./fallback";
+import { generateAICFOBrief } from "./openaiCFO";
 
 export async function runExecutiveAnalysis(
   report: ExecutiveReport
 ) {
   try {
-    const result = await executiveEngine(report);
+    const brief = await generateAICFOBrief(report);
 
-    if (!result.success) {
-      return buildFallbackExecutiveAnalysis(report);
-    }
+    return {
+      success: true,
+      data: {
+        executiveSummary: brief.executiveBrief,
 
-    return result;
+        financialAnalysis:
+          `Business health: ${brief.health.status}. ${brief.todaysFocus.description}`,
+
+        topPriorities:
+          brief.recommendation,
+
+        businessRisks:
+          `Current workforce assessment: ${brief.capacity.status}. ${brief.capacity.recommendation}`,
+
+        growthOpportunities:
+          `${brief.todaysFocus.title}: ${brief.todaysFocus.impact}`,
+
+        finalRecommendation:
+          brief.recommendation,
+      },
+    };
   } catch (error) {
     console.error(
-      "[FINZURA AI] Falling back to intelligence engine:",
+      "[ArkenOne AI] OpenAI CFO analysis failed:",
       error
     );
 
-    return buildFallbackExecutiveAnalysis(report);
+    throw error;
   }
 }

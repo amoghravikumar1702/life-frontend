@@ -24,7 +24,7 @@ export default function FinancialInsights({
           Intelligence
         </p>
 
-        <h2 className="finzura-gold mt-2 text-4xl font-bold">
+        <h2 className="ArkenOne-gold mt-2 text-4xl font-bold">
           Executive Financial Insights
         </h2>
 

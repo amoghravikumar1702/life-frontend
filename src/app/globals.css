@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 /* ===========================================================
-   FINZURA GLOBALS (SAFE)
+   ArkenOne GLOBALS (SAFE)
    Only global styles belong here.
 =========================================================== */
 
@@ -58,10 +58,10 @@ body {
   color: black;
 }
 /* ==========================================================
-   FINZURA PREMIUM GOLD
+   ArkenOne PREMIUM GOLD
 ========================================================== */
 
-.finzura-gold {
+.ArkenOne-gold {
   background: linear-gradient(
     180deg,
     #fffbe3 0%,
