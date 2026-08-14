@@ -1,170 +1,266 @@
+// src/components/Dashboard/ExecutiveSummary.tsx
+
 "use client";
 
-import { ArrowUpRight, Sparkles } from "lucide-react";
-import { motion } from "framer-motion";
+type ExecutiveStrength = {
+  title: string;
+  description: string;
+};
 
-interface Props {
+type ExecutiveRisk = {
+  title: string;
+  description: string;
+};
+
+type Props = {
   revenue: number;
+  expenses: number;
+  profit: number;
   cashAvailable: number;
   receivables: number;
   healthScore: number;
+  strengths: ExecutiveStrength[];
+  risks: ExecutiveRisk[];
+};
+
+function formatCurrency(value: number): string {
+  return new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+    maximumFractionDigits: 0,
+  }).format(Number.isFinite(value) ? value : 0);
 }
 
-function money(value: number) {
-  if (value >= 10000000) {
-    return `₹${(value / 10000000).toFixed(1)}Cr`;
-  }
-
-  if (value >= 100000) {
-    return `₹${Math.round(value / 100000)}L`;
-  }
-
-  if (value >= 1000) {
-    return `₹${Math.round(value / 1000)}K`;
-  }
-
-  return `₹${Math.round(value)}`;
+function getHealthLabel(score: number): string {
+  if (score >= 85) return "Strong";
+  if (score >= 70) return "Healthy";
+  if (score >= 50) return "Watch";
+  return "Attention";
 }
 
 export default function ExecutiveSummary({
   revenue,
+  expenses,
+  profit,
   cashAvailable,
   receivables,
   healthScore,
+  strengths,
+  risks,
 }: Props) {
-  const priority =
-    receivables > 0
-      ? "Improve collections cycle"
-      : healthScore < 70
-        ? "Strengthen financial position"
-        : "Maintain operating momentum";
-
-  const summary =
-    receivables > 0
-      ? `Cash position remains ${healthScore >= 70 ? "stable" : "under pressure"} with ${money(
-          cashAvailable
-        )} available. Focus on clearing ${money(
-          receivables
-        )} in outstanding receivables to strengthen liquidity.`
-      : healthScore >= 85
-        ? `Financial position remains strong with ${money(
-            cashAvailable
-          )} available against ${money(
-            revenue
-          )} in recorded revenue. Maintain the current operating momentum.`
-        : `Financial position requires attention. Review cash flow, expenses, and operating performance to improve the current position.`;
+  const safeHealthScore = Math.max(
+    0,
+    Math.min(
+      100,
+      Number.isFinite(healthScore)
+        ? healthScore
+        : 0
+    )
+  );
 
   return (
-    <motion.section
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{
-        duration: 0.4,
-        ease: "easeOut",
-      }}
-      className="
-        relative
-        overflow-hidden
-        rounded-[22px]
-        border
-        border-white/[0.05]
-        bg-[#101318]
-      "
-    >
-      <div className="flex flex-col lg:flex-row">
-        {/* SUMMARY */}
-        <div className="flex min-w-0 flex-1 items-start gap-4 px-6 py-5">
-          <div
-            className="
-              mt-0.5
-              flex
-              h-9
-              w-9
-              shrink-0
-              items-center
-              justify-center
-              rounded-xl
-              border
-              border-[#D4AF37]/12
-              bg-[#D4AF37]/[0.06]
-            "
-          >
-            <Sparkles
-              size={15}
-              strokeWidth={1.7}
-              className="text-[#D4AF37]"
-            />
-          </div>
+    <section className="relative overflow-hidden rounded-[30px] border border-white/[0.06] bg-[#111419]">
+      {/* Ambient light */}
+      <div className="pointer-events-none absolute -right-32 -top-32 h-72 w-72 rounded-full bg-[#D4AF37]/[0.035] blur-[100px]" />
 
-          <div className="min-w-0">
-            <p
-              className="
-                text-[9px]
-                font-medium
-                uppercase
-                tracking-[0.34em]
-                text-[#D4AF37]
-              "
-            >
+      <div className="relative p-6 sm:p-8 lg:p-10">
+        {/* Header */}
+        <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-[10px] font-medium uppercase tracking-[0.35em] text-[#D4AF37]">
               Executive Summary
             </p>
 
-            <p
-              className="
-                mt-2
-                max-w-3xl
-                text-[13px]
-                leading-6
-                text-zinc-400
-              "
-            >
-              {summary}
+            <h2 className="mt-2 text-xl font-medium tracking-tight text-white">
+              Financial Position
+            </h2>
+
+            <p className="mt-1 text-sm text-zinc-500">
+              Current business performance and financial signals.
             </p>
+          </div>
+
+          {/* Health */}
+          <div className="flex items-center gap-3 rounded-2xl border border-white/[0.06] bg-white/[0.02] px-4 py-3">
+            <div>
+              <p className="text-[9px] uppercase tracking-[0.25em] text-zinc-600">
+                Health
+              </p>
+
+              <p className="mt-1 text-sm font-medium text-zinc-200">
+                {getHealthLabel(safeHealthScore)}
+              </p>
+            </div>
+
+            <div className="h-10 w-10 rounded-full border border-[#D4AF37]/20 bg-[#D4AF37]/[0.06] flex items-center justify-center">
+              <span className="text-xs font-semibold text-[#D4AF37]">
+                {Math.round(safeHealthScore)}
+              </span>
+            </div>
           </div>
         </div>
 
-        {/* PRIORITY */}
-        <div
-          className="
-            flex
-            shrink-0
-            items-center
-            justify-between
-            gap-6
-            border-t
-            border-white/[0.05]
-            px-6
-            py-4
-            lg:w-[280px]
-            lg:border-l
-            lg:border-t-0
-          "
-        >
-          <div>
-            <p
-              className="
-                text-[9px]
-                font-medium
-                uppercase
-                tracking-[0.3em]
-                text-zinc-600
-              "
-            >
-              Key Priority
-            </p>
+        {/* Metrics */}
+        <div className="mt-8 grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-white/[0.05] bg-white/[0.05] lg:grid-cols-5">
+          <Metric
+            label="Revenue"
+            value={formatCurrency(revenue)}
+          />
 
-            <p className="mt-2 text-[13px] font-medium text-zinc-200">
-              {priority}
-            </p>
-          </div>
+          <Metric
+            label="Expenses"
+            value={formatCurrency(expenses)}
+          />
 
-          <ArrowUpRight
-            size={16}
-            strokeWidth={1.7}
-            className="shrink-0 text-[#D4AF37]"
+          <Metric
+            label="Profit"
+            value={formatCurrency(profit)}
+          />
+
+          <Metric
+            label="Cash Available"
+            value={formatCurrency(cashAvailable)}
+          />
+
+          <Metric
+            label="Receivables"
+            value={formatCurrency(receivables)}
           />
         </div>
+
+        {/* Intelligence */}
+        <div className="mt-8 grid gap-6 lg:grid-cols-2">
+          {/* Strengths */}
+          <div className="rounded-2xl border border-white/[0.05] bg-white/[0.015] p-5">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-[10px] uppercase tracking-[0.3em] text-zinc-600">
+                  Strengths
+                </p>
+
+                <p className="mt-1 text-sm font-medium text-zinc-200">
+                  What is working
+                </p>
+              </div>
+
+              <div className="flex h-7 w-7 items-center justify-center rounded-lg border border-emerald-400/10 bg-emerald-400/[0.05]">
+                <span className="text-xs text-emerald-400">
+                  ✓
+                </span>
+              </div>
+            </div>
+
+            <div className="mt-5 space-y-3">
+              {strengths.length > 0 ? (
+                strengths.map((strength, index) => (
+                  <div
+                    key={`${strength.title}-${index}`}
+                    className="rounded-xl border border-white/[0.04] bg-white/[0.015] p-4"
+                  >
+                    <p className="text-sm font-medium text-zinc-200">
+                      {strength.title}
+                    </p>
+
+                    <p className="mt-1.5 text-xs leading-5 text-zinc-500">
+                      {strength.description}
+                    </p>
+                  </div>
+                ))
+              ) : (
+                <p className="text-sm text-zinc-600">
+                  No financial strengths identified yet.
+                </p>
+              )}
+            </div>
+          </div>
+
+          {/* Risks */}
+          <div className="rounded-2xl border border-white/[0.05] bg-white/[0.015] p-5">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-[10px] uppercase tracking-[0.3em] text-zinc-600">
+                  Risks
+                </p>
+
+                <p className="mt-1 text-sm font-medium text-zinc-200">
+                  What needs attention
+                </p>
+              </div>
+
+              <div className="flex h-7 w-7 items-center justify-center rounded-lg border border-[#D4AF37]/10 bg-[#D4AF37]/[0.05]">
+                <span className="text-xs text-[#D4AF37]">
+                  !
+                </span>
+              </div>
+            </div>
+
+            <div className="mt-5 space-y-3">
+              {risks.length > 0 ? (
+                risks.map((risk, index) => (
+                  <div
+                    key={`${risk.title}-${index}`}
+                    className="rounded-xl border border-white/[0.04] bg-white/[0.015] p-4"
+                  >
+                    <p className="text-sm font-medium text-zinc-200">
+                      {risk.title}
+                    </p>
+
+                    <p className="mt-1.5 text-xs leading-5 text-zinc-500">
+                      {risk.description}
+                    </p>
+                  </div>
+                ))
+              ) : (
+                <p className="text-sm text-zinc-600">
+                  No major financial risks identified.
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Health bar */}
+        <div className="mt-8 border-t border-white/[0.05] pt-6">
+          <div className="flex items-center justify-between">
+            <p className="text-[10px] uppercase tracking-[0.3em] text-zinc-600">
+              Financial Health
+            </p>
+
+            <p className="text-xs text-zinc-500">
+              {Math.round(safeHealthScore)} / 100
+            </p>
+          </div>
+
+          <div className="mt-3 h-1 overflow-hidden rounded-full bg-white/[0.05]">
+            <div
+              className="h-full rounded-full bg-[#D4AF37] transition-all duration-700"
+              style={{
+                width: `${safeHealthScore}%`,
+              }}
+            />
+          </div>
+        </div>
       </div>
-    </motion.section>
+    </section>
+  );
+}
+
+function Metric({
+  label,
+  value,
+}: {
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="min-w-0 bg-[#111419] p-4 sm:p-5">
+      <p className="truncate text-[9px] uppercase tracking-[0.22em] text-zinc-600">
+        {label}
+      </p>
+
+      <p className="mt-2 truncate text-sm font-medium text-zinc-200 sm:text-base">
+        {value}
+      </p>
+    </div>
   );
 }

@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { getFinancialSnapshot } from "@/lib/finance/getFinancialSnapshot";
 
 export interface FinancialMetrics {
   revenue: number;
@@ -24,6 +25,12 @@ export interface FinancialMetrics {
 
   healthScore: number;
 }
+
+/*
+ * ============================================================
+ * DATE UTILITIES
+ * ============================================================
+ */
 
 function getMonthRange(offset = 0) {
   const now = new Date();
@@ -55,9 +62,7 @@ function isWithinRange(
     return false;
   }
 
-  const date = new Date(
-    String(dateValue)
-  );
+  const date = new Date(String(dateValue));
 
   if (Number.isNaN(date.getTime())) {
     return false;
@@ -66,9 +71,13 @@ function isWithinRange(
   return date >= start && date < end;
 }
 
-function safeNumber(
-  value: unknown
-): number {
+/*
+ * ============================================================
+ * SAFE NUMBER
+ * ============================================================
+ */
+
+function safeNumber(value: unknown): number {
   const number = Number(value);
 
   return Number.isFinite(number)
@@ -76,7 +85,40 @@ function safeNumber(
     : 0;
 }
 
+/*
+ * ============================================================
+ * FINANCIAL METRICS
+ * ============================================================
+ */
+
 export async function getFinancialMetrics(): Promise<FinancialMetrics> {
+  /*
+   * ==========================================================
+   * SOURCE OF TRUTH
+   * ==========================================================
+   *
+   * Mission Control and the AI CFO MUST use the same financial
+   * numbers.
+   *
+   * Therefore all core financial metrics come from:
+   *
+   * getFinancialSnapshot()
+   *
+   * Do NOT independently recalculate revenue/profit here.
+   */
+
+  const snapshot =
+    await getFinancialSnapshot();
+
+  /*
+   * ==========================================================
+   * AUTHENTICATION
+   * ==========================================================
+   *
+   * Supabase is still used below for month-over-month
+   * analytical metrics.
+   */
+
   const supabase =
     await createClient();
 
@@ -86,40 +128,55 @@ export async function getFinancialMetrics(): Promise<FinancialMetrics> {
     await supabase.auth.getUser();
 
   if (!user) {
-    throw new Error(
-      "Unauthorized"
-    );
+    throw new Error("Unauthorized");
   }
 
   const ownerId = user.id;
 
+  /*
+   * ==========================================================
+   * LOAD SECONDARY DATA
+   * ==========================================================
+   *
+   * Only used for:
+   *
+   * - Revenue growth
+   * - Expense growth
+   *
+   * Core financial numbers remain controlled by the snapshot.
+   */
+
   const [
     invoicesResult,
-    paymentsResult,
     expensesResult,
   ] = await Promise.all([
     supabase
       .from("invoices")
-      .select("*")
-      .eq("owner_id", ownerId),
-
-    supabase
-      .from("payments")
-      .select("*")
+      .select(
+        `
+          id,
+          created_at,
+          invoice_date,
+          total
+        `
+      )
       .eq("owner_id", ownerId),
 
     supabase
       .from("expenses")
-      .select("*")
+      .select(
+        `
+          id,
+          created_at,
+          expense_date,
+          amount
+        `
+      )
       .eq("owner_id", ownerId),
   ]);
 
   if (invoicesResult.error) {
     throw invoicesResult.error;
-  }
-
-  if (paymentsResult.error) {
-    throw paymentsResult.error;
   }
 
   if (expensesResult.error) {
@@ -129,11 +186,14 @@ export async function getFinancialMetrics(): Promise<FinancialMetrics> {
   const invoices =
     invoicesResult.data ?? [];
 
-  const payments =
-    paymentsResult.data ?? [];
-
   const expensesData =
     expensesResult.data ?? [];
+
+  /*
+   * ==========================================================
+   * MONTH RANGES
+   * ==========================================================
+   */
 
   const currentMonth =
     getMonthRange(0);
@@ -142,13 +202,11 @@ export async function getFinancialMetrics(): Promise<FinancialMetrics> {
     getMonthRange(-1);
 
   /*
-   * ============================================================
+   * ==========================================================
    * CURRENT MONTH REVENUE
-   * ============================================================
+   * ==========================================================
    *
-   * Revenue means invoiced revenue.
-   *
-   * This is intentionally different from collected cash.
+   * Used ONLY for growth analysis.
    */
 
   const currentMonthRevenue =
@@ -156,8 +214,7 @@ export async function getFinancialMetrics(): Promise<FinancialMetrics> {
       .filter((invoice) =>
         isWithinRange(
           invoice.created_at ??
-            invoice.invoice_date ??
-            invoice.date,
+            invoice.invoice_date,
           currentMonth.start,
           currentMonth.end
         )
@@ -172,9 +229,9 @@ export async function getFinancialMetrics(): Promise<FinancialMetrics> {
       );
 
   /*
-   * ============================================================
+   * ==========================================================
    * PREVIOUS MONTH REVENUE
-   * ============================================================
+   * ==========================================================
    */
 
   const previousMonthRevenue =
@@ -182,8 +239,7 @@ export async function getFinancialMetrics(): Promise<FinancialMetrics> {
       .filter((invoice) =>
         isWithinRange(
           invoice.created_at ??
-            invoice.invoice_date ??
-            invoice.date,
+            invoice.invoice_date,
           previousMonth.start,
           previousMonth.end
         )
@@ -198,65 +254,9 @@ export async function getFinancialMetrics(): Promise<FinancialMetrics> {
       );
 
   /*
-   * ============================================================
-   * CURRENT MONTH COLLECTED REVENUE
-   * ============================================================
-   *
-   * Prefer actual payment records.
-   *
-   * If payment records contain no usable amount, fall back to
-   * invoice amount_paid values.
-   */
-
-  const currentMonthPayments =
-    payments
-      .filter((payment) =>
-        isWithinRange(
-          payment.created_at ??
-            payment.payment_date ??
-            payment.date,
-          currentMonth.start,
-          currentMonth.end
-        )
-      )
-      .reduce(
-        (sum, payment) =>
-          sum +
-          safeNumber(
-            payment.amount
-          ),
-        0
-      );
-
-  const currentMonthInvoicePayments =
-    invoices
-      .filter((invoice) =>
-        isWithinRange(
-          invoice.created_at ??
-            invoice.invoice_date ??
-            invoice.date,
-          currentMonth.start,
-          currentMonth.end
-        )
-      )
-      .reduce(
-        (sum, invoice) =>
-          sum +
-          safeNumber(
-            invoice.amount_paid
-          ),
-        0
-      );
-
-  const currentMonthCollectedRevenue =
-    currentMonthPayments > 0
-      ? currentMonthPayments
-      : currentMonthInvoicePayments;
-
-  /*
-   * ============================================================
+   * ==========================================================
    * CURRENT MONTH EXPENSES
-   * ============================================================
+   * ==========================================================
    */
 
   const currentMonthExpenses =
@@ -264,8 +264,7 @@ export async function getFinancialMetrics(): Promise<FinancialMetrics> {
       .filter((expense) =>
         isWithinRange(
           expense.created_at ??
-            expense.expense_date ??
-            expense.date,
+            expense.expense_date,
           currentMonth.start,
           currentMonth.end
         )
@@ -280,9 +279,9 @@ export async function getFinancialMetrics(): Promise<FinancialMetrics> {
       );
 
   /*
-   * ============================================================
+   * ==========================================================
    * PREVIOUS MONTH EXPENSES
-   * ============================================================
+   * ==========================================================
    */
 
   const previousMonthExpenses =
@@ -290,8 +289,7 @@ export async function getFinancialMetrics(): Promise<FinancialMetrics> {
       .filter((expense) =>
         isWithinRange(
           expense.created_at ??
-            expense.expense_date ??
-            expense.date,
+            expense.expense_date,
           previousMonth.start,
           previousMonth.end
         )
@@ -306,87 +304,66 @@ export async function getFinancialMetrics(): Promise<FinancialMetrics> {
       );
 
   /*
-   * ============================================================
-   * CORE OPERATING METRICS
-   * ============================================================
+   * ==========================================================
+   * CORE FINANCIAL VALUES
+   * ==========================================================
+   *
+   * These MUST match Mission Control.
    */
 
   const revenue =
-    currentMonthRevenue;
+    safeNumber(
+      snapshot.revenue
+    );
 
   const expenses =
-    currentMonthExpenses;
-
-  /*
-   * Cash-based profit.
-   *
-   * Unpaid invoices are not treated as cash.
-   */
+    safeNumber(
+      snapshot.expenses
+    );
 
   const profit =
-    currentMonthCollectedRevenue -
-    expenses;
-
-  const cashFlow =
-    currentMonthCollectedRevenue -
-    expenses;
-
-  /*
-   * IMPORTANT:
-   *
-   * ArkenOne does not currently have a connected bank balance.
-   *
-   * Therefore this is an estimated net financial position,
-   * NOT an actual bank balance.
-   */
+    safeNumber(
+      snapshot.profit
+    );
 
   const cash =
-    cashFlow;
+    safeNumber(
+      snapshot.cashAvailable
+    );
 
-  /*
-   * ============================================================
-   * RECEIVABLES
-   * ============================================================
-   */
+  const cashFlow =
+    profit;
 
   const outstandingReceivables =
-    invoices.reduce(
-      (sum, invoice) =>
-        sum +
-        Math.max(
-          0,
-          safeNumber(
-            invoice.balance_due
-          )
-        ),
-      0
+    safeNumber(
+      snapshot.outstandingReceivables
     );
 
   /*
-   * ============================================================
+   * ==========================================================
    * MARGINS
-   * ============================================================
+   * ==========================================================
    *
-   * This is a conservative operating indicator.
-   *
-   * It is not formal accounting gross margin because profit is
-   * currently calculated on a cash basis.
+   * Operating indicator for MVP.
    */
 
   const grossMargin =
-    revenue <= 0
-      ? 0
-      : (profit / revenue) * 100;
+    revenue > 0
+      ? (profit / revenue) * 100
+      : 0;
 
   const netMargin =
     grossMargin;
 
   /*
-   * ============================================================
-   * WORKING CAPITAL INDICATOR
-   * ============================================================
+   * ==========================================================
+   * WORKING CAPITAL
+   * ==========================================================
    *
    * ArkenOne does not yet have a complete balance sheet.
+   *
+   * Therefore this is an operational indicator rather than
+   * formal accounting working capital.
    */
 
   const workingCapital =
@@ -394,21 +371,20 @@ export async function getFinancialMetrics(): Promise<FinancialMetrics> {
     outstandingReceivables;
 
   /*
-   * ============================================================
+   * ==========================================================
    * MONTHLY BURN RATE
-   * ============================================================
+   * ==========================================================
    */
 
   const monthlyBurnRate =
     expenses;
 
   /*
-   * ============================================================
+   * ==========================================================
    * CASH RUNWAY
-   * ============================================================
+   * ==========================================================
    *
-   * This is an estimate because actual bank cash is not yet
-   * connected.
+   * Estimated because there is no connected bank balance.
    */
 
   const cashRunwayDays =
@@ -422,9 +398,9 @@ export async function getFinancialMetrics(): Promise<FinancialMetrics> {
         );
 
   /*
-   * ============================================================
-   * GROWTH
-   * ============================================================
+   * ==========================================================
+   * REVENUE GROWTH
+   * ==========================================================
    */
 
   const revenueGrowth =
@@ -436,6 +412,12 @@ export async function getFinancialMetrics(): Promise<FinancialMetrics> {
           previousMonthRevenue
         ) * 100;
 
+  /*
+   * ==========================================================
+   * EXPENSE GROWTH
+   * ==========================================================
+   */
+
   const expenseGrowth =
     previousMonthExpenses <= 0
       ? 0
@@ -446,103 +428,43 @@ export async function getFinancialMetrics(): Promise<FinancialMetrics> {
         ) * 100;
 
   /*
-   * ============================================================
+   * ==========================================================
    * PAYABLES
-   * ============================================================
+   * ==========================================================
    *
-   * ArkenOne does not currently have a reliable payable model.
+   * There is currently no reliable payable model.
    *
-   * We intentionally do not pretend that payables are zero
-   * because of an accounting assumption.
+   * We therefore do not invent payable data.
    */
 
   const outstandingPayables = 0;
 
   /*
-   * ============================================================
-   * FINANCIAL HEALTH
-   * ============================================================
+   * ==========================================================
+   * HEALTH SCORE
+   * ==========================================================
+   *
+   * Use the exact health score generated by the financial
+   * snapshot so Mission Control and AI CFO never disagree.
    */
 
-  let healthScore = 50;
-
-  if (revenue > 0) {
-    healthScore += 10;
-  }
-
-  if (profit > 0) {
-    healthScore += 15;
-  } else if (profit < 0) {
-    healthScore -= 15;
-  }
-
-  if (cashFlow > 0) {
-    healthScore += 10;
-  } else if (cashFlow < 0) {
-    healthScore -= 10;
-  }
-
-  /*
-   * Receivables risk.
-   */
-
-  if (
-    revenue > 0 &&
-    outstandingReceivables >
-      revenue * 0.5
-  ) {
-    healthScore -= 10;
-  }
-
-  /*
-   * Expense pressure.
-   */
-
-  if (
-    currentMonthCollectedRevenue >
-    0
-  ) {
-    const expenseRatio =
-      expenses /
-      currentMonthCollectedRevenue;
-
-    if (
-      expenseRatio >= 0.9
-    ) {
-      healthScore -= 15;
-    } else if (
-      expenseRatio >= 0.75
-    ) {
-      healthScore -= 8;
-    }
-  }
-
-  /*
-   * Growth signal.
-   */
-
-  if (revenueGrowth > 10) {
-    healthScore += 5;
-  } else if (
-    revenueGrowth < -10
-  ) {
-    healthScore -= 5;
-  }
-
-  healthScore = Math.min(
-    100,
-    Math.max(
-      0,
-      Math.round(
-        healthScore
+  const healthScore =
+    Math.min(
+      100,
+      Math.max(
+        0,
+        Math.round(
+          safeNumber(
+            snapshot.healthScore
+          )
+        )
       )
-    )
-  );
+    );
 
   /*
-   * ============================================================
-   * RETURN NORMALIZED FINANCIAL METRICS
-   * ============================================================
+   * ==========================================================
+   * RETURN
+   * ==========================================================
    */
 
   return {

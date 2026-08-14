@@ -1,5 +1,6 @@
 import { loadRazorpay } from "@/lib/loadRazorpay";
 import { QueryClient } from "@tanstack/react-query";
+
 type PaymentCheckoutParams = {
   invoiceId: number;
   customerName: string;
@@ -34,12 +35,22 @@ export async function openRazorpayCheckout({
   const result = await response.json();
 
   if (!response.ok) {
-    throw new Error(result.message ?? "Failed to create payment order.");
+    throw new Error(
+      result.message ?? "Failed to create payment order."
+    );
   }
 
   const order = result.data;
 
+  if (!order?.id || !order?.amount || !order?.currency) {
+    throw new Error("Invalid Razorpay order returned by the server.");
+  }
+
   const Razorpay = (window as any).Razorpay;
+
+  if (!Razorpay) {
+    throw new Error("Razorpay Checkout is not available.");
+  }
 
   const paymentObject = new Razorpay({
     key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
@@ -61,7 +72,7 @@ export async function openRazorpayCheckout({
     },
 
     theme: {
-      color: "#06b6d4",
+      color: "#D4AF37",
     },
 
     modal: {
@@ -83,7 +94,8 @@ export async function openRazorpayCheckout({
           }
         );
 
-        const verifyResult = await verifyResponse.json();
+        const verifyResult =
+          await verifyResponse.json();
 
         if (!verifyResponse.ok) {
           throw new Error(
@@ -94,33 +106,41 @@ export async function openRazorpayCheckout({
 
         alert("Payment Successful!");
 
-await Promise.all([
-  queryClient.invalidateQueries({
-    queryKey: ["dashboard"],
-  }),
+        await Promise.all([
+          queryClient.invalidateQueries({
+            queryKey: ["dashboard"],
+          }),
 
-  queryClient.invalidateQueries({
-    queryKey: ["customers"],
-  }),
+          queryClient.invalidateQueries({
+            queryKey: ["customers"],
+          }),
 
-  queryClient.invalidateQueries({
-    queryKey: ["invoices"],
-  }),
+          queryClient.invalidateQueries({
+            queryKey: ["invoices"],
+          }),
 
-  queryClient.invalidateQueries({
-    queryKey: ["business-health"],
-  }),
+          queryClient.invalidateQueries({
+            queryKey: ["business-health"],
+          }),
 
-  queryClient.invalidateQueries({
-    queryKey: ["financial-analysis"],
-  }),
+          queryClient.invalidateQueries({
+            queryKey: ["financial-analysis"],
+          }),
 
-  queryClient.invalidateQueries({
-    queryKey: ["ai-cfo"],
-  }),
-]);
+          queryClient.invalidateQueries({
+            queryKey: ["ai-cfo"],
+          }),
+        ]);
       } catch (error) {
-        console.error(error);
+        console.error(
+          "RAZORPAY VERIFICATION ERROR:",
+          error
+        );
+
+        console.error(
+          "RAZORPAY VERIFICATION ERROR JSON:",
+          JSON.stringify(error, null, 2)
+        );
 
         alert(
           error instanceof Error
@@ -131,15 +151,48 @@ await Promise.all([
     },
   });
 
-  paymentObject.on("payment.failed", function (response: any) {
-    console.error(response);
+  paymentObject.on(
+    "payment.failed",
+    function (response: any) {
+      console.error(
+        "RAZORPAY PAYMENT FAILED:",
+        JSON.stringify(response, null, 2)
+      );
 
-    const description =
-      response?.error?.description ??
-      "Your payment could not be completed.";
+      console.error(
+        "RAZORPAY ERROR CODE:",
+        response?.error?.code
+      );
 
-    alert(`Payment Failed\n\n${description}`);
-  });
+      console.error(
+        "RAZORPAY ERROR DESCRIPTION:",
+        response?.error?.description
+      );
+
+      console.error(
+        "RAZORPAY ERROR SOURCE:",
+        response?.error?.source
+      );
+
+      console.error(
+        "RAZORPAY ERROR STEP:",
+        response?.error?.step
+      );
+
+      console.error(
+        "RAZORPAY ERROR REASON:",
+        response?.error?.reason
+      );
+
+      const description =
+        response?.error?.description ??
+        "Your payment could not be completed.";
+
+      alert(
+        `Payment Failed\n\n${description}`
+      );
+    }
+  );
 
   paymentObject.open();
 }

@@ -5,6 +5,9 @@ import { ArrowUpRight, Sparkles } from "lucide-react";
 
 interface Props {
   revenue: number;
+  expenses: number;
+  profit: number;
+  cashAvailable: number;
   receivables: number;
   healthScore: number;
 }
@@ -26,21 +29,20 @@ function getGreeting() {
 
 export default function MissionHero({
   revenue,
+  expenses,
+  profit,
+  cashAvailable,
   receivables,
   healthScore,
 }: Props) {
   const greeting = getGreeting();
 
-  const score = Math.max(0, Math.min(100, healthScore ?? 0));
+  const score = Math.max(
+    0,
+    Math.min(100, Number(healthScore ?? 0))
+  );
 
-  /*
-   * Business performance visual:
-   *
-   * 85–100  → strong upward trajectory
-   * 70–84   → gentle upward trajectory
-   * 50–69   → stable / flat trajectory
-   * 0–49    → downward trajectory
-   */
+  const profitPositive = Number(profit ?? 0) >= 0;
 
   const linePoints =
     score >= 85
@@ -80,9 +82,7 @@ export default function MissionHero({
         lg:py-11
       "
     >
-      {/* =========================================================
-          SUBTLE EXECUTIVE GLOW
-      ========================================================= */}
+      {/* SUBTLE EXECUTIVE GLOW */}
 
       <div
         className="
@@ -98,10 +98,7 @@ export default function MissionHero({
         "
       />
 
-      {/* =========================================================
-          SUBTLE PERFORMANCE TRAJECTORY
-          Lives ONLY in the empty right-side space.
-      ========================================================= */}
+      {/* PERFORMANCE TRAJECTORY */}
 
       <div
         className="
@@ -116,8 +113,6 @@ export default function MissionHero({
           lg:block
         "
       >
-        {/* Very subtle baseline */}
-
         <div
           className="
             absolute
@@ -128,8 +123,6 @@ export default function MissionHero({
             bg-white/[0.035]
           "
         />
-
-        {/* Very subtle vertical guide */}
 
         <div
           className="
@@ -154,8 +147,6 @@ export default function MissionHero({
           fill="none"
           preserveAspectRatio="none"
         >
-          {/* Main trajectory */}
-
           <motion.polyline
             points={linePoints}
             stroke="#D4AF37"
@@ -177,8 +168,6 @@ export default function MissionHero({
             }}
           />
 
-          {/* Extremely subtle secondary line */}
-
           <motion.polyline
             points={linePoints}
             stroke="#D4AF37"
@@ -198,8 +187,6 @@ export default function MissionHero({
             }}
           />
         </svg>
-
-        {/* Endpoint */}
 
         <motion.div
           initial={{
@@ -227,9 +214,7 @@ export default function MissionHero({
         />
       </div>
 
-      {/* =========================================================
-          CONTENT
-      ========================================================= */}
+      {/* CONTENT */}
 
       <div className="relative">
         {/* LABEL */}
@@ -308,11 +293,21 @@ export default function MissionHero({
           <span className="font-semibold text-white">
             {money(revenue)}
           </span>{" "}
-          in recorded revenue, with{" "}
-          <span className="font-semibold text-[#D4AF37]">
-            {money(receivables)}
+          in recorded revenue and incurred{" "}
+          <span className="font-semibold text-red-300">
+            {money(expenses)}
           </span>{" "}
-          currently outstanding.
+          in expenses, leaving{" "}
+          <span
+            className={`font-semibold ${
+              profitPositive
+                ? "text-emerald-400"
+                : "text-red-400"
+            }`}
+          >
+            {money(Math.abs(profit))}
+          </span>{" "}
+          in {profitPositive ? "profit" : "loss"}.
         </p>
 
         {/* DIVIDER */}
@@ -321,7 +316,7 @@ export default function MissionHero({
 
         {/* KEY FIGURES */}
 
-        <div className="mt-7 grid gap-4 sm:grid-cols-2">
+        <div className="mt-7 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {/* REVENUE */}
 
           <div
@@ -342,7 +337,7 @@ export default function MissionHero({
                 text-zinc-500
               "
             >
-              Recorded Revenue
+              Revenue
             </p>
 
             <div className="mt-3 flex items-end justify-between gap-4">
@@ -364,7 +359,7 @@ export default function MissionHero({
             </div>
           </div>
 
-          {/* RECEIVABLES */}
+          {/* EXPENSES */}
 
           <div
             className="
@@ -372,6 +367,142 @@ export default function MissionHero({
               border
               border-white/[0.05]
               bg-white/[0.02]
+              px-6
+              py-5
+            "
+          >
+            <p
+              className="
+                text-[10px]
+                uppercase
+                tracking-[0.3em]
+                text-zinc-500
+              "
+            >
+              Expenses
+            </p>
+
+            <div className="mt-3 flex items-end justify-between gap-4">
+              <p
+                className="
+                  text-3xl
+                  font-semibold
+                  tracking-[-0.03em]
+                  text-red-300
+                "
+              >
+                {money(expenses)}
+              </p>
+
+              <ArrowUpRight
+                size={18}
+                className="mb-1 text-zinc-500"
+              />
+            </div>
+          </div>
+
+          {/* PROFIT */}
+
+          <div
+            className="
+              rounded-2xl
+              border
+              border-white/[0.05]
+              bg-white/[0.02]
+              px-6
+              py-5
+            "
+          >
+            <p
+              className="
+                text-[10px]
+                uppercase
+                tracking-[0.3em]
+                text-zinc-500
+              "
+            >
+              {profitPositive ? "Net Profit" : "Net Loss"}
+            </p>
+
+            <div className="mt-3 flex items-end justify-between gap-4">
+              <p
+                className={`
+                  text-3xl
+                  font-semibold
+                  tracking-[-0.03em]
+                  ${
+                    profitPositive
+                      ? "text-emerald-400"
+                      : "text-red-400"
+                  }
+                `}
+              >
+                {money(Math.abs(profit))}
+              </p>
+
+              <ArrowUpRight
+                size={18}
+                className={
+                  profitPositive
+                    ? "mb-1 text-emerald-400"
+                    : "mb-1 text-red-400"
+                }
+              />
+            </div>
+          </div>
+
+          {/* CASH */}
+
+          <div
+            className="
+              rounded-2xl
+              border
+              border-white/[0.05]
+              bg-white/[0.02]
+              px-6
+              py-5
+            "
+          >
+            <p
+              className="
+                text-[10px]
+                uppercase
+                tracking-[0.3em]
+                text-zinc-500
+              "
+            >
+              Available Cash
+            </p>
+
+            <div className="mt-3 flex items-end justify-between gap-4">
+              <p
+                className="
+                  text-3xl
+                  font-semibold
+                  tracking-[-0.03em]
+                  text-white
+                "
+              >
+                {money(cashAvailable)}
+              </p>
+
+              <ArrowUpRight
+                size={18}
+                className="mb-1 text-zinc-500"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* RECEIVABLES + HEALTH */}
+
+        <div className="mt-4 grid gap-4 sm:grid-cols-2">
+          <div
+            className="
+              rounded-2xl
+              border
+              border-[#D4AF37]/10
+              bg-[#D4AF37]/[0.025]
               px-6
               py-5
             "
@@ -393,7 +524,7 @@ export default function MissionHero({
                   text-3xl
                   font-semibold
                   tracking-[-0.03em]
-                  text-white
+                  text-[#D4AF37]
                 "
               >
                 {money(receivables)}
@@ -401,7 +532,60 @@ export default function MissionHero({
 
               <ArrowUpRight
                 size={18}
-                className="mb-1 text-zinc-500"
+                className="mb-1 text-[#D4AF37]"
+              />
+            </div>
+          </div>
+
+          <div
+            className="
+              rounded-2xl
+              border
+              border-white/[0.05]
+              bg-white/[0.02]
+              px-6
+              py-5
+            "
+          >
+            <div className="flex items-center justify-between">
+              <p
+                className="
+                  text-[10px]
+                  uppercase
+                  tracking-[0.3em]
+                  text-zinc-500
+                "
+              >
+                Financial Health
+              </p>
+
+              <span
+                className="
+                  text-2xl
+                  font-semibold
+                  text-white
+                "
+              >
+                {Math.round(score)}
+                <span className="ml-1 text-xs text-zinc-600">
+                  /100
+                </span>
+              </span>
+            </div>
+
+            <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-white/[0.06]">
+              <motion.div
+                initial={{ width: 0 }}
+                animate={{ width: `${score}%` }}
+                transition={{
+                  duration: 0.8,
+                  ease: "easeOut",
+                }}
+                className="
+                  h-full
+                  rounded-full
+                  bg-[#D4AF37]
+                "
               />
             </div>
           </div>

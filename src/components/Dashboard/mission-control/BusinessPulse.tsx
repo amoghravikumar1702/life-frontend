@@ -13,6 +13,8 @@ import {
 
 interface Snapshot {
   revenue: number;
+  expenses: number;
+  profit: number;
   cashAvailable: number;
   outstandingReceivables: number;
   customerCount: number;
@@ -25,35 +27,37 @@ interface Props {
 }
 
 function money(value: number) {
-  if (value >= 10000000) {
-    return `₹${(value / 10000000).toFixed(1)}Cr`;
+  const amount = Number(value ?? 0);
+
+  if (amount >= 10000000) {
+    return `₹${(amount / 10000000).toFixed(1)}Cr`;
   }
 
-  if (value >= 100000) {
-    return `₹${Math.round(value / 100000)}L`;
+  if (amount >= 100000) {
+    return `₹${Math.round(amount / 100000)}L`;
   }
 
-  if (value >= 1000) {
-    return `₹${Math.round(value / 1000)}K`;
+  if (amount >= 1000) {
+    return `₹${Math.round(amount / 1000)}K`;
   }
 
-  return `₹${Math.round(value)}`;
+  return `₹${Math.round(amount)}`;
 }
 
 function MetricCard({
   title,
   value,
   icon: Icon,
+  valueClassName = "text-white",
 }: {
   title: string;
   value: string;
   icon: React.ElementType;
+  valueClassName?: string;
 }) {
   return (
     <motion.div
-      whileHover={{
-        y: -2,
-      }}
+      whileHover={{ y: -2 }}
       transition={{
         duration: 0.2,
         ease: "easeOut",
@@ -112,13 +116,13 @@ function MetricCard({
       </div>
 
       <p
-        className="
+        className={`
           mt-5
           text-[21px]
           font-semibold
           tracking-[-0.03em]
-          text-white
-        "
+          ${valueClassName}
+        `}
       >
         {value}
       </p>
@@ -132,6 +136,16 @@ export default function BusinessPulse({
   const score = Math.max(
     0,
     Math.min(100, Number(snapshot.healthScore ?? 0))
+  );
+
+  const revenue = Number(snapshot.revenue ?? 0);
+  const expenses = Number(snapshot.expenses ?? 0);
+  const profit = Number(snapshot.profit ?? 0);
+  const cashAvailable = Number(
+    snapshot.cashAvailable ?? 0
+  );
+  const receivables = Number(
+    snapshot.outstandingReceivables ?? 0
   );
 
   const healthColor =
@@ -168,6 +182,13 @@ export default function BusinessPulse({
         ? "text-zinc-400"
         : "text-red-400";
 
+  const profitColor =
+    profit > 0
+      ? "text-emerald-400"
+      : profit < 0
+        ? "text-red-400"
+        : "text-zinc-300";
+
   return (
     <motion.section
       initial={{
@@ -195,9 +216,7 @@ export default function BusinessPulse({
         hover:border-white/[0.09]
       "
     >
-      {/* =========================================================
-          HEADER
-      ========================================================= */}
+      {/* HEADER */}
 
       <div
         className="
@@ -280,9 +299,7 @@ export default function BusinessPulse({
         </div>
       </div>
 
-      {/* =========================================================
-          HEALTH
-      ========================================================= */}
+      {/* HEALTH */}
 
       <div className="border-t border-white/[0.05] px-6 py-5">
         <div className="flex items-end justify-between">
@@ -344,16 +361,10 @@ export default function BusinessPulse({
           </div>
         </div>
 
-        {/* HEALTH BAR */}
-
         <div className="mt-5 h-1.5 overflow-hidden rounded-full bg-white/[0.06]">
           <motion.div
-            initial={{
-              width: 0,
-            }}
-            animate={{
-              width: `${score}%`,
-            }}
+            initial={{ width: 0 }}
+            animate={{ width: `${score}%` }}
             transition={{
               duration: 0.8,
               ease: "easeOut",
@@ -363,93 +374,112 @@ export default function BusinessPulse({
         </div>
       </div>
 
-      {/* =========================================================
-          KPI GRID
-      ========================================================= */}
+      {/* KPI GRID */}
 
       <div className="grid grid-cols-3 gap-px bg-white/[0.05]">
         <MetricCard
           title="Revenue"
-          value={money(snapshot.revenue)}
+          value={money(revenue)}
           icon={TrendingUp}
         />
 
         <MetricCard
           title="Expenses"
-          value={money(
-            Math.max(
-              0,
-              snapshot.revenue -
-                snapshot.cashAvailable
-            )
-          )}
+          value={money(expenses)}
           icon={Receipt}
+          valueClassName={
+            expenses > 0
+              ? "text-red-300"
+              : "text-zinc-300"
+          }
         />
 
         <MetricCard
           title="Profit"
-          value={money(snapshot.revenue)}
+          value={money(profit)}
           icon={Activity}
+          valueClassName={profitColor}
         />
 
         <MetricCard
           title="Cash"
-          value={money(snapshot.cashAvailable)}
+          value={money(cashAvailable)}
           icon={Wallet}
         />
 
         <MetricCard
           title="Receivables"
-          value={money(
-            snapshot.outstandingReceivables
-          )}
+          value={money(receivables)}
           icon={Activity}
+          valueClassName={
+            receivables > 0
+              ? "text-amber-300"
+              : "text-zinc-300"
+          }
         />
 
         <MetricCard
           title="Customers"
-          value={snapshot.customerCount.toString()}
+          value={String(
+            Number(snapshot.customerCount ?? 0)
+          )}
           icon={Users}
         />
       </div>
 
-      {/* =========================================================
-          FOOTER
-      ========================================================= */}
+      {/* FINANCIAL POSITION NOTE */}
 
       <div
         className="
-          flex
-          items-center
-          justify-between
           border-t
           border-white/[0.05]
           px-6
           py-4
         "
       >
-        <span
-          className="
-            text-[9px]
-            font-medium
-            uppercase
-            tracking-[0.32em]
-            text-zinc-600
-          "
-        >
-          Executive Overview
-        </span>
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <p
+              className="
+                text-[9px]
+                font-medium
+                uppercase
+                tracking-[0.32em]
+                text-zinc-600
+              "
+            >
+              Net Position
+            </p>
 
-        <ArrowUpRight
-          size={15}
-          className="
-            text-[#D4AF37]
-            transition-transform
-            duration-300
-            group-hover:translate-x-0.5
-            group-hover:-translate-y-0.5
-          "
-        />
+            <p
+              className={`
+                mt-1
+                text-xs
+                font-medium
+                ${profitColor}
+              `}
+            >
+              {profit > 0
+                ? `Operating profit of ${money(profit)}`
+                : profit < 0
+                  ? `Operating loss of ${money(
+                      Math.abs(profit)
+                    )}`
+                  : "No operating profit recorded yet"}
+            </p>
+          </div>
+
+          <ArrowUpRight
+            size={15}
+            className="
+              text-[#D4AF37]
+              transition-transform
+              duration-300
+              group-hover:translate-x-0.5
+              group-hover:-translate-y-0.5
+            "
+          />
+        </div>
       </div>
     </motion.section>
   );

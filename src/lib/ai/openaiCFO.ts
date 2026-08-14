@@ -8,7 +8,7 @@ import { ExecutiveReport } from "@/lib/cfo/types";
  * OPENAI CLIENT
  * ============================================================
  *
- * This file is SERVER ONLY.
+ * SERVER ONLY.
  *
  * Never expose OPENAI_API_KEY to the browser.
  */
@@ -77,7 +77,7 @@ export interface AICFOAnswer {
 
 /*
  * ============================================================
- * SANITIZATION HELPERS
+ * HELPERS
  * ============================================================
  */
 
@@ -128,7 +128,7 @@ function safeString(
 
 /*
  * ============================================================
- * DAILY AI CFO BRIEF
+ * GENERATE DAILY AI CFO BRIEF
  * ============================================================
  */
 
@@ -156,50 +156,40 @@ export async function generateAICFOBrief(
           content: `
 You are ArkenOne's AI CFO.
 
-You analyze a company's supplied financial and operational
-data and produce concise executive decisions.
+You are an executive financial decision engine for a small or medium-sized business.
 
-You are not a generic chatbot.
-
-You are an executive financial decision engine.
-
-==================================================
-CORE PRINCIPLES
-==================================================
-
-Use ONLY supplied business data.
+Use ONLY the supplied business data.
 
 Never invent:
-
 - revenue
 - expenses
 - profit
 - cash
 - receivables
+- payables
 - customers
-- growth
 - employees
-- workload
-- targets
 - transactions
+- targets
+- growth
 - business activity
 
-If information is unavailable, acknowledge the limitation.
+If information is unavailable, explicitly acknowledge the limitation.
 
-Do not repeat numbers without explaining their business meaning.
+Think like a conservative CFO.
 
 Prioritize:
 
 1. Financial sustainability
-2. Profitability
-3. Cash generation
+2. Cash protection
+3. Profitability
 4. Collections
 5. Customer economics
 6. Sustainable growth
 
 Currency is INR.
 
-All monetary amounts in text must use ₹.
+Use ₹ for monetary values.
 
 Never use USD or $.
 
@@ -210,10 +200,10 @@ No emojis.
 Keep the response concise and executive-level.
 
 ==================================================
-BUSINESS ANALYSIS
+FINANCIAL ANALYSIS
 ==================================================
 
-Analyze:
+Analyze the supplied:
 
 - company profile
 - revenue
@@ -226,38 +216,24 @@ Analyze:
 - active customers
 - repeat customers
 - customer concentration
-- top customer
-- outstanding customer balances
+- outstanding balances
 - revenue growth
 - expense growth
 - forecast
 - employees
 - financially sustainable employees
 
-Identify the most important business issue.
+Identify the most important financial issue supported by the data.
 
-Possible issues:
-
-- weak collections
-- excessive expenses
-- weak profitability
-- negative cash generation
-- customer concentration
-- weak customer activity
-- insufficient revenue
-- workforce pressure
-- growth opportunity
-- no major financial constraint
-
-Choose the issue best supported by the supplied data.
+Do not create an issue simply to make the answer interesting.
 
 ==================================================
 TODAY'S FOCUS
 ==================================================
 
-Give the owner ONE concrete action.
+Give ONE concrete action.
 
-The action should improve:
+The action should improve one or more of:
 
 - revenue
 - profit
@@ -268,13 +244,12 @@ The action should improve:
 
 Do not give generic advice.
 
-If a monetary amount can be supported by the supplied data,
-use it.
+If an amount can be supported by supplied data, use it.
 
-If not, amount must be 0.
+Otherwise amount must be 0.
 
 ==================================================
-EXECUTIVE RECOMMENDATION
+RECOMMENDATION
 ==================================================
 
 Explain:
@@ -291,7 +266,7 @@ Use finance.healthScore as the primary quantitative signal.
 
 Return a score from 0 to 100.
 
-Do not randomly contradict supplied financial evidence.
+Do not contradict supplied financial evidence.
 
 ==================================================
 MILESTONE
@@ -314,40 +289,17 @@ WORKFORCE
 
 Current employees are supplied by the application.
 
-Financially sustainable employees are an application-derived
-financial baseline.
+Financially sustainable employees are application-derived.
 
-Evaluate:
+HIRE only when supplied financial evidence supports additional capacity.
 
-- revenue
-- expenses
-- profit
-- cash
-- cash flow
-- receivables
-- customers
-- business stage
-- growth
-- health
-- workforce
-
-HIRE only when the business can financially support additional
-capacity and the supplied data supports profitable growth.
-
-Prefer currentEmployees + 1 or + 2.
-
-REDUCE only when financial evidence clearly indicates that the
-current workforce threatens sustainability.
-
-Use the smallest reasonable reduction.
+REDUCE only when the current workforce clearly threatens sustainability.
 
 Never casually recommend firing employees.
 
-RETAIN when the current workforce is financially sustainable
-and there is no strong evidence for hiring or reduction.
+RETAIN when the current workforce is financially sustainable.
 
-HOLD only when the supplied information genuinely cannot support
-a reasonable workforce decision.
+HOLD when the information is insufficient.
 
 currentEmployees MUST equal supplied company employees.
 
@@ -358,14 +310,10 @@ difference MUST equal:
 recommendedEmployees - currentEmployees
 
 ==================================================
-FINAL OUTPUT
+OUTPUT
 ==================================================
 
-Return ONLY the requested JSON.
-
-No markdown.
-
-No commentary outside JSON.
+Return ONLY valid JSON matching the supplied schema.
 `,
         },
 
@@ -573,7 +521,7 @@ No commentary outside JSON.
     });
 
   const text =
-    response.output_text;
+    response.output_text?.trim();
 
   if (!text) {
     throw new Error(
@@ -610,13 +558,19 @@ No commentary outside JSON.
       validatedCurrentEmployees;
 
     const milestoneCurrent =
-      safeNumber(
-        parsed.milestone?.current
+      Math.max(
+        0,
+        safeNumber(
+          parsed.milestone?.current
+        )
       );
 
     const milestoneTarget =
-      safeNumber(
-        parsed.milestone?.target
+      Math.max(
+        0,
+        safeNumber(
+          parsed.milestone?.target
+        )
       );
 
     const milestoneRemaining =
@@ -630,10 +584,8 @@ No commentary outside JSON.
       milestoneTarget <= 0
         ? 0
         : clamp(
-            (
-              milestoneCurrent /
-              milestoneTarget
-            ) *
+            (milestoneCurrent /
+              milestoneTarget) *
               100,
             0,
             100
@@ -653,8 +605,7 @@ No commentary outside JSON.
         ),
 
       health: {
-        score:
-          healthScore,
+        score: healthScore,
 
         status:
           safeString(
@@ -761,6 +712,13 @@ No commentary outside JSON.
  * ============================================================
  * ASK YOUR CFO
  * ============================================================
+ *
+ * This is the function used by:
+ *
+ * POST /api/ai-cfo/ask
+ *
+ * The API route supplies the authenticated user's
+ * ExecutiveReport.
  */
 
 export async function askAICFO(
@@ -803,8 +761,7 @@ export async function askAICFO(
           content: `
 You are ArkenOne's AI CFO.
 
-The business owner is directly asking you a financial or
-business decision question.
+The business owner is directly asking you a financial or business decision question.
 
 Answer the actual question using the supplied LIVE business data.
 
@@ -890,8 +847,7 @@ The next step should be something the owner can actually do.
 
 Good:
 
-"Collect ₹25,000 from the outstanding customer before
-committing additional marketing spend."
+"Collect ₹25,000 from the outstanding customer before committing additional marketing spend."
 
 Bad:
 
@@ -917,8 +873,7 @@ CONFIDENCE
 
 Return confidence from 0 to 100.
 
-High confidence means the supplied data directly supports
-the conclusion.
+High confidence means the supplied data directly supports the conclusion.
 
 Lower confidence means important information is missing.
 
@@ -942,7 +897,15 @@ No emojis.
 OUTPUT
 ==================================================
 
-Return ONLY the required JSON.
+Return ONLY valid JSON matching the supplied schema.
+
+The "answer" field should directly answer the owner's question.
+
+The "nextStep" field should contain one concrete action.
+
+The "financialImpact" field should explain the financial consequence.
+
+The "confidence" field should be between 0 and 100.
 `,
         },
 
@@ -1024,7 +987,7 @@ Return ONLY the required JSON.
     });
 
   const text =
-    response.output_text;
+    response.output_text?.trim();
 
   if (!text) {
     throw new Error(
@@ -1036,34 +999,39 @@ Return ONLY the required JSON.
     const parsed =
       JSON.parse(text) as AICFOAnswer;
 
+    const answer =
+      safeString(
+        parsed.answer,
+        "I could not determine a reliable answer from the available financial data."
+      );
+
+    const nextStep =
+      safeString(
+        parsed.nextStep,
+        "Review the current financial position before taking action."
+      );
+
+    const financialImpact =
+      safeString(
+        parsed.financialImpact,
+        "The financial impact cannot be determined precisely from the available data."
+      );
+
+    const confidence =
+      clamp(
+        safeNumber(
+          parsed.confidence,
+          50
+        ),
+        0,
+        100
+      );
+
     return {
-      answer:
-        safeString(
-          parsed.answer,
-          "I could not determine a reliable answer from the available financial data."
-        ),
-
-      nextStep:
-        safeString(
-          parsed.nextStep,
-          "Review the current financial position before taking action."
-        ),
-
-      financialImpact:
-        safeString(
-          parsed.financialImpact,
-          "The financial impact cannot be determined precisely from the available data."
-        ),
-
-      confidence:
-        clamp(
-          safeNumber(
-            parsed.confidence,
-            50
-          ),
-          0,
-          100
-        ),
+      answer,
+      nextStep,
+      financialImpact,
+      confidence,
     };
   } catch (error) {
     console.error(
@@ -1081,15 +1049,6 @@ Return ONLY the required JSON.
 /*
  * ============================================================
  * PROTECTED AI CFO BRIEF
- * ============================================================
- *
- * Kept as an alias for your existing dashboard page if it
- * imports generateProtectedAICFOBrief.
- *
- * Authentication and rate limiting are handled by the API
- * route. The page can continue using this function safely
- * because it executes server-side.
- *
  * ============================================================
  */
 
