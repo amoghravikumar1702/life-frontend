@@ -72,12 +72,22 @@ export interface AICFOBrief {
     progress: number;
   };
 
-  capacity: {
-    title: string;
-    status: string;
+  /*
+   * WORKFORCE
+   *
+   * IMPORTANT:
+   *
+   * The AI CFO receives the actual employee count.
+   *
+   * It does NOT produce a hardcoded recommended employee
+   * count anymore.
+   *
+   * Workforce decisions belong to the AI CFO's reasoning.
+   */
+
+  workforce: {
     currentEmployees: number;
-    recommendedEmployees: number;
-    difference: number;
+    status: string;
     recommendation: string;
   };
 }
@@ -253,25 +263,19 @@ function createOpenAIError(
     );
   }
 
-  if (
-    status === 403
-  ) {
+  if (status === 403) {
     return new Error(
       `ArkenOne AI CFO: OpenAI project does not have access to model "${model}".`
     );
   }
 
-  if (
-    status === 404
-  ) {
+  if (status === 404) {
     return new Error(
       `ArkenOne AI CFO: model "${model}" was not found or is unavailable to this API project.`
     );
   }
 
-  if (
-    status === 429
-  ) {
+  if (status === 429) {
     return new Error(
       "ArkenOne AI CFO: OpenAI rate limit or quota limit reached."
     );
@@ -300,11 +304,6 @@ export async function generateAICFOBrief(
   const currentEmployees =
     getReportEmployees(report);
 
-  const financiallySustainableEmployees =
-    safeInteger(
-      report.financiallySustainableEmployees
-    );
-
   let response:
     OpenAI.Responses.Response;
 
@@ -324,17 +323,29 @@ Never invent revenue, expenses, profit, cash, receivables,
 customers, employees, targets, transactions, growth,
 or future events.
 
+============================================================
+FINANCIAL DATA
+============================================================
+
 Revenue = supplied revenue.
 
-Expenses = recorded expenses.
+Expenses = recorded business expenses.
 
-Profit = revenue minus expenses.
+Profit = supplied profit.
+
+If profit is not supplied reliably, calculate:
+
+profit = revenue - expenses
 
 Outstanding receivables are NOT available cash.
 
 Do not claim a verified bank balance unless explicitly supplied.
 
 Currency is INR. Always use ₹.
+
+============================================================
+PRIORITIES
+============================================================
 
 Prioritize:
 
@@ -344,6 +355,49 @@ Prioritize:
 4. Collections
 5. Customer economics
 6. Sustainable growth
+7. Workforce sustainability
+
+============================================================
+WORKFORCE
+============================================================
+
+The supplied employee count is the ACTUAL current workforce.
+
+Do NOT calculate a generic employee quota.
+
+Do NOT use revenue divided by an arbitrary employee amount.
+
+Do NOT produce a hardcoded recommended employee count.
+
+Do NOT assume that more revenue means more employees are required.
+
+When evaluating workforce:
+
+Consider:
+
+- revenue
+- expenses
+- profit
+- cash flow
+- runway
+- receivables
+- business growth
+- operational requirements
+- actual employee count
+
+Only recommend hiring when the financial and operational
+evidence supports it.
+
+Only recommend reducing workforce when the evidence strongly
+supports it.
+
+Never casually recommend firing employees.
+
+If the data is insufficient, say so.
+
+============================================================
+TODAY'S FOCUS
+============================================================
 
 Today's focus must contain ONE concrete action supported by
 the supplied financial data.
@@ -352,28 +406,59 @@ Use:
 
 Decision → Financial reason → Business outcome
 
-Use the supplied health score as the primary health signal.
+============================================================
+MILESTONE
+============================================================
 
 Only create a milestone when the supplied data supports one.
 
-currentEmployees MUST equal the supplied employee count.
+Never invent a target.
 
-recommendedEmployees MUST be an integer.
+If no reliable target exists:
 
-difference MUST equal:
+title = "Financial milestone"
 
-recommendedEmployees - currentEmployees
+current = 0
 
-Do not casually recommend firing employees.
+target = 0
 
-Only recommend hiring when the supplied financial information
-supports sustainable additional capacity.
+remaining = 0
+
+progress = 0
+
+============================================================
+WORKFORCE RESPONSE
+============================================================
+
+Return:
+
+currentEmployees:
+The exact supplied employee count.
+
+status:
+A concise workforce assessment.
+
+recommendation:
+The AI CFO's reasoning about the current workforce.
+
+This recommendation must be based on actual business data.
+
+Do NOT return a recommended employee number.
+
+============================================================
+STYLE
+============================================================
 
 Professional.
+
 Direct.
+
 Concise.
+
 Executive-level.
+
 No emojis.
+
 No markdown.
 
 Return ONLY valid JSON matching the supplied schema.
@@ -382,12 +467,14 @@ Return ONLY valid JSON matching the supplied schema.
         input: JSON.stringify({
           company: {
             ...report.company,
+
             employees:
               currentEmployees,
           },
 
           finance: {
             ...report.finance,
+
             healthScore:
               safeNumber(
                 report.finance?.healthScore
@@ -403,9 +490,12 @@ Return ONLY valid JSON matching the supplied schema.
           forecast:
             report.forecast,
 
-          workforceAnalysis: {
-            financiallySustainableEmployees,
+          workforce: {
             currentEmployees,
+
+            rationale:
+              report.workforce?.rationale ??
+              "",
           },
         }),
 
@@ -528,31 +618,19 @@ Return ONLY valid JSON matching the supplied schema.
                   ],
                 },
 
-                capacity: {
+                workforce: {
                   type: "object",
 
                   additionalProperties:
                     false,
 
                   properties: {
-                    title: {
-                      type: "string",
-                    },
-
-                    status: {
-                      type: "string",
-                    },
-
                     currentEmployees: {
                       type: "number",
                     },
 
-                    recommendedEmployees: {
-                      type: "number",
-                    },
-
-                    difference: {
-                      type: "number",
+                    status: {
+                      type: "string",
                     },
 
                     recommendation: {
@@ -561,11 +639,8 @@ Return ONLY valid JSON matching the supplied schema.
                   },
 
                   required: [
-                    "title",
-                    "status",
                     "currentEmployees",
-                    "recommendedEmployees",
-                    "difference",
+                    "status",
                     "recommendation",
                   ],
                 },
@@ -578,7 +653,7 @@ Return ONLY valid JSON matching the supplied schema.
                 "todaysFocus",
                 "recommendation",
                 "milestone",
-                "capacity",
+                "workforce",
               ],
             },
           },
@@ -591,6 +666,7 @@ Return ONLY valid JSON matching the supplied schema.
       "[ArkenOne CFO] OpenAI request failed:",
       {
         model,
+
         status:
           (
             error as {
@@ -606,6 +682,12 @@ Return ONLY valid JSON matching the supplied schema.
     );
   }
 
+  /*
+   * ==========================================================
+   * EXTRACT OUTPUT
+   * ==========================================================
+   */
+
   const text =
     extractResponseText(
       response
@@ -616,6 +698,12 @@ Return ONLY valid JSON matching the supplied schema.
       `ArkenOne AI CFO: model "${model}" returned no usable output.`
     );
   }
+
+  /*
+   * ==========================================================
+   * PARSE
+   * ==========================================================
+   */
 
   let parsed:
     Partial<AICFOBrief>;
@@ -630,6 +718,12 @@ Return ONLY valid JSON matching the supplied schema.
     );
   }
 
+  /*
+   * ==========================================================
+   * NORMALIZE HEALTH
+   * ==========================================================
+   */
+
   const healthScore =
     clamp(
       safeNumber(
@@ -642,16 +736,11 @@ Return ONLY valid JSON matching the supplied schema.
       100
     );
 
-  const recommendedEmployees =
-    safeInteger(
-      parsed.capacity
-        ?.recommendedEmployees,
-      currentEmployees
-    );
-
-  const difference =
-    recommendedEmployees -
-    currentEmployees;
+  /*
+   * ==========================================================
+   * NORMALIZE MILESTONE
+   * ==========================================================
+   */
 
   const milestoneCurrent =
     Math.max(
@@ -687,6 +776,27 @@ Return ONLY valid JSON matching the supplied schema.
           0,
           100
         );
+
+  /*
+   * ==========================================================
+   * NORMALIZE WORKFORCE
+   * ==========================================================
+   *
+   * IMPORTANT:
+   *
+   * currentEmployees comes from the business report.
+   *
+   * We intentionally ignore any AI-generated employee count.
+   */
+
+  const workforceCurrentEmployees =
+    currentEmployees;
+
+  /*
+   * ==========================================================
+   * FINAL BRIEF
+   * ==========================================================
+   */
 
   return {
     greeting:
@@ -766,32 +876,20 @@ Return ONLY valid JSON matching the supplied schema.
         milestoneProgress,
     },
 
-    capacity: {
-      title:
-        safeString(
-          parsed.capacity?.title,
-          "Team Capacity"
-        ),
+    workforce: {
+      currentEmployees:
+        workforceCurrentEmployees,
 
       status:
         safeString(
-          parsed.capacity?.status,
+          parsed.workforce?.status,
           "Workforce assessment"
         ),
 
-      currentEmployees:
-        currentEmployees,
-
-      recommendedEmployees:
-        recommendedEmployees,
-
-      difference:
-        difference,
-
       recommendation:
         safeString(
-          parsed.capacity?.recommendation,
-          "Review workforce capacity against the company's financial performance."
+          parsed.workforce?.recommendation,
+          "Review workforce requirements against the company's current financial and operational position."
         ),
     },
   };
@@ -925,8 +1023,6 @@ If information is missing, explicitly state that it is missing.
 
 Outstanding receivables are NOT available cash.
 
-Never assume that receivables are already collected.
-
 Never assume a bank balance unless one is explicitly supplied.
 
 ============================================================
@@ -950,6 +1046,52 @@ When calculating affordability, clearly distinguish an estimate
 from a guaranteed safe spending amount.
 
 ============================================================
+WORKFORCE
+============================================================
+
+The business's actual employee count must come from the supplied
+workforce/company data.
+
+Do not use an arbitrary revenue-per-employee formula.
+
+Do not create a generic "recommended employee count".
+
+If the owner asks:
+
+"Should I hire?"
+
+Evaluate:
+
+- current employees
+- revenue
+- expenses
+- profit
+- cash flow
+- runway
+- receivables
+- business growth
+- operational requirements
+
+If the owner asks:
+
+"Should I remove an employee?"
+
+Do not recommend termination casually.
+
+Explain the financial evidence and operational trade-offs.
+
+If the available data is insufficient, say so.
+
+If the owner asks whether they can afford another employee,
+calculate the known financial impact where possible.
+
+Clearly distinguish:
+
+Known financial impact
+from
+Estimated future affordability.
+
+============================================================
 DECISION STANDARD
 ============================================================
 
@@ -961,6 +1103,7 @@ Prioritize:
 4. Collections
 5. Cash protection
 6. Sustainable growth
+7. Workforce sustainability
 
 Do not recommend spending simply because revenue exists.
 
@@ -1046,8 +1189,10 @@ Return ONLY valid JSON matching the supplied schema.
             companyId,
             industry,
             startingRevenue,
+
             profile:
-              context.business?.profile ?? {},
+              context.business?.profile ??
+              {},
           },
 
           financialSummary: {
@@ -1060,16 +1205,25 @@ Return ONLY valid JSON matching the supplied schema.
           },
 
           snapshot:
-            context.snapshot ?? null,
+            context.snapshot ??
+            null,
 
           invoices:
-            context.invoices ?? [],
+            context.invoices ??
+            [],
 
           expenses:
-            context.expenses ?? [],
+            context.expenses ??
+            [],
 
           customers:
-            context.customers ?? [],
+            context.customers ??
+            [],
+
+          workforce:
+            context.workforce ??
+            context.business?.profile?.employees ??
+            null,
         }),
 
         text: {
@@ -1145,6 +1299,7 @@ Return ONLY valid JSON matching the supplied schema.
       "[ArkenOne CFO] Ask request failed:",
       {
         model,
+
         status:
           (
             error as {
@@ -1176,8 +1331,10 @@ Return ONLY valid JSON matching the supplied schema.
       "[ArkenOne CFO] Ask returned no output.",
       {
         model,
+
         responseId:
           response.id,
+
         status:
           response.status,
       }
@@ -1206,6 +1363,7 @@ Return ONLY valid JSON matching the supplied schema.
       "[ArkenOne CFO] Ask returned invalid JSON.",
       {
         model,
+
         responseId:
           response.id,
       }

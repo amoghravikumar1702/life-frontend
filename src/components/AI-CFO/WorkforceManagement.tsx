@@ -2,8 +2,6 @@
 
 import { useState } from "react";
 import {
-  ArrowDownRight,
-  ArrowUpRight,
   Minus,
   Plus,
   Users,
@@ -12,23 +10,26 @@ import { useRouter } from "next/navigation";
 
 interface WorkforceManagementProps {
   initialEmployees: number;
-  recommendedEmployees: number;
-  difference: number;
   recommendation: string;
   status: string;
 }
 
 export default function WorkforceManagement({
   initialEmployees,
-  recommendedEmployees,
-  difference,
   recommendation,
   status,
 }: WorkforceManagementProps) {
   const router = useRouter();
 
   const [employees, setEmployees] =
-    useState(initialEmployees);
+    useState(
+      Math.max(
+        0,
+        Math.floor(
+          Number(initialEmployees) || 0
+        )
+      )
+    );
 
   const [saving, setSaving] =
     useState(false);
@@ -80,28 +81,27 @@ export default function WorkforceManagement({
       }
 
       setEmployees(
-        data.employeeCount
+        Math.max(
+          0,
+          Math.floor(
+            Number(
+              data.employeeCount
+            ) || 0
+          )
+        )
       );
 
       /*
-       * IMPORTANT:
+       * Refresh the server-rendered
+       * AI CFO report.
        *
-       * This refreshes the server-rendered
-       * Executive Report.
+       * The AI CFO is the authority
+       * for workforce recommendations.
        *
-       * The recommended workforce number
-       * itself is calculated from financial data,
-       * NOT from this employee count.
-       *
-       * Therefore changing:
-       *
-       * 6 → 5
-       *
-       * changes CURRENT TEAM and DIFFERENCE,
-       * but does not change RECOMMENDED.
+       * This employee count represents
+       * the actual current team only.
        */
       router.refresh();
-
     } catch (error) {
       console.error(
         "[WorkforceManagement]",
@@ -113,7 +113,6 @@ export default function WorkforceManagement({
           ? error.message
           : "Unable to update employees."
       );
-
     } finally {
       setSaving(false);
     }
@@ -127,42 +126,6 @@ export default function WorkforceManagement({
       )
     );
 
-  /*
-   * IMPORTANT:
-   *
-   * Recommended is supplied by the
-   * server-side financial calculation.
-   */
-  const recommended =
-    Math.max(
-      0,
-      Math.floor(
-        Number(
-          recommendedEmployees
-        ) || 0
-      )
-    );
-
-  /*
-   * Difference is based on:
-   *
-   * recommended - current
-   *
-   * so it updates when the actual team changes.
-   */
-  const currentDifference =
-    recommended -
-    currentEmployees;
-
-  const isHiring =
-    currentDifference > 0;
-
-  const isReducing =
-    currentDifference < 0;
-
-  const isStable =
-    currentDifference === 0;
-
   return (
     <section
       className="
@@ -173,7 +136,6 @@ export default function WorkforceManagement({
         bg-[#101318]
       "
     >
-
       {/* =====================================================
           HEADER
       ===================================================== */}
@@ -193,7 +155,6 @@ export default function WorkforceManagement({
           sm:px-8
         "
       >
-
         <div className="flex items-start gap-4">
 
           <div
@@ -218,7 +179,6 @@ export default function WorkforceManagement({
           </div>
 
           <div>
-
             <p
               className="
                 text-[10px]
@@ -244,226 +204,108 @@ export default function WorkforceManagement({
             </h2>
 
             <p className="mt-1 text-xs text-zinc-600">
-              Financially supported workforce level
+              Manage your actual business workforce
             </p>
-
           </div>
 
         </div>
 
-        {/* STATUS */}
+        {/* AI CFO STATUS */}
 
         <div
-          className={`
+          className="
             inline-flex
             w-fit
             items-center
             gap-2
             rounded-full
             border
+            border-[#D4AF37]/15
+            bg-[#D4AF37]/[0.06]
             px-4
             py-2
             text-xs
             font-medium
-            ${
-              isReducing
-                ? "border-amber-400/15 bg-amber-400/[0.06] text-amber-300"
-                : isHiring
-                  ? "border-emerald-400/15 bg-emerald-400/[0.06] text-emerald-300"
-                  : "border-white/[0.07] bg-white/[0.025] text-zinc-400"
-            }
-          `}
+            text-[#D4AF37]
+          "
         >
-
-          {isReducing ? (
-            <ArrowDownRight
-              size={14}
-            />
-          ) : isHiring ? (
-            <ArrowUpRight
-              size={14}
-            />
-          ) : (
-            <Minus
-              size={14}
-            />
-          )}
+          <span
+            className="
+              h-1.5
+              w-1.5
+              rounded-full
+              bg-[#D4AF37]
+            "
+          />
 
           {status ||
-            "Workforce assessment"}
-
+            "CFO Workforce Assessment"}
         </div>
-
       </div>
 
-
       {/* =====================================================
-          WORKFORCE METRICS
+          CURRENT WORKFORCE
       ===================================================== */}
 
       <div
         className="
-          grid
-          md:grid-cols-3
-          md:divide-x
-          md:divide-white/[0.05]
+          px-7
+          py-8
+          sm:px-8
         "
       >
+        <p
+          className="
+            text-[10px]
+            uppercase
+            tracking-[0.3em]
+            text-zinc-500
+          "
+        >
+          Current Team
+        </p>
 
-        {/* CURRENT */}
-
-        <div className="px-7 py-7 sm:px-8">
-
-          <p
-            className="
-              text-[10px]
-              uppercase
-              tracking-[0.3em]
-              text-zinc-500
-            "
-          >
-            Current Team
-          </p>
+        <div className="mt-4 flex items-end gap-3">
 
           <p
             className="
-              mt-4
-              text-4xl
+              text-5xl
               font-semibold
-              tracking-[-0.04em]
+              tracking-[-0.05em]
               text-white
             "
           >
             {currentEmployees}
           </p>
 
-          <p className="mt-1 text-xs text-zinc-600">
-            Employees
+          <p
+            className="
+              mb-1.5
+              text-sm
+              text-zinc-600
+            "
+          >
+            {currentEmployees === 1
+              ? "Employee"
+              : "Employees"}
           </p>
 
         </div>
 
-
-        {/* RECOMMENDED */}
-
-        <div
+        <p
           className="
-            border-t
-            border-white/[0.05]
-            px-7
-            py-7
-            sm:px-8
-            md:border-t-0
+            mt-2
+            max-w-xl
+            text-xs
+            leading-6
+            text-zinc-600
           "
         >
-
-          <p
-            className="
-              text-[10px]
-              uppercase
-              tracking-[0.3em]
-              text-zinc-500
-            "
-          >
-            Recommended
-          </p>
-
-          <p
-            className="
-              mt-4
-              text-4xl
-              font-semibold
-              tracking-[-0.04em]
-              text-[#D4AF37]
-            "
-          >
-            {recommended}
-          </p>
-
-          <p className="mt-1 text-xs text-zinc-600">
-            Financially supported
-          </p>
-
-        </div>
-
-
-        {/* DIFFERENCE */}
-
-        <div
-          className="
-            border-t
-            border-white/[0.05]
-            px-7
-            py-7
-            sm:px-8
-            md:border-t-0
-          "
-        >
-
-          <p
-            className="
-              text-[10px]
-              uppercase
-              tracking-[0.3em]
-              text-zinc-500
-            "
-          >
-            Difference
-          </p>
-
-          <div className="mt-4 flex items-center gap-2">
-
-            {isReducing && (
-              <ArrowDownRight
-                size={20}
-                className="text-amber-300"
-              />
-            )}
-
-            {isHiring && (
-              <ArrowUpRight
-                size={20}
-                className="text-emerald-300"
-              />
-            )}
-
-            {isStable && (
-              <Minus
-                size={20}
-                className="text-zinc-500"
-              />
-            )}
-
-            <p
-              className="
-                text-4xl
-                font-semibold
-                tracking-[-0.04em]
-                text-white
-              "
-            >
-              {currentDifference > 0
-                ? "+"
-                : ""}
-              {currentDifference}
-            </p>
-
-          </div>
-
-          <p className="mt-1 text-xs text-zinc-600">
-
-            {isReducing
-              ? "Potential excess capacity"
-              : isHiring
-                ? "Additional capacity"
-                : "No workforce change"}
-
-          </p>
-
-        </div>
-
+          This is your actual current workforce.
+          ArkenOne does not automatically change this
+          number based on AI recommendations.
+        </p>
       </div>
-
 
       {/* =====================================================
           WORKFORCE CONTROLS
@@ -478,7 +320,6 @@ export default function WorkforceManagement({
           sm:px-8
         "
       >
-
         <div
           className="
             flex
@@ -489,7 +330,6 @@ export default function WorkforceManagement({
             sm:justify-between
           "
         >
-
           <div>
 
             <p
@@ -543,11 +383,8 @@ export default function WorkforceManagement({
               aria-label="Remove employee"
               title="Remove employee"
             >
-              <Minus
-                size={17}
-              />
+              <Minus size={17} />
             </button>
-
 
             {/* CURRENT COUNT */}
 
@@ -565,13 +402,16 @@ export default function WorkforceManagement({
                 py-2.5
               "
             >
-
-              <span className="text-sm font-medium text-white">
+              <span
+                className="
+                  text-sm
+                  font-medium
+                  text-white
+                "
+              >
                 {currentEmployees}
               </span>
-
             </div>
-
 
             {/* ADD */}
 
@@ -602,13 +442,10 @@ export default function WorkforceManagement({
               aria-label="Add employee"
               title="Add employee"
             >
-              <Plus
-                size={17}
-              />
+              <Plus size={17} />
             </button>
 
           </div>
-
         </div>
 
         {saving && (
@@ -636,9 +473,7 @@ export default function WorkforceManagement({
             {error}
           </p>
         )}
-
       </div>
-
 
       {/* =====================================================
           CFO WORKFORCE DECISION
@@ -653,7 +488,6 @@ export default function WorkforceManagement({
           sm:px-8
         "
       >
-
         <p
           className="
             text-[10px]
@@ -680,7 +514,6 @@ export default function WorkforceManagement({
         </p>
 
       </div>
-
     </section>
   );
 }

@@ -1,4 +1,7 @@
-import { Forecast, FinancialMetrics } from "./types";
+import {
+  ExecutiveForecast,
+  ExecutiveFinance,
+} from "./types";
 
 /*
  * ============================================================
@@ -12,11 +15,12 @@ import { Forecast, FinancialMetrics } from "./types";
  * 1. This function performs local calculations only.
  * 2. It does NOT call OpenAI.
  * 3. It does NOT invent external financial assumptions.
- * 4. It uses the financial metrics already calculated by
+ * 4. It uses financial metrics already calculated by
  *    ArkenOne.
- * 5. Because ArkenOne does not currently have a connected
- *    bank balance, expectedCashPosition is a model estimate,
- *    NOT an actual bank balance.
+ * 5. expectedCashPosition is a MODEL ESTIMATE, not a
+ *    verified bank balance.
+ *
+ * ============================================================
  */
 
 function safeNumber(
@@ -53,9 +57,15 @@ function clamp(
   );
 }
 
+/*
+ * ============================================================
+ * GENERATE FORECAST
+ * ============================================================
+ */
+
 export function generateForecast(
-  finance: FinancialMetrics
-): Forecast {
+  finance: ExecutiveFinance
+): ExecutiveForecast {
   /*
    * ==========================================================
    * NORMALIZE INPUTS
@@ -91,15 +101,6 @@ export function generateForecast(
    * ==========================================================
    * GROWTH MULTIPLIERS
    * ==========================================================
-   *
-   * Example:
-   *
-   * +10% → 1.10
-   *  0% → 1.00
-   * -10% → 0.90
-   *
-   * Growth rates are bounded so malformed database values
-   * cannot create absurd forecasts.
    */
 
   const boundedRevenueGrowth =
@@ -154,9 +155,6 @@ export function generateForecast(
    * ==========================================================
    * NEXT 30 DAYS — PROFIT
    * ==========================================================
-   *
-   * This follows the same simplified financial basis used by
-   * the MVP FinancialMetrics engine.
    */
 
   const next30Profit =
@@ -168,14 +166,12 @@ export function generateForecast(
    * EXPECTED CASH POSITION
    * ==========================================================
    *
-   * ArkenOne does not currently have a connected bank balance.
+   * This is NOT a verified bank balance.
    *
-   * Therefore this should be interpreted as:
+   * It is:
    *
-   * current modeled cash position
+   * current modeled cash
    * + projected 30-day profit
-   *
-   * It must NOT be presented as a verified bank balance.
    */
 
   const expectedCashPosition =
@@ -195,38 +191,15 @@ export function generateForecast(
    * ==========================================================
    * FORECAST CONFIDENCE
    * ==========================================================
-   *
-   * Confidence is based on the quality of the financial data
-   * available to the engine.
-   *
-   * It is NOT model certainty.
    */
 
   let confidence = 90;
 
-  /*
-   * No revenue means there is not enough historical revenue
-   * information for a strong revenue forecast.
-   */
-
   if (revenue <= 0) {
     confidence = 55;
-  }
-
-  /*
-   * No expenses means the expense projection is incomplete.
-   */
-
-  else if (expenses <= 0) {
+  } else if (expenses <= 0) {
     confidence = 65;
-  }
-
-  /*
-   * No observed month-over-month movement means the forecast
-   * has less evidence of directional change.
-   */
-
-  else if (
+  } else if (
     boundedRevenueGrowth === 0 &&
     boundedExpenseGrowth === 0
   ) {
@@ -234,8 +207,9 @@ export function generateForecast(
   }
 
   /*
-   * Financial weakness reduces confidence in aggressive
-   * forward projections.
+   * ==========================================================
+   * HEALTH-BASED CONFIDENCE ADJUSTMENT
+   * ==========================================================
    */
 
   const healthScore =
@@ -248,29 +222,28 @@ export function generateForecast(
     );
 
   if (healthScore < 80) {
-    confidence = Math.min(
-      confidence,
-      82
-    );
+    confidence =
+      Math.min(
+        confidence,
+        82
+      );
   }
 
   if (healthScore < 60) {
-    confidence = Math.min(
-      confidence,
-      74
-    );
+    confidence =
+      Math.min(
+        confidence,
+        74
+      );
   }
 
   if (healthScore < 40) {
-    confidence = Math.min(
-      confidence,
-      65
-    );
+    confidence =
+      Math.min(
+        confidence,
+        65
+      );
   }
-
-  /*
-   * Final safety boundary.
-   */
 
   confidence =
     clamp(
@@ -287,15 +260,10 @@ export function generateForecast(
 
   return {
     next30Revenue,
-
     next30Expenses,
-
     next30Profit,
-
     expectedCashPosition,
-
     expectedGrowth,
-
     confidence,
   };
 }

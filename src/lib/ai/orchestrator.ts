@@ -18,8 +18,8 @@ export async function runExecutiveAnalysis(
         topPriorities:
           brief.recommendation,
 
-        businessRisks:
-          `Current workforce assessment: ${brief.capacity.status}. ${brief.capacity.recommendation}`,
+       businessRisks:
+  `Current workforce assessment: ${brief.workforce.status}. ${brief.workforce.recommendation}`,
 
         growthOpportunities:
           `${brief.todaysFocus.title}: ${brief.todaysFocus.impact}`,

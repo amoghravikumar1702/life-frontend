@@ -11,10 +11,13 @@ import { generateProtectedAICFOBrief } from "@/lib/ai/openaiCFO";
 export const dynamic = "force-dynamic";
 
 export default async function AICFOPage() {
-  const report = await buildExecutiveReport();
+  const report =
+    await buildExecutiveReport();
 
   const aiBrief =
-    await generateProtectedAICFOBrief(report);
+    await generateProtectedAICFOBrief(
+      report
+    );
 
   return (
     <PageContainer>
@@ -25,27 +28,37 @@ export default async function AICFOPage() {
         ===================================================== */}
 
         <DailyCEOBrief
-          greeting={aiBrief.greeting}
-          executiveBrief={aiBrief.executiveBrief}
-          recommendation={aiBrief.recommendation}
+          greeting={
+            aiBrief.greeting
+          }
+          executiveBrief={
+            aiBrief.executiveBrief
+          }
+          recommendation={
+            aiBrief.recommendation
+          }
           finance={{
             revenue:
-              report.finance.revenue ?? 0,
+              report.finance.revenue ??
+              0,
 
             expenses:
-              report.finance.expenses ?? 0,
+              report.finance.expenses ??
+              0,
 
             profit:
-              report.finance.profit ?? 0,
+              report.finance.profit ??
+              0,
 
             outstandingReceivables:
-              report.finance.outstandingReceivables ?? 0,
+              report.finance
+                .outstandingReceivables ??
+              0,
           }}
         />
 
         {/* =====================================================
             ARKENONE INTELLIGENCE ENGINE
-            MAIN AI CFO FEATURE
         ===================================================== */}
 
         <div className="mt-10">
@@ -54,10 +67,10 @@ export default async function AICFOPage() {
 
         {/* =====================================================
             CFO DECISION
-            SINGLE INSTANCE — BELOW ASK YOUR CFO
         ===================================================== */}
 
         <div className="mt-10">
+
           <section
             className="
               relative
@@ -228,36 +241,32 @@ export default async function AICFOPage() {
             </div>
 
           </section>
+
         </div>
 
         {/* =====================================================
             WORKFORCE MANAGEMENT
+            ACTUAL TEAM ONLY
+            AI CFO IS THE DECISION AUTHORITY
         ===================================================== */}
 
         <div className="mt-10">
 
           <WorkforceManagement
             initialEmployees={
-              report.workforce.currentEmployees
+              report.workforce
+                .currentEmployees
             }
 
-            recommendedEmployees={
-              report.workforce.recommendedEmployees
-            }
+           recommendation={
+  aiBrief.workforce?.recommendation ??
+  "Maintain the current workforce until more financial evidence is available."
+}
 
-            difference={
-              report.workforce.difference
-            }
-
-            recommendation={
-              aiBrief.capacity?.recommendation ??
-              "Maintain the current workforce until more financial evidence is available."
-            }
-
-            status={
-              aiBrief.capacity?.status ??
-              "Workforce assessment"
-            }
+           status={
+  aiBrief.workforce?.status ??
+  "CFO Workforce Assessment"
+}
           />
 
         </div>
