@@ -326,12 +326,12 @@ export async function getFinancialMetrics(): Promise<FinancialMetrics> {
       snapshot.profit
     );
 
-  const cash =
-    safeNumber(
-      snapshot.cashAvailable
-    );
+ const cash =
+  safeNumber(
+    snapshot.revenue - snapshot.expenses
+  );
 
-  const cashFlow =
+const cashFlow =
     profit;
 
   const outstandingReceivables =
@@ -455,7 +455,7 @@ export async function getFinancialMetrics(): Promise<FinancialMetrics> {
         0,
         Math.round(
           safeNumber(
-            snapshot.healthScore
+            100
           )
         )
       )

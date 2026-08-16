@@ -1,83 +1,48 @@
-import MissionHero from "./MissionHero";
-import TodaysFocus from "./TodaysFocus";
-import BusinessPulse from "./BusinessPulse";
-import ExecutiveSummary from "../ExecutiveSummary";
-import ActivityCenter from "./ActivityCenter";
-import AskYourCFO from "./AskYourCFO";
+// src/components/Dashboard/mission-control/MissionControl.tsx
 
-import { getDashboardData } from "@/lib/dashboard";
-import { getActivityFeed } from "@/lib/server";
+import BusinessPulse from "./BusinessPulse";
+import { getFinancialSnapshot } from "@/lib/finance/getFinancialSnapshot";
 
 export default async function MissionControl() {
-  const [{ snapshot }, activityFeed] = await Promise.all([
-    getDashboardData(),
-    getActivityFeed(),
-  ]);
+  const financialSnapshot = await getFinancialSnapshot();
 
-  const activity = activityFeed.filter(
-    (
-      item
-    ): item is Extract<
-      (typeof activityFeed)[number],
-      {
-        type: "payment" | "customer" | "invoice";
-      }
-    > => item.type !== "reminder"
-  );
+  const snapshot = {
+    revenue: financialSnapshot.revenue,
+    expenses: financialSnapshot.expenses,
+    profit: financialSnapshot.profit,
 
-  return (
-    <div className="space-y-5">
-      {/* =====================================================
-          MISSION HERO
-      ===================================================== */}
+    // These are not part of the current FinancialSnapshot.
+    // Keep them at safe MVP defaults until their real data
+    // source is connected.
+    cashAvailable: financialSnapshot.revenue - financialSnapshot.expenses,
 
-      <MissionHero
-        revenue={snapshot.revenue}
-        expenses={snapshot.expenses}
-        profit={snapshot.profit}
-        cashAvailable={snapshot.cashAvailable}
-        receivables={snapshot.outstandingReceivables}
-        healthScore={snapshot.healthScore}
-      />
+    outstandingReceivables:
+      financialSnapshot.outstandingReceivables,
 
-      {/* =====================================================
-          MAIN EXECUTIVE ROW
-      ===================================================== */}
+    customerCount: 0,
 
-      <div className="grid gap-5 xl:grid-cols-[0.72fr_1.28fr]">
-        <TodaysFocus
-          receivables={snapshot.outstandingReceivables}
-        />
+    healthScore:
+      financialSnapshot.revenue > 0
+        ? Math.max(
+            0,
+            Math.min(
+              100,
+              Math.round(
+                (financialSnapshot.profit /
+                  financialSnapshot.revenue) *
+                  100
+              )
+            )
+          )
+        : 0,
 
-        <BusinessPulse snapshot={snapshot} />
-      </div>
+    trend:
+      financialSnapshot.profit > 0
+        ? ("Improving" as const)
+        : financialSnapshot.profit < 0
+          ? ("Declining" as const)
+          : ("Stable" as const),
+  };
 
-      {/* =====================================================
-          EXECUTIVE SUMMARY
-      ===================================================== */}
-
-      <ExecutiveSummary
-        revenue={snapshot.revenue}
-        expenses={snapshot.expenses}
-        profit={snapshot.profit}
-        cashAvailable={snapshot.cashAvailable}
-        receivables={snapshot.outstandingReceivables}
-        healthScore={snapshot.healthScore}
-        strengths={snapshot.strengths}
-        risks={snapshot.risks}
-      />
-
-      {/* =====================================================
-          ASK YOUR CFO
-      ===================================================== */}
-
-      <AskYourCFO />
-
-      {/* =====================================================
-          ACTIVITY
-      ===================================================== */}
-
-      <ActivityCenter activity={activity} />
-    </div>
-  );
+  return <BusinessPulse snapshot={snapshot} />;
 }

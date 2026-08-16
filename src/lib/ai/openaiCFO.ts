@@ -2,28 +2,42 @@
 
 import OpenAI from "openai";
 import { ExecutiveReport } from "@/lib/cfo/types";
+import { getCFOContext } from "@/lib/cfo/getCFOContext";
 
 /*
  * ============================================================
- * OPENAI CLIENT
+ * ARKENONE AI CFO — OPENAI ENGINE
  * ============================================================
- *
- * SERVER ONLY.
- *
- * Never expose OPENAI_API_KEY to the browser.
  */
 
-const apiKey = process.env.OPENAI_API_KEY;
+const DEFAULT_CFO_MODEL = "gpt-5.6-terra";
 
-if (!apiKey) {
-  throw new Error(
-    "OPENAI_API_KEY is not configured."
+function getCFOModel(): string {
+  const configuredModel =
+    process.env.OPENAI_CFO_MODEL?.trim();
+
+  console.log(
+    "[DEBUG] Raw OPENAI_CFO_MODEL value:",
+    JSON.stringify(configuredModel)
   );
+
+  return configuredModel || DEFAULT_CFO_MODEL;
 }
 
-const openai = new OpenAI({
-  apiKey,
-});
+function getOpenAIClient(): OpenAI {
+  const apiKey =
+    process.env.OPENAI_API_KEY?.trim();
+
+  if (!apiKey) {
+    throw new Error(
+      "OPENAI_API_KEY is not configured. Add your OpenAI API key to .env.local and restart the Next.js server."
+    );
+  }
+
+  return new OpenAI({
+    apiKey,
+  });
+}
 
 /*
  * ============================================================
@@ -70,14 +84,33 @@ export interface AICFOBrief {
 
 export interface AICFOAnswer {
   answer: string;
-  nextStep: string;
-  financialImpact: string;
+
+  decision: string;
+
+  action: string;
+
+  financialImpact: {
+    amount: number;
+    explanation: string;
+  };
+
   confidence: number;
 }
 
 /*
  * ============================================================
- * HELPERS
+ * ASK CFO CONTEXT
+ * ============================================================
+ */
+
+type CFOAskContext =
+  Awaited<
+    ReturnType<typeof getCFOContext>
+  >;
+
+/*
+ * ============================================================
+ * SAFE HELPERS
  * ============================================================
  */
 
@@ -111,197 +144,219 @@ function safeInteger(
     safeNumber(value, fallback)
   );
 
-  return Math.max(0, parsed);
+  return Math.max(
+    0,
+    parsed
+  );
 }
 
 function safeString(
   value: unknown,
   fallback: string
 ): string {
-  return (
+  if (
     typeof value === "string" &&
     value.trim().length > 0
-  )
-    ? value.trim()
-    : fallback;
+  ) {
+    return value.trim();
+  }
+
+  return fallback;
+}
+
+function getReportEmployees(
+  report: ExecutiveReport
+): number {
+  return safeInteger(
+    report.company?.employees
+  );
 }
 
 /*
  * ============================================================
- * GENERATE DAILY AI CFO BRIEF
+ * RESPONSE TEXT
+ * ============================================================
+ */
+
+function extractResponseText(
+  response: OpenAI.Responses.Response
+): string {
+  if (
+    typeof response.output_text === "string" &&
+    response.output_text.trim().length > 0
+  ) {
+    return response.output_text.trim();
+  }
+
+  for (
+    const item of response.output ?? []
+  ) {
+    if (
+      item.type !== "message"
+    ) {
+      continue;
+    }
+
+    for (
+      const content of item.content ?? []
+    ) {
+      if (
+        content.type === "output_text" &&
+        typeof content.text === "string" &&
+        content.text.trim().length > 0
+      ) {
+        return content.text.trim();
+      }
+    }
+  }
+
+  return "";
+}
+
+/*
+ * ============================================================
+ * OPENAI ERROR NORMALIZATION
+ * ============================================================
+ */
+
+function createOpenAIError(
+  error: unknown,
+  model: string
+): Error {
+  const possibleError =
+    error as {
+      status?: number;
+      message?: string;
+      code?: string;
+      type?: string;
+      error?: {
+        message?: string;
+        code?: string;
+        type?: string;
+      };
+    };
+
+  const status =
+    possibleError?.status;
+
+  const message =
+    possibleError?.error?.message ??
+    possibleError?.message ??
+    "Unknown OpenAI error.";
+
+  if (
+    status === 401 ||
+    possibleError?.code === "invalid_api_key"
+  ) {
+    return new Error(
+      "ArkenOne AI CFO: OpenAI API key is invalid or missing."
+    );
+  }
+
+  if (
+    status === 403
+  ) {
+    return new Error(
+      `ArkenOne AI CFO: OpenAI project does not have access to model "${model}".`
+    );
+  }
+
+  if (
+    status === 404
+  ) {
+    return new Error(
+      `ArkenOne AI CFO: model "${model}" was not found or is unavailable to this API project.`
+    );
+  }
+
+  if (
+    status === 429
+  ) {
+    return new Error(
+      "ArkenOne AI CFO: OpenAI rate limit or quota limit reached."
+    );
+  }
+
+  return new Error(
+    `ArkenOne AI CFO OpenAI error (${status ?? "unknown"}): ${message}`
+  );
+}
+
+/*
+ * ============================================================
+ * DAILY AI CFO BRIEF
  * ============================================================
  */
 
 export async function generateAICFOBrief(
   report: ExecutiveReport
 ): Promise<AICFOBrief> {
+  const openai =
+    getOpenAIClient();
+
+  const model =
+    getCFOModel();
+
   const currentEmployees =
-    safeInteger(
-      report.company.employees
-    );
+    getReportEmployees(report);
 
   const financiallySustainableEmployees =
     safeInteger(
       report.financiallySustainableEmployees
     );
 
-  const response =
-    await openai.responses.create({
-      model: "gpt-5.6-terra",
+  let response:
+    OpenAI.Responses.Response;
 
-      input: [
-        {
-          role: "system",
+  try {
+    response =
+      await openai.responses.create({
+        model,
 
-          content: `
+        instructions: `
 You are ArkenOne's AI CFO.
 
-You are an executive financial decision engine for a small or medium-sized business.
+You are an executive financial decision engine.
 
-Use ONLY the supplied business data.
+Analyze ONLY the supplied business information.
 
-Never invent:
-- revenue
-- expenses
-- profit
-- cash
-- receivables
-- payables
-- customers
-- employees
-- transactions
-- targets
-- growth
-- business activity
+Never invent revenue, expenses, profit, cash, receivables,
+customers, employees, targets, transactions, growth,
+or future events.
 
-If information is unavailable, explicitly acknowledge the limitation.
+Revenue = supplied revenue.
 
-Think like a conservative CFO.
+Expenses = recorded expenses.
+
+Profit = revenue minus expenses.
+
+Outstanding receivables are NOT available cash.
+
+Do not claim a verified bank balance unless explicitly supplied.
+
+Currency is INR. Always use ₹.
 
 Prioritize:
 
 1. Financial sustainability
-2. Cash protection
-3. Profitability
+2. Profitability
+3. Cash generation
 4. Collections
 5. Customer economics
 6. Sustainable growth
 
-Currency is INR.
+Today's focus must contain ONE concrete action supported by
+the supplied financial data.
 
-Use ₹ for monetary values.
-
-Never use USD or $.
-
-No markdown.
-
-No emojis.
-
-Keep the response concise and executive-level.
-
-==================================================
-FINANCIAL ANALYSIS
-==================================================
-
-Analyze the supplied:
-
-- company profile
-- revenue
-- expenses
-- profit
-- cash
-- cash flow
-- receivables
-- customers
-- active customers
-- repeat customers
-- customer concentration
-- outstanding balances
-- revenue growth
-- expense growth
-- forecast
-- employees
-- financially sustainable employees
-
-Identify the most important financial issue supported by the data.
-
-Do not create an issue simply to make the answer interesting.
-
-==================================================
-TODAY'S FOCUS
-==================================================
-
-Give ONE concrete action.
-
-The action should improve one or more of:
-
-- revenue
-- profit
-- cash
-- collections
-- customer value
-- operational efficiency
-
-Do not give generic advice.
-
-If an amount can be supported by supplied data, use it.
-
-Otherwise amount must be 0.
-
-==================================================
-RECOMMENDATION
-==================================================
-
-Explain:
+Use:
 
 Decision → Financial reason → Business outcome
 
-Do not simply repeat Today's Focus.
+Use the supplied health score as the primary health signal.
 
-==================================================
-HEALTH
-==================================================
+Only create a milestone when the supplied data supports one.
 
-Use finance.healthScore as the primary quantitative signal.
-
-Return a score from 0 to 100.
-
-Do not contradict supplied financial evidence.
-
-==================================================
-MILESTONE
-==================================================
-
-Create one conservative milestone using supplied data.
-
-Do not invent targets.
-
-If no defensible milestone exists:
-
-current = 0
-target = 0
-remaining = 0
-progress = 0
-
-==================================================
-WORKFORCE
-==================================================
-
-Current employees are supplied by the application.
-
-Financially sustainable employees are application-derived.
-
-HIRE only when supplied financial evidence supports additional capacity.
-
-REDUCE only when the current workforce clearly threatens sustainability.
-
-Never casually recommend firing employees.
-
-RETAIN when the current workforce is financially sustainable.
-
-HOLD when the information is insufficient.
-
-currentEmployees MUST equal supplied company employees.
+currentEmployees MUST equal the supplied employee count.
 
 recommendedEmployees MUST be an integer.
 
@@ -309,420 +364,447 @@ difference MUST equal:
 
 recommendedEmployees - currentEmployees
 
-==================================================
-OUTPUT
-==================================================
+Do not casually recommend firing employees.
+
+Only recommend hiring when the supplied financial information
+supports sustainable additional capacity.
+
+Professional.
+Direct.
+Concise.
+Executive-level.
+No emojis.
+No markdown.
 
 Return ONLY valid JSON matching the supplied schema.
 `,
-        },
 
-        {
-          role: "user",
-
-          content: JSON.stringify({
-            company: {
-              ...report.company,
-              employees:
-                currentEmployees,
-            },
-
-            finance: {
-              ...report.finance,
-              healthScore:
-                safeNumber(
-                  report.finance.healthScore
-                ),
-            },
-
-            customers:
-              report.customers,
-
-            risks:
-              report.risks,
-
-            forecast:
-              report.forecast,
-
-            workforceAnalysis: {
-              financiallySustainableEmployees,
+        input: JSON.stringify({
+          company: {
+            ...report.company,
+            employees:
               currentEmployees,
+          },
+
+          finance: {
+            ...report.finance,
+            healthScore:
+              safeNumber(
+                report.finance?.healthScore
+              ),
+          },
+
+          customers:
+            report.customers,
+
+          risks:
+            report.risks,
+
+          forecast:
+            report.forecast,
+
+          workforceAnalysis: {
+            financiallySustainableEmployees,
+            currentEmployees,
+          },
+        }),
+
+        text: {
+          format: {
+            type: "json_schema",
+
+            name:
+              "arkenone_cfo_brief",
+
+            strict: true,
+
+            schema: {
+              type: "object",
+
+              additionalProperties:
+                false,
+
+              properties: {
+                greeting: {
+                  type: "string",
+                },
+
+                executiveBrief: {
+                  type: "string",
+                },
+
+                health: {
+                  type: "object",
+
+                  additionalProperties:
+                    false,
+
+                  properties: {
+                    score: {
+                      type: "number",
+                    },
+
+                    status: {
+                      type: "string",
+                    },
+                  },
+
+                  required: [
+                    "score",
+                    "status",
+                  ],
+                },
+
+                todaysFocus: {
+                  type: "object",
+
+                  additionalProperties:
+                    false,
+
+                  properties: {
+                    title: {
+                      type: "string",
+                    },
+
+                    description: {
+                      type: "string",
+                    },
+
+                    amount: {
+                      type: "number",
+                    },
+
+                    impact: {
+                      type: "string",
+                    },
+                  },
+
+                  required: [
+                    "title",
+                    "description",
+                    "amount",
+                    "impact",
+                  ],
+                },
+
+                recommendation: {
+                  type: "string",
+                },
+
+                milestone: {
+                  type: "object",
+
+                  additionalProperties:
+                    false,
+
+                  properties: {
+                    title: {
+                      type: "string",
+                    },
+
+                    current: {
+                      type: "number",
+                    },
+
+                    target: {
+                      type: "number",
+                    },
+
+                    remaining: {
+                      type: "number",
+                    },
+
+                    progress: {
+                      type: "number",
+                    },
+                  },
+
+                  required: [
+                    "title",
+                    "current",
+                    "target",
+                    "remaining",
+                    "progress",
+                  ],
+                },
+
+                capacity: {
+                  type: "object",
+
+                  additionalProperties:
+                    false,
+
+                  properties: {
+                    title: {
+                      type: "string",
+                    },
+
+                    status: {
+                      type: "string",
+                    },
+
+                    currentEmployees: {
+                      type: "number",
+                    },
+
+                    recommendedEmployees: {
+                      type: "number",
+                    },
+
+                    difference: {
+                      type: "number",
+                    },
+
+                    recommendation: {
+                      type: "string",
+                    },
+                  },
+
+                  required: [
+                    "title",
+                    "status",
+                    "currentEmployees",
+                    "recommendedEmployees",
+                    "difference",
+                    "recommendation",
+                  ],
+                },
+              },
+
+              required: [
+                "greeting",
+                "executiveBrief",
+                "health",
+                "todaysFocus",
+                "recommendation",
+                "milestone",
+                "capacity",
+              ],
             },
-          }),
-        },
-      ],
-
-      text: {
-        format: {
-          type: "json_schema",
-
-          name: "arkenone_cfo_brief",
-
-          strict: true,
-
-          schema: {
-            type: "object",
-
-            additionalProperties: false,
-
-            properties: {
-              greeting: {
-                type: "string",
-              },
-
-              executiveBrief: {
-                type: "string",
-              },
-
-              health: {
-                type: "object",
-                additionalProperties: false,
-
-                properties: {
-                  score: {
-                    type: "number",
-                  },
-
-                  status: {
-                    type: "string",
-                  },
-                },
-
-                required: [
-                  "score",
-                  "status",
-                ],
-              },
-
-              todaysFocus: {
-                type: "object",
-                additionalProperties: false,
-
-                properties: {
-                  title: {
-                    type: "string",
-                  },
-
-                  description: {
-                    type: "string",
-                  },
-
-                  amount: {
-                    type: "number",
-                  },
-
-                  impact: {
-                    type: "string",
-                  },
-                },
-
-                required: [
-                  "title",
-                  "description",
-                  "amount",
-                  "impact",
-                ],
-              },
-
-              recommendation: {
-                type: "string",
-              },
-
-              milestone: {
-                type: "object",
-                additionalProperties: false,
-
-                properties: {
-                  title: {
-                    type: "string",
-                  },
-
-                  current: {
-                    type: "number",
-                  },
-
-                  target: {
-                    type: "number",
-                  },
-
-                  remaining: {
-                    type: "number",
-                  },
-
-                  progress: {
-                    type: "number",
-                  },
-                },
-
-                required: [
-                  "title",
-                  "current",
-                  "target",
-                  "remaining",
-                  "progress",
-                ],
-              },
-
-              capacity: {
-                type: "object",
-                additionalProperties: false,
-
-                properties: {
-                  title: {
-                    type: "string",
-                  },
-
-                  status: {
-                    type: "string",
-                  },
-
-                  currentEmployees: {
-                    type: "number",
-                  },
-
-                  recommendedEmployees: {
-                    type: "number",
-                  },
-
-                  difference: {
-                    type: "number",
-                  },
-
-                  recommendation: {
-                    type: "string",
-                  },
-                },
-
-                required: [
-                  "title",
-                  "status",
-                  "currentEmployees",
-                  "recommendedEmployees",
-                  "difference",
-                  "recommendation",
-                ],
-              },
-            },
-
-            required: [
-              "greeting",
-              "executiveBrief",
-              "health",
-              "todaysFocus",
-              "recommendation",
-              "milestone",
-              "capacity",
-            ],
           },
         },
-      },
 
-      max_output_tokens: 1800,
-    });
+        max_output_tokens: 1800,
+      });
+  } catch (error) {
+    console.error(
+      "[ArkenOne CFO] OpenAI request failed:",
+      {
+        model,
+        status:
+          (
+            error as {
+              status?: number;
+            }
+          )?.status,
+      }
+    );
+
+    throw createOpenAIError(
+      error,
+      model
+    );
+  }
 
   const text =
-    response.output_text?.trim();
+    extractResponseText(
+      response
+    );
 
   if (!text) {
     throw new Error(
-      "OpenAI returned an empty CFO response."
+      `ArkenOne AI CFO: model "${model}" returned no usable output.`
     );
   }
 
+  let parsed:
+    Partial<AICFOBrief>;
+
   try {
-    const parsed =
-      JSON.parse(text) as AICFOBrief;
+    parsed =
+      JSON.parse(text) as
+        Partial<AICFOBrief>;
+  } catch {
+    throw new Error(
+      "ArkenOne AI CFO: OpenAI returned invalid JSON."
+    );
+  }
 
-    const healthScore =
-      clamp(
+  const healthScore =
+    clamp(
+      safeNumber(
+        parsed.health?.score,
         safeNumber(
-          parsed.health?.score,
-          report.finance.healthScore
-        ),
-        0,
-        100
-      );
-
-    const validatedCurrentEmployees =
-      currentEmployees;
-
-    const recommendedEmployees =
-      safeInteger(
-        parsed.capacity
-          ?.recommendedEmployees,
-        validatedCurrentEmployees
-      );
-
-    const difference =
-      recommendedEmployees -
-      validatedCurrentEmployees;
-
-    const milestoneCurrent =
-      Math.max(
-        0,
-        safeNumber(
-          parsed.milestone?.current
+          report.finance?.healthScore
         )
-      );
+      ),
+      0,
+      100
+    );
 
-    const milestoneTarget =
-      Math.max(
-        0,
-        safeNumber(
-          parsed.milestone?.target
-        )
-      );
+  const recommendedEmployees =
+    safeInteger(
+      parsed.capacity
+        ?.recommendedEmployees,
+      currentEmployees
+    );
 
-    const milestoneRemaining =
-      Math.max(
-        0,
-        milestoneTarget -
-          milestoneCurrent
-      );
+  const difference =
+    recommendedEmployees -
+    currentEmployees;
 
-    const milestoneProgress =
-      milestoneTarget <= 0
-        ? 0
-        : clamp(
-            (milestoneCurrent /
-              milestoneTarget) *
-              100,
-            0,
-            100
-          );
+  const milestoneCurrent =
+    Math.max(
+      0,
+      safeNumber(
+        parsed.milestone?.current
+      )
+    );
 
-    return {
-      greeting:
+  const milestoneTarget =
+    Math.max(
+      0,
+      safeNumber(
+        parsed.milestone?.target
+      )
+    );
+
+  const milestoneRemaining =
+    Math.max(
+      0,
+      milestoneTarget -
+        milestoneCurrent
+    );
+
+  const milestoneProgress =
+    milestoneTarget <= 0
+      ? 0
+      : clamp(
+          (
+            milestoneCurrent /
+            milestoneTarget
+          ) * 100,
+          0,
+          100
+        );
+
+  return {
+    greeting:
+      safeString(
+        parsed.greeting,
+        "Good morning."
+      ),
+
+    executiveBrief:
+      safeString(
+        parsed.executiveBrief,
+        "ArkenOne has reviewed the available business data."
+      ),
+
+    health: {
+      score:
+        healthScore,
+
+      status:
         safeString(
-          parsed.greeting,
-          "Good morning."
+          parsed.health?.status,
+          "Financial assessment"
+        ),
+    },
+
+    todaysFocus: {
+      title:
+        safeString(
+          parsed.todaysFocus?.title,
+          "Review today's financial priority"
         ),
 
-      executiveBrief:
+      description:
         safeString(
-          parsed.executiveBrief,
-          "ArkenOne has reviewed the available business data."
+          parsed.todaysFocus?.description,
+          "Review the available financial data and act on the highest-priority opportunity."
         ),
 
-      health: {
-        score: healthScore,
+      amount:
+        Math.max(
+          0,
+          safeNumber(
+            parsed.todaysFocus?.amount
+          )
+        ),
 
-        status:
-          safeString(
-            parsed.health?.status,
-            "Financial assessment"
-          ),
-      },
+      impact:
+        safeString(
+          parsed.todaysFocus?.impact,
+          "Protect financial performance."
+        ),
+    },
 
-      todaysFocus: {
-        title:
-          safeString(
-            parsed.todaysFocus?.title,
-            "Review today's financial priority"
-          ),
+    recommendation:
+      safeString(
+        parsed.recommendation,
+        "Review the latest financial performance before making major business decisions."
+      ),
 
-        description:
-          safeString(
-            parsed.todaysFocus?.description,
-            "Review the available financial data and act on the highest-priority opportunity."
-          ),
+    milestone: {
+      title:
+        safeString(
+          parsed.milestone?.title,
+          "Financial milestone"
+        ),
 
-        amount:
-          Math.max(
-            0,
-            safeNumber(
-              parsed.todaysFocus?.amount
-            )
-          ),
+      current:
+        milestoneCurrent,
 
-        impact:
-          safeString(
-            parsed.todaysFocus?.impact,
-            "Protect financial performance."
-          ),
-      },
+      target:
+        milestoneTarget,
+
+      remaining:
+        milestoneRemaining,
+
+      progress:
+        milestoneProgress,
+    },
+
+    capacity: {
+      title:
+        safeString(
+          parsed.capacity?.title,
+          "Team Capacity"
+        ),
+
+      status:
+        safeString(
+          parsed.capacity?.status,
+          "Workforce assessment"
+        ),
+
+      currentEmployees:
+        currentEmployees,
+
+      recommendedEmployees:
+        recommendedEmployees,
+
+      difference:
+        difference,
 
       recommendation:
         safeString(
-          parsed.recommendation,
-          "Review the latest financial performance before making major business decisions."
+          parsed.capacity?.recommendation,
+          "Review workforce capacity against the company's financial performance."
         ),
-
-      milestone: {
-        title:
-          safeString(
-            parsed.milestone?.title,
-            "Financial milestone"
-          ),
-
-        current:
-          milestoneCurrent,
-
-        target:
-          milestoneTarget,
-
-        remaining:
-          milestoneRemaining,
-
-        progress:
-          milestoneProgress,
-      },
-
-      capacity: {
-        title:
-          safeString(
-            parsed.capacity?.title,
-            "Team Capacity"
-          ),
-
-        status:
-          safeString(
-            parsed.capacity?.status,
-            "Workforce assessment"
-          ),
-
-        currentEmployees:
-          validatedCurrentEmployees,
-
-        recommendedEmployees,
-
-        difference,
-
-        recommendation:
-          safeString(
-            parsed.capacity?.recommendation,
-            "Review workforce capacity against the company's financial performance."
-          ),
-      },
-    };
-  } catch (error) {
-    console.error(
-      "[ArkenOne AI CFO] Invalid JSON:",
-      text,
-      error
-    );
-
-    throw new Error(
-      "OpenAI returned an invalid CFO response."
-    );
-  }
+    },
+  };
 }
 
 /*
  * ============================================================
  * ASK YOUR CFO
  * ============================================================
- *
- * This is the function used by:
- *
- * POST /api/ai-cfo/ask
- *
- * The API route supplies the authenticated user's
- * ExecutiveReport.
  */
 
 export async function askAICFO(
-  report: ExecutiveReport,
+  context: CFOAskContext,
   question: string
 ): Promise<AICFOAnswer> {
   const cleanQuestion =
@@ -734,69 +816,94 @@ export async function askAICFO(
     );
   }
 
-  if (cleanQuestion.length > 1000) {
+  if (
+    cleanQuestion.length > 2000
+  ) {
     throw new Error(
       "CFO question is too long."
     );
   }
 
-  const currentEmployees =
-    safeInteger(
-      report.company.employees
+  const openai =
+    getOpenAIClient();
+
+  const model =
+    getCFOModel();
+
+  const financialSummary =
+    context.financialSummary;
+
+  const revenue =
+    safeNumber(
+      financialSummary?.revenue
     );
 
-  const financiallySustainableEmployees =
-    safeInteger(
-      report.financiallySustainableEmployees
+  const expenses =
+    safeNumber(
+      financialSummary?.expenses
     );
 
-  const response =
-    await openai.responses.create({
-      model: "gpt-5.6-terra",
+  const profit =
+    safeNumber(
+      financialSummary?.profit
+    );
 
-      input: [
-        {
-          role: "system",
+  const outstandingReceivables =
+    safeNumber(
+      financialSummary?.outstandingReceivables
+    );
 
-          content: `
+  const invoiceCount =
+    safeInteger(
+      financialSummary?.invoiceCount
+    );
+
+  const expenseCount =
+    safeInteger(
+      financialSummary?.expenseCount
+    );
+
+  const startingRevenue =
+    safeNumber(
+      context.business?.startingRevenue
+    );
+
+  const companyId =
+    context.business?.companyId;
+
+  const industry =
+    safeString(
+      context.business?.industry,
+      "Other"
+    );
+
+  /*
+   * ==========================================================
+   * REQUEST
+   * ==========================================================
+   */
+
+  let response:
+    OpenAI.Responses.Response;
+
+  try {
+    response =
+      await openai.responses.create({
+        model,
+
+        instructions: `
 You are ArkenOne's AI CFO.
 
-The business owner is directly asking you a financial or business decision question.
+The business owner is directly asking you a financial or
+business decision question.
 
-Answer the actual question using the supplied LIVE business data.
+Your job is to behave like a real conservative CFO.
 
-You are not a generic chatbot.
+Use ONLY the supplied LIVE business data.
 
-You are the company's financial decision engine.
-
-==================================================
-CORE RULE
-==================================================
-
-Answer the owner's actual question.
-
-Do not simply summarize the dashboard.
-
-Calculate relationships between supplied numbers when necessary.
-
-Examples:
-
-- revenue vs expenses
-- profit margin
-- cash vs expenses
-- receivables vs revenue
-- employee count vs revenue
-- sustainable workforce vs current workforce
-- forecast revenue vs forecast expenses
-- outstanding balances vs cash needs
-
-Use arithmetic when it helps answer the question.
-
-==================================================
-DATA RULES
-==================================================
-
-Use ONLY supplied business data.
+============================================================
+DATA INTEGRITY
+============================================================
 
 Never invent:
 
@@ -804,82 +911,109 @@ Never invent:
 - expenses
 - profit
 - cash
+- bank balance
 - receivables
 - customers
 - employees
 - costs
 - targets
 - transactions
-- business activity
+- conversions
 - future events
 
-If the data is insufficient, say what is missing.
+If information is missing, explicitly state that it is missing.
 
-Do not pretend to know unavailable information.
+Outstanding receivables are NOT available cash.
 
-==================================================
+Never assume that receivables are already collected.
+
+Never assume a bank balance unless one is explicitly supplied.
+
+============================================================
+CALCULATIONS
+============================================================
+
+You may calculate relationships between supplied numbers.
+
+Useful calculations include:
+
+- profit = revenue - expenses
+- profit margin
+- receivables as a percentage of revenue
+- expense as a percentage of revenue
+- proposed expense as a percentage of revenue
+- proposed expense as a percentage of profit
+- collection priorities
+- affordability estimates
+
+When calculating affordability, clearly distinguish an estimate
+from a guaranteed safe spending amount.
+
+============================================================
 DECISION STANDARD
-==================================================
-
-Think like a conservative CFO.
+============================================================
 
 Prioritize:
 
-1. Financial sustainability
-2. Cash protection
+1. Liquidity
+2. Financial sustainability
 3. Profitability
 4. Collections
-5. Sustainable growth
+5. Cash protection
+6. Sustainable growth
 
-Do not recommend spending simply because cash exists.
+Do not recommend spending simply because revenue exists.
 
 Do not recommend hiring simply because growth is possible.
 
 Do not recommend reducing employees casually.
 
-==================================================
-NEXT STEP
-==================================================
+============================================================
+IMPORTANT LIMITATION
+============================================================
 
-Every answer MUST contain one concrete next step.
+The supplied context does NOT automatically contain verified
+bank cash.
 
-The next step should be something the owner can actually do.
+If the owner asks whether they can afford something and no
+cash balance is supplied, say that affordability cannot be
+confirmed from accounting data alone.
 
-Good:
+You may still calculate the immediate accounting impact.
 
-"Collect ₹25,000 from the outstanding customer before committing additional marketing spend."
+============================================================
+ANSWER STRUCTURE
+============================================================
 
-Bad:
+Return:
 
-"Improve cash flow."
+answer:
+A concise explanation answering the actual question.
 
-==================================================
-FINANCIAL IMPACT
-==================================================
+decision:
+The CFO's direct decision or recommendation.
 
-Explain the financial reason behind the recommendation.
+action:
+ONE concrete next action the business owner should take.
 
-If an amount can be calculated from supplied data, use it.
+financialImpact:
+amount:
+A numeric INR amount representing the directly calculable
+financial impact.
 
-Currency is INR.
+If no specific amount can be responsibly calculated,
+return 0.
 
-Use ₹.
+explanation:
+Explain what that amount means financially.
 
-Never use $ or USD.
+confidence:
+A number from 0 to 100 representing confidence in the
+recommendation based on the completeness and quality of data.
 
-==================================================
-CONFIDENCE
-==================================================
-
-Return confidence from 0 to 100.
-
-High confidence means the supplied data directly supports the conclusion.
-
-Lower confidence means important information is missing.
-
-==================================================
+============================================================
 STYLE
-==================================================
+============================================================
 
 Professional.
 
@@ -889,135 +1023,250 @@ Concise.
 
 Executive-level.
 
-No markdown.
-
 No emojis.
 
-==================================================
-OUTPUT
-==================================================
+No markdown.
+
+Use ₹ when discussing INR.
+
+Do not use $ or USD.
+
+Do not merely repeat the dashboard.
+
+Lead with the conclusion.
 
 Return ONLY valid JSON matching the supplied schema.
-
-The "answer" field should directly answer the owner's question.
-
-The "nextStep" field should contain one concrete action.
-
-The "financialImpact" field should explain the financial consequence.
-
-The "confidence" field should be between 0 and 100.
 `,
-        },
 
-        {
-          role: "user",
+        input: JSON.stringify({
+          question:
+            cleanQuestion,
 
-          content: JSON.stringify({
-            question:
-              cleanQuestion,
+          business: {
+            companyId,
+            industry,
+            startingRevenue,
+            profile:
+              context.business?.profile ?? {},
+          },
 
-            company: {
-              ...report.company,
-              employees:
-                currentEmployees,
+          financialSummary: {
+            revenue,
+            expenses,
+            profit,
+            outstandingReceivables,
+            invoiceCount,
+            expenseCount,
+          },
+
+          snapshot:
+            context.snapshot ?? null,
+
+          invoices:
+            context.invoices ?? [],
+
+          expenses:
+            context.expenses ?? [],
+
+          customers:
+            context.customers ?? [],
+        }),
+
+        text: {
+          format: {
+            type: "json_schema",
+
+            name:
+              "arkenone_cfo_answer",
+
+            strict: true,
+
+            schema: {
+              type: "object",
+
+              additionalProperties:
+                false,
+
+              properties: {
+                answer: {
+                  type: "string",
+                },
+
+                decision: {
+                  type: "string",
+                },
+
+                action: {
+                  type: "string",
+                },
+
+                financialImpact: {
+                  type: "object",
+
+                  additionalProperties:
+                    false,
+
+                  properties: {
+                    amount: {
+                      type: "number",
+                    },
+
+                    explanation: {
+                      type: "string",
+                    },
+                  },
+
+                  required: [
+                    "amount",
+                    "explanation",
+                  ],
+                },
+
+                confidence: {
+                  type: "number",
+                },
+              },
+
+              required: [
+                "answer",
+                "decision",
+                "action",
+                "financialImpact",
+                "confidence",
+              ],
             },
-
-            finance:
-              report.finance,
-
-            customers:
-              report.customers,
-
-            risks:
-              report.risks,
-
-            forecast:
-              report.forecast,
-
-            workforceAnalysis: {
-              financiallySustainableEmployees,
-              currentEmployees,
-            },
-          }),
-        },
-      ],
-
-      text: {
-        format: {
-          type: "json_schema",
-
-          name: "arkenone_cfo_answer",
-
-          strict: true,
-
-          schema: {
-            type: "object",
-
-            additionalProperties: false,
-
-            properties: {
-              answer: {
-                type: "string",
-              },
-
-              nextStep: {
-                type: "string",
-              },
-
-              financialImpact: {
-                type: "string",
-              },
-
-              confidence: {
-                type: "number",
-              },
-            },
-
-            required: [
-              "answer",
-              "nextStep",
-              "financialImpact",
-              "confidence",
-            ],
           },
         },
-      },
 
-      max_output_tokens: 900,
-    });
+        max_output_tokens: 1200,
+      });
+  } catch (error) {
+    console.error(
+      "[ArkenOne CFO] Ask request failed:",
+      {
+        model,
+        status:
+          (
+            error as {
+              status?: number;
+            }
+          )?.status,
+      }
+    );
 
-  const text =
-    response.output_text?.trim();
-
-  if (!text) {
-    throw new Error(
-      "OpenAI returned an empty CFO answer."
+    throw createOpenAIError(
+      error,
+      model
     );
   }
 
-  try {
-    const parsed =
-      JSON.parse(text) as AICFOAnswer;
+  /*
+   * ==========================================================
+   * EXTRACT OUTPUT
+   * ==========================================================
+   */
 
-    const answer =
+  const text =
+    extractResponseText(
+      response
+    );
+
+  if (!text) {
+    console.error(
+      "[ArkenOne CFO] Ask returned no output.",
+      {
+        model,
+        responseId:
+          response.id,
+        status:
+          response.status,
+      }
+    );
+
+    throw new Error(
+      `ArkenOne AI CFO: model "${model}" returned no usable answer.`
+    );
+  }
+
+  /*
+   * ==========================================================
+   * PARSE
+   * ==========================================================
+   */
+
+  let parsed:
+    Partial<AICFOAnswer>;
+
+  try {
+    parsed =
+      JSON.parse(text) as
+        Partial<AICFOAnswer>;
+  } catch {
+    console.error(
+      "[ArkenOne CFO] Ask returned invalid JSON.",
+      {
+        model,
+        responseId:
+          response.id,
+      }
+    );
+
+    throw new Error(
+      "ArkenOne AI CFO: OpenAI returned invalid answer JSON."
+    );
+  }
+
+  /*
+   * ==========================================================
+   * NORMALIZE FINANCIAL IMPACT
+   * ==========================================================
+   */
+
+  const financialImpactAmount =
+    Math.max(
+      0,
+      safeNumber(
+        parsed.financialImpact?.amount
+      )
+    );
+
+  /*
+   * ==========================================================
+   * FINAL CFO ANSWER
+   * ==========================================================
+   */
+
+  return {
+    answer:
       safeString(
         parsed.answer,
         "I could not determine a reliable answer from the available financial data."
-      );
+      ),
 
-    const nextStep =
+    decision:
       safeString(
-        parsed.nextStep,
+        parsed.decision,
+        "No clear decision could be determined from the available data."
+      ),
+
+    action:
+      safeString(
+        parsed.action,
         "Review the current financial position before taking action."
-      );
+      ),
 
-    const financialImpact =
-      safeString(
-        parsed.financialImpact,
-        "The financial impact cannot be determined precisely from the available data."
-      );
+    financialImpact: {
+      amount:
+        financialImpactAmount,
 
-    const confidence =
+      explanation:
+        safeString(
+          parsed.financialImpact?.explanation,
+          "The financial impact cannot be determined precisely from the available data."
+        ),
+    },
+
+    confidence:
       clamp(
         safeNumber(
           parsed.confidence,
@@ -1025,25 +1274,8 @@ The "confidence" field should be between 0 and 100.
         ),
         0,
         100
-      );
-
-    return {
-      answer,
-      nextStep,
-      financialImpact,
-      confidence,
-    };
-  } catch (error) {
-    console.error(
-      "[ArkenOne AI CFO] Invalid CFO answer:",
-      text,
-      error
-    );
-
-    throw new Error(
-      "OpenAI returned an invalid CFO answer."
-    );
-  }
+      ),
+  };
 }
 
 /*

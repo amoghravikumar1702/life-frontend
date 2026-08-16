@@ -1,32 +1,26 @@
-// src/app/api/ai-cfo/ask/route.ts
+// src/app/api/ai-cfo/route.ts
 
 import { NextResponse } from "next/server";
 
 import { createClient } from "@/lib/supabase/server";
 import { buildExecutiveReport } from "@/lib/cfo/report";
-import { askAICFO } from "@/lib/ai/openaiCFO";
+import { generateAICFOBrief } from "@/lib/ai/openaiCFO";
 import { checkRateLimit } from "@/lib/security/rateLimit";
 
 export const dynamic = "force-dynamic";
 
-export async function POST(
-  request: Request
-) {
+export async function GET() {
   try {
-    /*
-     * ============================================================
-     * 1. AUTHENTICATION
-     * ============================================================
-     */
+    // ============================================================
+    // 1. AUTHENTICATION
+    // ============================================================
 
-    const supabase =
-      await createClient();
+    const supabase = await createClient();
 
     const {
       data: { user },
       error: authError,
-    } =
-      await supabase.auth.getUser();
+    } = await supabase.auth.getUser();
 
     if (authError || !user) {
       return NextResponse.json(
@@ -36,23 +30,17 @@ export async function POST(
         {
           status: 401,
           headers: {
-            "Cache-Control":
-              "no-store",
+            "Cache-Control": "no-store",
           },
         }
       );
     }
 
-    /*
-     * ============================================================
-     * 2. RATE LIMIT
-     * ============================================================
-     */
+    // ============================================================
+    // 2. RATE LIMIT
+    // ============================================================
 
-    const rateLimit =
-      checkRateLimit(
-        `ai-cfo-ask:${user.id}`
-      );
+    const rateLimit = checkRateLimit(`ai-cfo:${user.id}`);
 
     if (!rateLimit.allowed) {
       return NextResponse.json(
@@ -65,8 +53,7 @@ export async function POST(
         {
           status: 429,
           headers: {
-            "Cache-Control":
-              "no-store",
+            "Cache-Control": "no-store",
             "Retry-After": String(
               rateLimit.retryAfterSeconds
             ),
@@ -75,298 +62,112 @@ export async function POST(
       );
     }
 
-    /*
-     * ============================================================
-     * 3. READ REQUEST
-     * ============================================================
-     */
+    // ============================================================
+    // 3. BUILD THE REAL EXECUTIVE REPORT
+    // ============================================================
+    //
+    // IMPORTANT:
+    // generateAICFOBrief() expects an ExecutiveReport.
+    //
+    // Do NOT pass getCFOContext() here.
+    //
+    // buildExecutiveReport() already creates the complete
+    // ExecutiveReport structure expected by the AI CFO.
+    //
 
-    let body: unknown;
+    const report = await buildExecutiveReport();
 
-    try {
-      body = await request.json();
-    } catch {
-      return NextResponse.json(
-        {
-          error:
-            "Invalid request body.",
-        },
-        {
-          status: 400,
-          headers: {
-            "Cache-Control":
-              "no-store",
-          },
-        }
-      );
-    }
+    // ============================================================
+    // 4. GENERATE AI CFO BRIEF
+    // ============================================================
 
-    if (
-      typeof body !== "object" ||
-      body === null ||
-      !("question" in body)
-    ) {
-      return NextResponse.json(
-        {
-          error:
-            "CFO question is required.",
-        },
-        {
-          status: 400,
-          headers: {
-            "Cache-Control":
-              "no-store",
-          },
-        }
-      );
-    }
+    const aiBrief = await generateAICFOBrief(report);
 
-    const questionValue =
-      (
-        body as {
-          question?: unknown;
-        }
-      ).question;
-
-    if (
-      typeof questionValue !==
-      "string"
-    ) {
-      return NextResponse.json(
-        {
-          error:
-            "CFO question must be a string.",
-        },
-        {
-          status: 400,
-          headers: {
-            "Cache-Control":
-              "no-store",
-          },
-        }
-      );
-    }
-
-    const question =
-      questionValue.trim();
-
-    if (!question) {
-      return NextResponse.json(
-        {
-          error:
-            "CFO question cannot be empty.",
-        },
-        {
-          status: 400,
-          headers: {
-            "Cache-Control":
-              "no-store",
-          },
-        }
-      );
-    }
-
-    if (question.length > 1000) {
-      return NextResponse.json(
-        {
-          error:
-            "CFO question is too long.",
-        },
-        {
-          status: 400,
-          headers: {
-            "Cache-Control":
-              "no-store",
-          },
-        }
-      );
-    }
-
-    /*
-     * ============================================================
-     * 4. BUILD LIVE EXECUTIVE REPORT
-     * ============================================================
-     *
-     * The report is generated server-side using the authenticated
-     * Supabase user.
-     *
-     * The browser never supplies financial data.
-     */
-
-    const report =
-      await buildExecutiveReport();
-
-    /*
-     * ============================================================
-     * 5. ASK THE AI CFO
-     * ============================================================
-     */
-
-    const cfoAnswer =
-      await askAICFO(
-        report,
-        question
-      );
-
-    /*
-     * ============================================================
-     * 6. NORMALIZE RESPONSE FOR FRONTEND
-     * ============================================================
-     *
-     * AskYourCFO expects:
-     *
-     * {
-     *   answer,
-     *   decision,
-     *   action,
-     *   financialImpact: {
-     *     amount,
-     *     explanation
-     *   },
-     *   confidence
-     * }
-     *
-     * askAICFO currently returns:
-     *
-     * {
-     *   answer,
-     *   nextStep,
-     *   financialImpact: string,
-     *   confidence
-     * }
-     *
-     * Therefore we translate the server-side CFO response here.
-     */
-
-    const financialImpactText =
-      typeof cfoAnswer.financialImpact ===
-      "string"
-        ? cfoAnswer.financialImpact
-        : "";
-
-    /*
-     * Try to extract a rupee amount from the
-     * financial-impact explanation.
-     *
-     * If no reliable amount exists, return 0.
-     */
-
-    let financialImpactAmount = 0;
-
-    const amountMatch =
-      financialImpactText.match(
-        /₹\s*([\d,]+(?:\.\d+)?)/i
-      );
-
-    if (amountMatch?.[1]) {
-      const parsedAmount =
-        Number(
-          amountMatch[1].replace(
-            /,/g,
-            ""
-          )
-        );
-
-      if (
-        Number.isFinite(
-          parsedAmount
-        )
-      ) {
-        financialImpactAmount =
-          parsedAmount;
-      }
-    }
-
-    /*
-     * ============================================================
-     * 7. RETURN CFO RESPONSE
-     * ============================================================
-     */
+    // ============================================================
+    // 5. RETURN CFO DATA
+    // ============================================================
 
     return NextResponse.json(
       {
         success: true,
 
         data: {
-          answer:
-            cfoAnswer.answer,
+          aiBrief,
 
-          decision:
-            cfoAnswer.answer,
+          finance: {
+            revenue: Number(
+              report.finance?.revenue ?? 0
+            ),
 
-          action:
-            cfoAnswer.nextStep,
+            expenses: Number(
+              report.finance?.expenses ?? 0
+            ),
 
-          financialImpact: {
-            amount:
-              financialImpactAmount,
+            profit: Number(
+              report.finance?.profit ?? 0
+            ),
 
-            explanation:
-              financialImpactText,
+            outstandingReceivables: Number(
+              report.finance
+                ?.outstandingReceivables ?? 0
+            ),
+
+            healthScore: Number(
+              report.finance?.healthScore ?? 0
+            ),
           },
 
-          confidence:
-            Number.isFinite(
-              Number(
-                cfoAnswer.confidence
-              )
-            )
-              ? Math.min(
-                  100,
-                  Math.max(
-                    0,
-                    Number(
-                      cfoAnswer.confidence
-                    )
-                  )
-                )
-              : 0,
+          workforce: {
+            currentEmployees: Number(
+              report.workforce
+                ?.currentEmployees ?? 0
+            ),
+
+            recommendedEmployees: Number(
+              report.workforce
+                ?.recommendedEmployees ?? 0
+            ),
+
+            difference: Number(
+              report.workforce?.difference ?? 0
+            ),
+          },
         },
 
         rateLimit: {
-          remaining:
-            rateLimit.remaining,
+          remaining: rateLimit.remaining,
         },
       },
       {
         status: 200,
 
         headers: {
-          "Cache-Control":
-            "private, no-store",
-
-          "X-Content-Type-Options":
-            "nosniff",
+          "Cache-Control": "private, no-store",
+          "X-Content-Type-Options": "nosniff",
         },
       }
     );
   } catch (error) {
-    /*
-     * ============================================================
-     * 8. SERVER-SIDE ERROR HANDLING
-     * ============================================================
-     *
-     * Never expose OpenAI/Supabase internals to the browser.
-     */
+    // ============================================================
+    // 6. SERVER-SIDE ERROR HANDLING
+    // ============================================================
 
     console.error(
-      "[ArkenOne Ask CFO API]",
+      "[ArkenOne AI CFO API]",
       error instanceof Error
         ? error.message
-        : error
+        : "Unknown server error"
     );
 
     return NextResponse.json(
       {
         error:
-          "Unable to reach your CFO right now. Please try again.",
+          "Unable to generate the AI CFO briefing.",
       },
       {
         status: 500,
-
         headers: {
-          "Cache-Control":
-            "no-store",
+          "Cache-Control": "no-store",
         },
       }
     );

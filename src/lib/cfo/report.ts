@@ -10,22 +10,16 @@ import { ExecutiveReport } from "./types";
  * ARKENONE AI CFO — EXECUTIVE REPORT ENGINE
  * ============================================================
  *
- * SECURITY / RELIABILITY PRINCIPLES
- *
- * 1. Never trust malformed database values.
- * 2. Never use `any`.
- * 3. Never expose financial data through production logs.
- * 4. Workforce recommendations must be financially conservative.
- * 5. Current employee count must not artificially inflate the
- *    recommended workforce.
- * 6. The AI CFO receives normalized financial data only.
+ * This file prepares normalized financial intelligence.
  *
  * IMPORTANT:
  *
- * This file does NOT call OpenAI.
+ * - No OpenAI calls
+ * - No OpenAI model configuration
+ * - No API keys
+ * - No environment-variable requirements
  *
- * It prepares the financial intelligence that the AI CFO
- * endpoint later provides to OpenAI.
+ * The OpenAI layer consumes this report separately.
  */
 
 /*
@@ -40,25 +34,18 @@ function safeNumber(
 ): number {
   const number = Number(value);
 
-  if (!Number.isFinite(number)) {
-    return fallback;
-  }
-
-  return number;
+  return Number.isFinite(number)
+    ? number
+    : fallback;
 }
 
 function safeNonNegativeNumber(
   value: unknown,
   fallback = 0
 ): number {
-  const number = safeNumber(
-    value,
-    fallback
-  );
-
   return Math.max(
     0,
-    number
+    safeNumber(value, fallback)
   );
 }
 
@@ -71,11 +58,9 @@ function safeInteger(
     fallback
   );
 
-  if (!Number.isFinite(number)) {
-    return fallback;
-  }
-
-  return Math.floor(number);
+  return Number.isFinite(number)
+    ? Math.floor(number)
+    : fallback;
 }
 
 function safeNonNegativeInteger(
@@ -84,10 +69,7 @@ function safeNonNegativeInteger(
 ): number {
   return Math.max(
     0,
-    safeInteger(
-      value,
-      fallback
-    )
+    safeInteger(value, fallback)
   );
 }
 
@@ -101,9 +83,7 @@ function safeText(
   value: unknown,
   fallback = ""
 ): string {
-  if (
-    typeof value !== "string"
-  ) {
+  if (typeof value !== "string") {
     return fallback;
   }
 
@@ -115,45 +95,21 @@ function safeText(
  * WORKFORCE INTELLIGENCE
  * ============================================================
  *
- * IMPORTANT:
+ * This calculates financial capacity.
  *
- * This calculation determines FINANCIAL CAPACITY.
- *
- * It is NOT a blind hiring recommendation.
- *
- * The AI CFO can use this baseline together with:
- *
- * - cash flow
- * - profit
- * - expenses
- * - receivables
- * - forecast
- * - business stage
- * - risk appetite
- *
- * before recommending an actual hire.
+ * It is NOT an automatic hiring recommendation.
  */
 
 /*
- * Maximum workforce baseline the engine can produce.
- *
- * This prevents malformed financial records from creating
- * absurd values such as millions of recommended employees.
- *
- * This is NOT a business restriction.
- *
- * It is a safety boundary for the intelligence engine.
+ * Safety ceiling for malformed financial data.
  */
 const MAX_RECOMMENDED_EMPLOYEES = 1000;
 
 /*
- * Revenue-per-employee baseline.
+ * Conservative MVP baseline.
  *
- * MVP financial capacity baseline:
- *
- * ₹25,000 monthly revenue ≈ capacity for one employee.
- *
- * This is deliberately conservative.
+ * ₹25,000 monthly revenue ~= financial capacity for
+ * one employee.
  */
 const MONTHLY_REVENUE_PER_EMPLOYEE = 25_000;
 
@@ -163,34 +119,23 @@ function calculateRecommendedEmployees(
   profit: number
 ): number {
   const monthlyRevenue =
-    safeNonNegativeNumber(
-      revenue
-    );
+    safeNonNegativeNumber(revenue);
 
   const monthlyExpenses =
-    safeNonNegativeNumber(
-      expenses
-    );
+    safeNonNegativeNumber(expenses);
 
   const monthlyProfit =
-    safeNumber(
-      profit
-    );
+    safeNumber(profit);
 
   /*
    * No meaningful revenue.
-   *
-   * Do not recommend a workforce from
-   * nonexistent financial capacity.
    */
-  if (
-    monthlyRevenue <= 0
-  ) {
+  if (monthlyRevenue <= 0) {
     return 0;
   }
 
   /*
-   * Base financial capacity.
+   * Base capacity.
    */
   let recommendedEmployees =
     Math.floor(
@@ -199,8 +144,8 @@ function calculateRecommendedEmployees(
     );
 
   /*
-   * A business with revenue can support
-   * at least one employee in this baseline.
+   * Meaningful revenue supports at least
+   * one employee in this baseline.
    */
   recommendedEmployees =
     Math.max(
@@ -209,44 +154,34 @@ function calculateRecommendedEmployees(
     );
 
   /*
-   * Loss-making businesses receive
-   * a conservative reduction.
+   * Loss-making business:
+   * reduce financial capacity conservatively.
    */
-  if (
-    monthlyProfit < 0
-  ) {
+  if (monthlyProfit < 0) {
     recommendedEmployees =
       Math.floor(
-        recommendedEmployees *
-          0.75
+        recommendedEmployees * 0.75
       );
   }
 
   /*
-   * Extremely high expense ratio.
-   *
-   * If expenses consume 90%+ of revenue,
-   * workforce expansion should be constrained.
+   * Very high expense ratio:
+   * constrain workforce capacity.
    */
   const expenseRatio =
     monthlyRevenue > 0
-      ? monthlyExpenses /
-        monthlyRevenue
+      ? monthlyExpenses / monthlyRevenue
       : 0;
 
-  if (
-    expenseRatio >= 0.9
-  ) {
+  if (expenseRatio >= 0.9) {
     recommendedEmployees =
       Math.floor(
-        recommendedEmployees *
-          0.75
+        recommendedEmployees * 0.75
       );
   }
 
   /*
-   * Never return less than one when there is
-   * meaningful revenue.
+   * Never return below one when revenue exists.
    */
   recommendedEmployees =
     Math.max(
@@ -255,7 +190,7 @@ function calculateRecommendedEmployees(
     );
 
   /*
-   * Hard safety ceiling.
+   * Safety ceiling.
    */
   recommendedEmployees =
     Math.min(
@@ -274,8 +209,11 @@ function calculateRecommendedEmployees(
 
 export async function buildExecutiveReport(): Promise<ExecutiveReport> {
   /*
-   * Load independent data concurrently.
+   * ==========================================================
+   * LOAD SOURCE DATA
+   * ==========================================================
    */
+
   const [
     company,
     finance,
@@ -288,22 +226,88 @@ export async function buildExecutiveReport(): Promise<ExecutiveReport> {
 
   /*
    * ==========================================================
-   * FINANCIAL NORMALIZATION
+   * NORMALIZE FINANCIAL DATA
    * ==========================================================
    */
 
-  const financeReport: ExecutiveReport["finance"] = {
+  const financeReport:
+    ExecutiveReport["finance"] = {
     ...finance,
+
+    revenue:
+      safeNonNegativeNumber(
+        finance.revenue
+      ),
+
+    expenses:
+      safeNonNegativeNumber(
+        finance.expenses
+      ),
+
+    profit:
+      safeNumber(
+        finance.profit
+      ),
 
     cash:
       safeNonNegativeNumber(
         finance.cash
       ),
 
+    cashFlow:
+      safeNumber(
+        finance.cashFlow
+      ),
+
+    grossMargin:
+      safeNumber(
+        finance.grossMargin
+      ),
+
+    netMargin:
+      safeNumber(
+        finance.netMargin
+      ),
+
+    workingCapital:
+      safeNumber(
+        finance.workingCapital
+      ),
+
+    cashRunwayDays:
+      safeNonNegativeNumber(
+        finance.cashRunwayDays
+      ),
+
+    monthlyBurnRate:
+      safeNonNegativeNumber(
+        finance.monthlyBurnRate
+      ),
+
     outstanding:
       safeNonNegativeNumber(
         finance.outstanding ??
           finance.outstandingReceivables
+      ),
+
+    outstandingReceivables:
+      safeNonNegativeNumber(
+        finance.outstandingReceivables
+      ),
+
+    outstandingPayables:
+      safeNonNegativeNumber(
+        finance.outstandingPayables
+      ),
+
+    revenueGrowth:
+      safeNumber(
+        finance.revenueGrowth
+      ),
+
+    expenseGrowth:
+      safeNumber(
+        finance.expenseGrowth
       ),
 
     healthScore:
@@ -316,21 +320,11 @@ export async function buildExecutiveReport(): Promise<ExecutiveReport> {
           )
         )
       ),
-
-    cashFlow:
-      safeNumber(
-        finance.cashFlow
-      ),
-
-    outstandingReceivables:
-      safeNonNegativeNumber(
-        finance.outstandingReceivables
-      ),
   };
 
   /*
    * ==========================================================
-   * CUSTOMER NORMALIZATION
+   * NORMALIZE CUSTOMER DATA
    * ==========================================================
    */
 
@@ -402,11 +396,6 @@ export async function buildExecutiveReport(): Promise<ExecutiveReport> {
    * ==========================================================
    * CURRENT WORKFORCE
    * ==========================================================
-   *
-   * Current employees are used ONLY for comparison.
-   *
-   * They do NOT determine the financially sustainable
-   * workforce baseline.
    */
 
   const currentEmployees =
@@ -430,20 +419,9 @@ export async function buildExecutiveReport(): Promise<ExecutiveReport> {
       financeReport.profit
     );
 
-  /*
-   * Difference between current workforce
-   * and financial capacity.
-   */
-
   const employeeDifference =
     recommendedEmployees -
     currentEmployees;
-
-  /*
-   * This is explicitly named as financial capacity
-   * so the AI does not confuse it with an automatic
-   * hiring instruction.
-   */
 
   const financiallySustainableEmployees =
     recommendedEmployees;
@@ -466,9 +444,7 @@ export async function buildExecutiveReport(): Promise<ExecutiveReport> {
    */
 
   const formattedRevenue =
-    Number(
-      financeReport.revenue
-    ).toLocaleString(
+    financeReport.revenue.toLocaleString(
       "en-IN",
       {
         maximumFractionDigits: 0,
@@ -476,9 +452,7 @@ export async function buildExecutiveReport(): Promise<ExecutiveReport> {
     );
 
   const formattedExpenses =
-    Number(
-      financeReport.expenses
-    ).toLocaleString(
+    financeReport.expenses.toLocaleString(
       "en-IN",
       {
         maximumFractionDigits: 0,
@@ -486,9 +460,7 @@ export async function buildExecutiveReport(): Promise<ExecutiveReport> {
     );
 
   const formattedProfit =
-    Number(
-      financeReport.profit
-    ).toLocaleString(
+    financeReport.profit.toLocaleString(
       "en-IN",
       {
         maximumFractionDigits: 0,
@@ -506,7 +478,7 @@ export async function buildExecutiveReport(): Promise<ExecutiveReport> {
 
   /*
    * ==========================================================
-   * RETURN EXECUTIVE REPORT
+   * RETURN NORMALIZED EXECUTIVE REPORT
    * ==========================================================
    */
 

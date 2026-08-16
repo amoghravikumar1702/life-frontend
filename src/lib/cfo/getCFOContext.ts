@@ -6,40 +6,102 @@ import { getFinancialSnapshot } from "@/lib/finance/getFinancialSnapshot";
 export async function getCFOContext() {
   const supabase = await createClient();
 
-  // ============================================================
-  // 1. AUTHENTICATION
-  // ============================================================
-
   const {
     data: { user },
     error: authError,
   } = await supabase.auth.getUser();
 
-  if (authError) {
+  if (authError || !user) {
+    throw new Error("User is not authenticated.");
+  }
+
+  /*
+   * ============================================================
+   * FINANCIAL SNAPSHOT
+   * ============================================================
+   */
+
+  const snapshot = await getFinancialSnapshot();
+
+  /*
+   * ============================================================
+   * COMPANY
+   * ============================================================
+   *
+   * We use owner_id -> company.id because the companies table
+   * uses a bigint primary key.
+   */
+
+  const {
+    data: company,
+    error: companyError,
+  } = await supabase
+    .from("companies")
+    .select(
+      `
+        id,
+        industry,
+        starting_revenue
+      `
+    )
+    .eq("owner_id", user.id)
+    .single();
+
+  if (companyError) {
     console.error(
-      "[CFO Context] Authentication error:",
-      authError
+      "[CFO] Failed to fetch company:",
+      companyError
     );
 
-    throw authError;
+    throw companyError;
   }
 
-  if (!user) {
-    throw new Error(
-      "User is not authenticated."
+  /*
+   * ============================================================
+   * BUSINESS PROFILE
+   * ============================================================
+   *
+   * This contains the sector-specific onboarding answers.
+   *
+   * Example:
+   *
+   * {
+   *   revenue_model: "Monthly retainers",
+   *   active_clients: "12",
+   *   team_size: "5"
+   * }
+   */
+
+  const {
+    data: businessProfile,
+    error: businessProfileError,
+  } = await supabase
+    .from("business_profiles")
+    .select(
+      `
+        industry,
+        answers,
+        created_at,
+        updated_at
+      `
+    )
+    .eq("company_id", company.id)
+    .maybeSingle();
+
+  if (businessProfileError) {
+    console.error(
+      "[CFO] Failed to fetch business profile:",
+      businessProfileError
     );
+
+    throw businessProfileError;
   }
 
-  // ============================================================
-  // 2. FINANCIAL SNAPSHOT
-  // ============================================================
-
-  const snapshot =
-    await getFinancialSnapshot();
-
-  // ============================================================
-  // 3. RECENT INVOICES
-  // ============================================================
+  /*
+   * ============================================================
+   * RECENT INVOICES
+   * ============================================================
+   */
 
   const {
     data: invoices,
@@ -56,28 +118,29 @@ export async function getCFOContext() {
         total,
         amount_paid,
         balance_due,
-        status,
-        created_at
+        status
       `
     )
     .eq("owner_id", user.id)
     .order("invoice_date", {
       ascending: false,
     })
-    .limit(100);
+    .limit(50);
 
   if (invoicesError) {
     console.error(
-      "[CFO Context] Failed to fetch invoices:",
+      "[CFO] Failed to fetch invoices:",
       invoicesError
     );
 
     throw invoicesError;
   }
 
-  // ============================================================
-  // 4. RECENT EXPENSES
-  // ============================================================
+  /*
+   * ============================================================
+   * RECENT EXPENSES
+   * ============================================================
+   */
 
   const {
     data: expenses,
@@ -92,28 +155,29 @@ export async function getCFOContext() {
         description,
         vendor,
         expense_date,
-        is_recurring,
-        created_at
+        is_recurring
       `
     )
     .eq("owner_id", user.id)
     .order("expense_date", {
       ascending: false,
     })
-    .limit(100);
+    .limit(50);
 
   if (expensesError) {
     console.error(
-      "[CFO Context] Failed to fetch expenses:",
+      "[CFO] Failed to fetch expenses:",
       expensesError
     );
 
     throw expensesError;
   }
 
-  // ============================================================
-  // 5. CUSTOMERS
-  // ============================================================
+  /*
+   * ============================================================
+   * CUSTOMERS
+   * ============================================================
+   */
 
   const {
     data: customers,
@@ -122,250 +186,98 @@ export async function getCFOContext() {
     .from("customers")
     .select("*")
     .eq("owner_id", user.id)
-    .limit(200);
+    .limit(100);
 
   if (customersError) {
     console.error(
-      "[CFO Context] Failed to fetch customers:",
+      "[CFO] Failed to fetch customers:",
       customersError
     );
 
     throw customersError;
   }
 
-  // ============================================================
-  // 6. NORMALIZE NUMBERS
-  // ============================================================
+  /*
+   * ============================================================
+   * NORMALIZED BUSINESS PROFILE
+   * ============================================================
+   *
+   * Keep this predictable for the AI.
+   */
 
-  const safeNumber = (
-    value: unknown
-  ): number => {
-    const number = Number(value);
+  const industry =
+    businessProfile?.industry ??
+    company?.industry ??
+    "Other";
 
-    return Number.isFinite(number)
-      ? number
-      : 0;
-  };
+  const answers =
+    businessProfile?.answers &&
+    typeof businessProfile.answers === "object"
+      ? businessProfile.answers
+      : {};
 
-  // ============================================================
-  // 7. NORMALIZE INVOICES
-  // ============================================================
-
-  const normalizedInvoices =
-    (invoices ?? []).map(
-      (invoice) => ({
-        id: invoice.id,
-
-        invoiceNumber:
-          invoice.invoice_number ?? "",
-
-        customer:
-          invoice.customer ?? "",
-
-        invoiceDate:
-          invoice.invoice_date ?? null,
-
-        dueDate:
-          invoice.due_date ?? null,
-
-        total:
-          safeNumber(invoice.total),
-
-        amountPaid:
-          safeNumber(
-            invoice.amount_paid
-          ),
-
-        balanceDue:
-          Math.max(
-            0,
-            safeNumber(
-              invoice.balance_due
-            )
-          ),
-
-        status:
-          invoice.status ?? "",
-
-        createdAt:
-          invoice.created_at ?? null,
-      })
-    );
-
-  // ============================================================
-  // 8. NORMALIZE EXPENSES
-  // ============================================================
-
-  const normalizedExpenses =
-    (expenses ?? []).map(
-      (expense) => ({
-        id: expense.id,
-
-        amount:
-          safeNumber(
-            expense.amount
-          ),
-
-        category:
-          expense.category ?? "",
-
-        description:
-          expense.description ?? "",
-
-        vendor:
-          expense.vendor ?? "",
-
-        expenseDate:
-          expense.expense_date ?? null,
-
-        isRecurring:
-          Boolean(
-            expense.is_recurring
-          ),
-
-        createdAt:
-          expense.created_at ?? null,
-      })
-    );
-
-  // ============================================================
-  // 9. NORMALIZE CUSTOMERS
-  // ============================================================
-
-  const normalizedCustomers =
-    (customers ?? []).map(
-      (customer) => ({
-        ...customer,
-
-        name:
-          customer.name ??
-          customer.customer_name ??
-          "",
-
-        email:
-          customer.email ?? "",
-
-        phone:
-          customer.phone ?? "",
-
-        company:
-          customer.company ?? "",
-
-        totalRevenue:
-          safeNumber(
-            customer.total_revenue
-          ),
-
-        outstanding:
-          safeNumber(
-            customer.outstanding
-          ),
-      })
-    );
-
-  // ============================================================
-  // 10. CALCULATED CFO SIGNALS
-  // ============================================================
-
-  const totalInvoiced =
-    normalizedInvoices.reduce(
-      (sum, invoice) =>
-        sum + invoice.total,
-      0
-    );
-
-  const totalCollected =
-    normalizedInvoices.reduce(
-      (sum, invoice) =>
-        sum + invoice.amountPaid,
-      0
-    );
-
-  const totalOutstanding =
-    normalizedInvoices.reduce(
-      (sum, invoice) =>
-        sum + invoice.balanceDue,
-      0
-    );
-
-  const totalExpenses =
-    normalizedExpenses.reduce(
-      (sum, expense) =>
-        sum + expense.amount,
-      0
-    );
-
-  const overdueInvoices =
-    normalizedInvoices.filter(
-      (invoice) => {
-        if (
-          invoice.balanceDue <= 0 ||
-          !invoice.dueDate
-        ) {
-          return false;
-        }
-
-        const dueDate =
-          new Date(
-            invoice.dueDate
-          );
-
-        return (
-          !Number.isNaN(
-            dueDate.getTime()
-          ) &&
-          dueDate <
-            new Date()
-        );
-      }
-    );
-
-  const overdueReceivables =
-    overdueInvoices.reduce(
-      (sum, invoice) =>
-        sum + invoice.balanceDue,
-      0
-    );
-
-  // ============================================================
-  // 11. RETURN CFO CONTEXT
-  // ============================================================
+  /*
+   * ============================================================
+   * CFO CONTEXT
+   * ============================================================
+   */
 
   return {
-    generatedAt:
-      new Date().toISOString(),
+    /*
+     * BUSINESS IDENTITY
+     */
 
-    userId: user.id,
-
-    financialSnapshot: snapshot,
-
-    summary: {
-      totalInvoiced,
-      totalCollected,
-      totalOutstanding,
-      totalExpenses,
-      overdueReceivables,
-
-      invoiceCount:
-        normalizedInvoices.length,
-
-      expenseCount:
-        normalizedExpenses.length,
-
-      customerCount:
-        normalizedCustomers.length,
-
-      overdueInvoiceCount:
-        overdueInvoices.length,
+    business: {
+      companyId: company.id,
+      industry,
+      startingRevenue: Number(
+        company?.starting_revenue ?? 0
+      ),
+      profile: answers,
     },
 
-    invoices:
-      normalizedInvoices,
+    /*
+     * FINANCIAL POSITION
+     */
 
-    expenses:
-      normalizedExpenses,
+    financialSummary: {
+      revenue: Number(snapshot.revenue ?? 0),
 
-    customers:
-      normalizedCustomers,
+      expenses: Number(
+        snapshot.expenses ?? 0
+      ),
+
+      profit: Number(
+        snapshot.profit ?? 0
+      ),
+
+      outstandingReceivables: Number(
+        snapshot.outstandingReceivables ?? 0
+      ),
+
+      invoiceCount: Number(
+        snapshot.invoiceCount ?? 0
+      ),
+
+      expenseCount: Number(
+        snapshot.expenseCount ?? 0
+      ),
+    },
+
+    /*
+     * RAW SNAPSHOT
+     */
+
+    snapshot,
+
+    /*
+     * TRANSACTION DATA
+     */
+
+    invoices: invoices ?? [],
+
+    expenses: expenses ?? [],
+
+    customers: customers ?? [],
   };
 }

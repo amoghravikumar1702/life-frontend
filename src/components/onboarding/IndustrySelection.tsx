@@ -1,133 +1,118 @@
+// src/components/onboarding/IndustrySelection.tsx
+
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState } from "react";
 import {
   ArrowRight,
-  Briefcase,
-  GraduationCap,
-  HeartPulse,
-  Hotel,
-  Factory,
-  Dumbbell,
-  Landmark,
-  Store,
+  BriefcaseBusiness,
 } from "lucide-react";
-import { saveIndustry } from "@/app/onboarding/actions";
+
+interface IndustrySelectionProps {
+  onContinue: (industry: string) => void;
+}
 
 const industries = [
-  {
-    id: "retail",
-    title: "Retail & E-commerce",
-    icon: Store,
-  },
-  {
-    id: "services",
-    title: "Professional Services",
-    icon: Briefcase,
-  },
-  {
-    id: "education",
-    title: "Education",
-    icon: GraduationCap,
-  },
-  {
-    id: "healthcare",
-    title: "Healthcare",
-    icon: HeartPulse,
-  },
-  {
-    id: "hospitality",
-    title: "Hospitality",
-    icon: Hotel,
-  },
-  {
-    id: "manufacturing",
-    title: "Manufacturing",
-    icon: Factory,
-  },
-  {
-    id: "fitness",
-    title: "Fitness & Wellness",
-    icon: Dumbbell,
-  },
-  {
-    id: "nonprofit",
-    title: "Non-Profit",
-    icon: Landmark,
-  },
+  "Retail",
+  "E-commerce",
+  "Food & Restaurant",
+  "Professional Services",
+  "Agency",
+  "Manufacturing",
+  "Construction",
+  "Technology",
+  "Healthcare",
+  "Education",
+  "Real Estate",
+  "Other",
 ];
 
-export default function IndustrySelection() {
-  const [selected, setSelected] = useState("");
-  const [isPending, startTransition] = useTransition();
+export default function IndustrySelection({
+  onContinue,
+}: IndustrySelectionProps) {
+  const [industry, setIndustry] = useState("");
+
+  function handleContinue() {
+    if (!industry) {
+      return;
+    }
+
+    onContinue(industry);
+  }
 
   return (
-    <div className="w-full max-w-5xl rounded-[32px] border border-white/10 bg-[#121214] p-10 shadow-2xl">
-      <p className="text-sm uppercase tracking-[0.35em] text-zinc-500">
-        ArkenOne Setup
-      </p>
+    <section className="relative w-full max-w-3xl overflow-hidden rounded-[32px] border border-[#D4AF37]/15 bg-[#101318]">
+      <div className="pointer-events-none absolute left-1/2 top-[-180px] h-[360px] w-[600px] -translate-x-1/2 rounded-full bg-[#D4AF37]/[0.045] blur-[120px]" />
 
-      <h1 className="mt-6 text-5xl font-semibold text-white">
-        Select Your Industry
-      </h1>
+      <div className="relative px-6 py-8 sm:px-10 sm:py-10">
+        <div className="flex items-center gap-3">
+          <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-[#D4AF37]/20 bg-[#D4AF37]/[0.07]">
+            <BriefcaseBusiness
+              size={18}
+              className="text-[#D4AF37]"
+              strokeWidth={1.7}
+            />
+          </div>
 
-      <p className="mt-4 max-w-2xl text-lg leading-8 text-zinc-400">
-        ArkenOne will tailor terminology, financial insights and workflows
-        according to your business sector.
-      </p>
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-[#D4AF37]">
+              Business Setup
+            </p>
 
-      <div className="mt-12 grid gap-5 md:grid-cols-2">
-        {industries.map((industry) => {
-          const Icon = industry.icon;
+            <p className="mt-1 text-sm text-zinc-500">
+              Tell ArkenOne what you do
+            </p>
+          </div>
+        </div>
 
-          const active = selected === industry.id;
+        <div className="mt-8">
+          <h1 className="text-2xl font-medium tracking-tight text-white sm:text-3xl">
+            What type of business do you run?
+          </h1>
 
-          return (
-            <button
-              type="button"
-              key={industry.id}
-              onClick={() => setSelected(industry.id)}
-              className={`flex items-center gap-5 rounded-2xl border p-6 text-left transition-all duration-300 ${
-                active
-                  ? "border-yellow-500 bg-yellow-500/10"
-                  : "border-white/10 hover:border-white/20 hover:bg-white/[0.03]"
-              }`}
-            >
-              <div
-                className={`rounded-xl p-3 ${
-                  active ? "bg-yellow-500/20" : "bg-white/5"
+          <p className="mt-3 text-sm leading-7 text-zinc-500">
+            This helps ArkenOne use the right financial
+            language and recommendations for your business.
+          </p>
+        </div>
+
+        <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {industries.map((item) => {
+            const selected = industry === item;
+
+            return (
+              <button
+                key={item}
+                type="button"
+                onClick={() => setIndustry(item)}
+                className={`min-h-14 rounded-2xl border px-4 text-left text-sm transition ${
+                  selected
+                    ? "border-[#D4AF37]/45 bg-[#D4AF37]/[0.08] text-[#D4AF37]"
+                    : "border-white/[0.06] bg-white/[0.015] text-zinc-400 hover:border-[#D4AF37]/20 hover:bg-[#D4AF37]/[0.03] hover:text-zinc-200"
                 }`}
               >
-                <Icon
-                  size={24}
-                  className={active ? "text-yellow-300" : "text-zinc-400"}
-                />
-              </div>
+                {item}
+              </button>
+            );
+          })}
+        </div>
 
-              <span className="text-lg font-medium text-white">
-                {industry.title}
-              </span>
-            </button>
-          );
-        })}
+        <div className="mt-8 flex justify-end">
+          <button
+            type="button"
+            onClick={handleContinue}
+            disabled={!industry}
+            className="flex min-h-12 items-center justify-center gap-2 rounded-xl bg-[#D4AF37] px-6 text-sm font-semibold text-black transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-35"
+          >
+            Continue
+
+            <ArrowRight
+              size={17}
+              strokeWidth={1.8}
+            />
+          </button>
+        </div>
       </div>
-
-      <div className="mt-12 flex justify-end">
-        <button
-          type="button"
-          disabled={!selected || isPending}
-          onClick={() =>
-            startTransition(async () => {
-              await saveIndustry(selected);
-            })
-          }
-          className="flex items-center gap-3 rounded-xl bg-yellow-500 px-7 py-4 font-medium text-black transition hover:bg-yellow-400 disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          {isPending ? "Saving..." : "Continue Setup"}
-
-          <ArrowRight size={18} />
-        </button>
-      </div>
-    </div>
+    </section>
   );
 }
