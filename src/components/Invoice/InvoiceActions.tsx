@@ -26,30 +26,37 @@ export default function InvoiceActions({
   onCollectPayment,
 }: InvoiceActionsProps) {
   return (
-    <div className="flex flex-wrap items-center gap-3">
+    <div className="flex flex-wrap items-center gap-2.5">
 
-      <ActionButton variant="primary" onClick={onCollectPayment}>
-        <CreditCard size={18} />
+      {/* PRIMARY ACTION */}
+
+      <ActionButton
+        variant="primary"
+        onClick={onCollectPayment}
+      >
+        <CreditCard size={17} strokeWidth={1.8} />
         Collect Payment
       </ActionButton>
 
+      {/* SECONDARY ACTIONS */}
+
       <ActionButton onClick={onEdit}>
-        <Pencil size={18} />
+        <Pencil size={16} strokeWidth={1.8} />
         Edit
       </ActionButton>
 
       <ActionButton onClick={onPrint}>
-        <Printer size={18} />
+        <Printer size={16} strokeWidth={1.8} />
         Print
       </ActionButton>
 
       <ActionButton onClick={onDownload}>
-        <Download size={18} />
+        <Download size={16} strokeWidth={1.8} />
         PDF
       </ActionButton>
 
       <ActionButton onClick={onWhatsApp}>
-        <MessageCircle size={18} />
+        <MessageCircle size={16} strokeWidth={1.8} />
         WhatsApp
       </ActionButton>
 

@@ -1,163 +1,69 @@
+import { Customer } from "@/types/customer";
 import { Invoice } from "@/types/invoice";
 
-import { CustomerMetrics } from "./types";
-
-const formatName = (value?: string | null) =>
-  (value ?? "").trim().toLowerCase();
-
-export function getCustomerInvoices(
-  customerId: number,
-  invoices: Invoice[]
-): Invoice[] {
-  return invoices.filter(
-    (invoice) => invoice.customer_id === customerId
-  );
-}
-
-export function calculateRevenue(
-  invoices: Invoice[]
-): number {
-  return invoices.reduce(
-    (sum, invoice) => sum + Number(invoice.total ?? 0),
-    0
-  );
-}
-
-export function calculateCollected(
-  invoices: Invoice[]
-): number {
-  return invoices.reduce(
-    (sum, invoice) =>
-      sum + Number(invoice.amount_paid ?? 0),
-    0
-  );
-}
-
-export function calculateOutstanding(
-  invoices: Invoice[]
-): number {
-  return invoices.reduce(
-    (sum, invoice) =>
-      sum + Number(invoice.balance_due ?? 0),
-    0
-  );
-}
-
-export function calculateCollectionRate(
-  revenue: number,
-  collected: number
-): number {
-  if (revenue <= 0) return 0;
-
-  return Math.round((collected / revenue) * 100);
-}
-
-export function calculateHealth(
-  collectionRate: number
-): CustomerMetrics["health"] {
-  if (collectionRate >= 95) return "Excellent";
-
-  if (collectionRate >= 80) return "Good";
-
-  if (collectionRate >= 60) return "Average";
-
-  return "Attention";
+export interface CustomerMetrics {
+  invoiceCount: number;
+  revenue: number;
+  outstanding: number;
+  collected: number;
 }
 
 export function buildCustomerMetrics(
   customerId: number,
   invoices: Invoice[]
 ): CustomerMetrics {
-  const customerInvoices = getCustomerInvoices(
-    customerId,
-    invoices
+  const customerInvoices = invoices.filter(
+    (invoice) => invoice.customer_id === customerId
   );
 
-  const revenue = calculateRevenue(customerInvoices);
+  const revenue = customerInvoices.reduce(
+    (sum, invoice) =>
+      sum + Number(invoice.total || 0),
+    0
+  );
 
-  const collected =
-    calculateCollected(customerInvoices);
+  const outstanding = customerInvoices.reduce(
+    (sum, invoice) =>
+      sum + Number(invoice.balance_due || 0),
+    0
+  );
 
-  const outstanding =
-    calculateOutstanding(customerInvoices);
-
-  const collectionRate =
-    calculateCollectionRate(
-      revenue,
-      collected
-    );
+  const collected = customerInvoices.reduce(
+    (sum, invoice) =>
+      sum + Number(invoice.amount_paid || 0),
+    0
+  );
 
   return {
     invoiceCount: customerInvoices.length,
-
     revenue,
-
-    collected,
-
     outstanding,
-
-    collectionRate,
-
-    health: calculateHealth(collectionRate),
+    collected,
   };
 }
 
-export function formatCompactCurrency(
-  amount: number
-): string {
-  return new Intl.NumberFormat("en-IN", {
-    style: "currency",
-    currency: "INR",
-    notation: "compact",
-    maximumFractionDigits: 1,
-  }).format(amount);
-}
-
-export function formatCurrency(
-  amount: number
-): string {
-  return new Intl.NumberFormat("en-IN", {
-    style: "currency",
-    currency: "INR",
-    maximumFractionDigits: 2,
-  }).format(amount);
-}
-
-export function getCustomerInitials(
-  customerName: string
-): string {
-  const words = customerName
-    .trim()
-    .split(/\s+/)
-    .filter(Boolean);
-
-  if (words.length === 0) return "?";
-
-  if (words.length === 1)
-    return words[0].slice(0, 2).toUpperCase();
-
-  return (
-    words[0][0] + words[1][0]
-  ).toUpperCase();
-}
-
 export function customerMatchesSearch(
-  customer: {
-    customer_name: string;
-    business_name?: string;
-    email?: string;
-    phone?: string;
-  },
-  query: string
+  customer: Customer,
+  search: string
 ): boolean {
-  const search = formatName(query);
+  const query = search.trim().toLowerCase();
 
-  if (!search) return true;
+  if (!query) {
+    return true;
+  }
 
-  return (
-    formatName(customer.customer_name).includes(search) ||
-    formatName(customer.business_name).includes(search) ||
-    formatName(customer.email).includes(search) ||
-    formatName(customer.phone).includes(search)
+  const searchableFields = [
+    customer.customer_name,
+    customer.business_name,
+    customer.email,
+    customer.phone,
+    customer.gst_number,
+    customer.address,
+  ];
+
+  return searchableFields.some((field) =>
+    String(field ?? "")
+      .toLowerCase()
+      .includes(query)
   );
 }

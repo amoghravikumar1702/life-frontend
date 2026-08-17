@@ -1,5 +1,3 @@
-// src/app/api/ai-cfo/ask/route.ts
-
 import { NextResponse } from "next/server";
 
 import { getCFOContext } from "@/lib/cfo/getCFOContext";
@@ -34,14 +32,12 @@ export async function POST(request: Request) {
       );
     }
 
-    const context =
-      await getCFOContext();
+    const context = await getCFOContext();
 
-    const result =
-      await askAICFO(
-        context,
-        question
-      );
+    const result = await askAICFO(
+      context,
+      question
+    );
 
     return NextResponse.json(
       {
@@ -51,8 +47,7 @@ export async function POST(request: Request) {
         status: 200,
         headers: {
           "Cache-Control": "no-store",
-          "X-Content-Type-Options":
-            "nosniff",
+          "X-Content-Type-Options": "nosniff",
         },
       }
     );

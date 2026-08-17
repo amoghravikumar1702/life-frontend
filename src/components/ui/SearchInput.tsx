@@ -1,49 +1,93 @@
+// src/components/ui/SearchInput.tsx
+
 "use client";
 
-import { ChangeEvent } from "react";
 import { Search, X } from "lucide-react";
 
 interface SearchInputProps {
   value: string;
   onChange: (value: string) => void;
-
   placeholder?: string;
-
-  className?: string;
 }
 
 export default function SearchInput({
   value,
   onChange,
   placeholder = "Search...",
-  className = "",
 }: SearchInputProps) {
   return (
-    <div
-      className={`group flex h-12 w-full items-center rounded-2xl border border-white/[0.06] bg-[#101214] px-4 transition-all duration-200 focus-within:border-[#D4AF37]/50 focus-within:bg-[#14171B] ${className}`}
-    >
+    <div className="relative w-full">
+      {/* Search icon */}
       <Search
-        size={18}
-        className="mr-3 shrink-0 text-zinc-500 transition-colors group-focus-within:text-[#D4AF37]"
+        size={16}
+        strokeWidth={1.8}
+        className="
+          pointer-events-none
+          absolute
+          left-4
+          top-1/2
+          -translate-y-1/2
+          text-zinc-600
+          transition-colors
+          duration-200
+        "
       />
 
+      {/* Input */}
       <input
+        type="text"
         value={value}
-        onChange={(e: ChangeEvent<HTMLInputElement>) =>
-          onChange(e.target.value)
+        onChange={(event) =>
+          onChange(event.target.value)
         }
         placeholder={placeholder}
-        className="h-full w-full bg-transparent text-[15px] text-white outline-none placeholder:text-zinc-500"
+        className="
+          h-11
+          w-full
+          rounded-2xl
+          border
+          border-white/[0.07]
+          bg-white/[0.025]
+          pl-11
+          pr-11
+          text-sm
+          text-white
+          outline-none
+          placeholder:text-zinc-700
+          transition-all
+          duration-200
+          hover:border-white/[0.11]
+          focus:border-[#D4AF37]/25
+          focus:bg-white/[0.035]
+          focus:ring-1
+          focus:ring-[#D4AF37]/10
+        "
       />
 
-      {value.length > 0 && (
+      {/* Clear button */}
+      {value && (
         <button
           type="button"
-          aria-label="Clear search"
           onClick={() => onChange("")}
-          className="ml-2 flex h-7 w-7 items-center justify-center rounded-lg text-zinc-500 transition hover:bg-white/5 hover:text-white"
+          aria-label="Clear search"
+          className="
+            absolute
+            right-3
+            top-1/2
+            flex
+            h-7
+            w-7
+            -translate-y-1/2
+            items-center
+            justify-center
+            rounded-lg
+            text-zinc-600
+            transition
+            hover:bg-white/[0.06]
+            hover:text-zinc-300
+          "
         >
-          <X size={15} />
+          <X size={14} />
         </button>
       )}
     </div>

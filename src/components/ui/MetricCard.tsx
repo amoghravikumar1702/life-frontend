@@ -1,29 +1,13 @@
-"use client";
+// src/components/ui/MetricCard.tsx
 
 import { ReactNode } from "react";
-import { motion } from "framer-motion";
-import {
-  ArrowDownRight,
-  ArrowUpRight,
-  Minus,
-} from "lucide-react";
-
-import Card from "./Card";
 
 interface MetricCardProps {
   title: string;
-
   value: string | number;
-
   subtitle?: string;
-
   icon?: ReactNode;
-
-  trend?: number;
-
   accent?: boolean;
-
-  className?: string;
 }
 
 export default function MetricCard({
@@ -31,96 +15,98 @@ export default function MetricCard({
   value,
   subtitle,
   icon,
-  trend,
   accent = false,
-  className,
 }: MetricCardProps) {
-  const TrendIcon =
-    trend === undefined
-      ? Minus
-      : trend >= 0
-      ? ArrowUpRight
-      : ArrowDownRight;
-
-  const trendColor =
-    trend === undefined
-      ? "text-zinc-500"
-      : trend >= 0
-      ? "text-emerald-400"
-      : "text-red-400";
-
   return (
-    <Card
-      hover
-      padding="md"
-      className={className}
+    <div
+      className={`
+        group
+        relative
+        overflow-hidden
+        rounded-[26px]
+        border
+        bg-[#101214]
+        p-6
+        transition-all
+        duration-300
+        ${
+          accent
+            ? "border-[#D4AF37]/12 hover:border-[#D4AF37]/25"
+            : "border-white/[0.06] hover:border-white/[0.10]"
+        }
+      `}
     >
-      <div className="flex items-start justify-between">
+      <div
+        className="
+          absolute
+          inset-x-0
+          top-0
+          h-px
+          bg-gradient-to-r
+          from-transparent
+          via-[#D4AF37]/20
+          to-transparent
+          opacity-0
+          transition-opacity
+          duration-300
+          group-hover:opacity-100
+        "
+      />
 
-        <div className="space-y-6">
+      <div className="flex items-start justify-between gap-4">
+        <div className="min-w-0">
+          <p className="text-[9px] font-medium uppercase tracking-[0.28em] text-zinc-600">
+            {title}
+          </p>
 
-          <div>
-
-            <p className="text-xs font-medium uppercase tracking-[0.18em] text-zinc-500">
-              {title}
-            </p>
-
-            <h2
-              className={`mt-3 text-3xl font-semibold tracking-tight ${
+          <p
+            className={`
+              mt-4
+              truncate
+              text-2xl
+              font-semibold
+              tracking-[-0.04em]
+              ${
                 accent
                   ? "text-[#D4AF37]"
                   : "text-white"
-              }`}
-            >
-              {value}
-            </h2>
-
-          </div>
+              }
+            `}
+          >
+            {value}
+          </p>
 
           {subtitle && (
-            <p className="text-sm text-zinc-500">
+            <p className="mt-2 truncate text-xs text-zinc-600">
               {subtitle}
             </p>
           )}
-
         </div>
 
         {icon && (
-          <motion.div
-            whileHover={{
-              rotate: 8,
-              scale: 1.08,
-            }}
-            transition={{
-              duration: 0.2,
-            }}
-            className="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/[0.06] bg-white/[0.03] text-[#D4AF37]"
+          <div
+            className={`
+              flex
+              h-11
+              w-11
+              shrink-0
+              items-center
+              justify-center
+              rounded-2xl
+              border
+              transition-all
+              duration-300
+              ${
+                accent
+                  ? "border-[#D4AF37]/15 bg-[#D4AF37]/[0.07] text-[#D4AF37]"
+                  : "border-white/[0.06] bg-white/[0.025] text-zinc-500"
+              }
+            `}
           >
             {icon}
-          </motion.div>
+          </div>
         )}
-
       </div>
-
-      {trend !== undefined && (
-        <div className="mt-8 flex items-center gap-2">
-
-          <TrendIcon
-            className={`h-4 w-4 ${trendColor}`}
-          />
-
-          <span
-            className={`text-sm font-medium ${trendColor}`}
-          >
-            {Math.abs(trend)}%
-          </span>
-
-          <span className="text-sm text-zinc-500">
-            compared to last month
-          </span>
-
-        </div>
-      )}
-    </Card>
+    </div>
   );
 }

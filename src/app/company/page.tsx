@@ -17,8 +17,8 @@ export default function CompanyPage() {
           />
 
           <Link
-            href="/invoices"
-            className="rounded-xl bg-cyan-500 px-5 py-3 font-semibold text-black hover:bg-cyan-400"
+            href="/dashboard"
+            className="rounded-xl border border-white/10 bg-white/5 px-5 py-3 font-semibold text-white transition hover:bg-white/10"
           >
             ← Back
           </Link>

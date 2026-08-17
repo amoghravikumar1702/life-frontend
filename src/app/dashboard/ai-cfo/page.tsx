@@ -11,66 +11,34 @@ import { generateProtectedAICFOBrief } from "@/lib/ai/openaiCFO";
 export const dynamic = "force-dynamic";
 
 export default async function AICFOPage() {
-  const report =
-    await buildExecutiveReport();
+  const report = await buildExecutiveReport();
 
-  const aiBrief =
-    await generateProtectedAICFOBrief(
-      report
-    );
+  const aiBrief = await generateProtectedAICFOBrief(
+    report
+  );
 
   return (
     <PageContainer>
       <div className="mx-auto max-w-7xl">
 
-        {/* =====================================================
-            EXECUTIVE BRIEF + FINANCIAL POSITION
-        ===================================================== */}
-
         <DailyCEOBrief
-          greeting={
-            aiBrief.greeting
-          }
-          executiveBrief={
-            aiBrief.executiveBrief
-          }
-          recommendation={
-            aiBrief.recommendation
-          }
+          greeting={`Good day, ${report.company.name}`}
+          executiveBrief={aiBrief.executiveBrief}
+          recommendation={aiBrief.recommendation}
           finance={{
-            revenue:
-              report.finance.revenue ??
-              0,
-
-            expenses:
-              report.finance.expenses ??
-              0,
-
-            profit:
-              report.finance.profit ??
-              0,
-
+            revenue: report.finance.revenue ?? 0,
+            expenses: report.finance.expenses ?? 0,
+            profit: report.finance.profit ?? 0,
             outstandingReceivables:
-              report.finance
-                .outstandingReceivables ??
-              0,
+              report.finance.outstandingReceivables ?? 0,
           }}
         />
-
-        {/* =====================================================
-            ARKENONE INTELLIGENCE ENGINE
-        ===================================================== */}
 
         <div className="mt-10">
           <AskYourCFO />
         </div>
 
-        {/* =====================================================
-            CFO DECISION
-        ===================================================== */}
-
         <div className="mt-10">
-
           <section
             className="
               relative
@@ -87,9 +55,6 @@ export default async function AICFOPage() {
               lg:py-11
             "
           >
-
-            {/* Ambient gold light */}
-
             <div
               className="
                 pointer-events-none
@@ -106,10 +71,7 @@ export default async function AICFOPage() {
 
             <div className="relative">
 
-              {/* Header */}
-
               <div className="flex items-center gap-3">
-
                 <div
                   className="
                     flex
@@ -135,7 +97,6 @@ export default async function AICFOPage() {
                 </div>
 
                 <div>
-
                   <p
                     className="
                       text-[10px]
@@ -151,15 +112,10 @@ export default async function AICFOPage() {
                   <p className="mt-1 text-xs text-zinc-500">
                     Executive recommendation
                   </p>
-
                 </div>
-
               </div>
 
-              {/* Recommendation */}
-
               <div className="mt-8 max-w-4xl">
-
                 <p
                   className="
                     text-[18px]
@@ -170,10 +126,7 @@ export default async function AICFOPage() {
                 >
                   {aiBrief.recommendation}
                 </p>
-
               </div>
-
-              {/* Decision Framework */}
 
               <div
                 className="
@@ -183,7 +136,6 @@ export default async function AICFOPage() {
                   pt-7
                 "
               >
-
                 <p
                   className="
                     text-[10px]
@@ -199,7 +151,6 @@ export default async function AICFOPage() {
                 <div className="mt-5 grid gap-5 md:grid-cols-3">
 
                   <div>
-
                     <p className="text-xs text-zinc-600">
                       Decision
                     </p>
@@ -207,11 +158,9 @@ export default async function AICFOPage() {
                     <p className="mt-2 text-sm leading-6 text-zinc-300">
                       Based on current financial and operational evidence.
                     </p>
-
                   </div>
 
                   <div>
-
                     <p className="text-xs text-zinc-600">
                       Financial Impact
                     </p>
@@ -219,11 +168,9 @@ export default async function AICFOPage() {
                     <p className="mt-2 text-sm leading-6 text-zinc-300">
                       Prioritizes profitability, cash generation, and sustainability.
                     </p>
-
                   </div>
 
                   <div>
-
                     <p className="text-xs text-zinc-600">
                       Growth Impact
                     </p>
@@ -231,49 +178,29 @@ export default async function AICFOPage() {
                     <p className="mt-2 text-sm leading-6 text-zinc-300">
                       Designed to support sustainable business growth.
                     </p>
-
                   </div>
 
                 </div>
-
               </div>
-
             </div>
-
           </section>
-
         </div>
-
-        {/* =====================================================
-            WORKFORCE MANAGEMENT
-            ACTUAL TEAM ONLY
-            AI CFO IS THE DECISION AUTHORITY
-        ===================================================== */}
 
         <div className="mt-10">
-
           <WorkforceManagement
             initialEmployees={
-              report.workforce
-                .currentEmployees
+              report.workforce.currentEmployees
             }
-
-           recommendation={
-  aiBrief.workforce?.recommendation ??
-  "Maintain the current workforce until more financial evidence is available."
-}
-
-           status={
-  aiBrief.workforce?.status ??
-  "CFO Workforce Assessment"
-}
+            recommendation={
+              aiBrief.workforce?.recommendation ??
+              "Maintain the current workforce until more financial evidence is available."
+            }
+            status={
+              aiBrief.workforce?.status ??
+              "CFO Workforce Assessment"
+            }
           />
-
         </div>
-
-        {/* =====================================================
-            FOOTER
-        ===================================================== */}
 
         <footer
           className="
@@ -291,7 +218,6 @@ export default async function AICFOPage() {
             pb-6
           "
         >
-
           <div
             className="
               h-px
@@ -325,7 +251,6 @@ export default async function AICFOPage() {
             the business&apos;s available financial
             and operational data.
           </p>
-
         </footer>
 
       </div>

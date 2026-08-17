@@ -7,7 +7,7 @@ interface ActionButtonProps
 }
 
 export default function ActionButton({
-  variant = "primary",
+  variant = "secondary",
   className,
   children,
   ...props
@@ -16,10 +16,48 @@ export default function ActionButton({
     <button
       {...props}
       className={clsx(
-        "inline-flex items-center justify-center rounded-2xl px-6 py-3 text-sm font-semibold transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/30 disabled:cursor-not-allowed disabled:opacity-50",
+        `
+          inline-flex
+          min-h-10
+          items-center
+          justify-center
+          gap-2
+          rounded-xl
+          px-4
+          py-2.5
+          text-xs
+          font-medium
+          whitespace-nowrap
+          transition-all
+          duration-200
+          focus:outline-none
+          focus:ring-2
+          focus:ring-[#D4AF37]/25
+          focus:ring-offset-0
+          disabled:cursor-not-allowed
+          disabled:opacity-50
+          active:scale-[0.98]
+        `,
         variant === "primary"
-          ? "bg-[#D4AF37] text-black hover:bg-[#E3C45A]"
-          : "border border-white/10 bg-white/[0.02] text-white hover:border-[#D4AF37]/30 hover:bg-white/[0.04]",
+          ? `
+              border
+              border-[#D4AF37]/20
+              bg-[#D4AF37]
+              text-[#090909]
+              shadow-[0_8px_24px_rgba(212,175,55,0.14)]
+              hover:scale-[1.01]
+              hover:bg-[#E3C45A]
+              hover:shadow-[0_10px_28px_rgba(212,175,55,0.18)]
+            `
+          : `
+              border
+              border-white/[0.07]
+              bg-white/[0.025]
+              text-zinc-300
+              hover:border-[#D4AF37]/20
+              hover:bg-[#D4AF37]/[0.05]
+              hover:text-[#D4AF37]
+            `,
         className
       )}
     >

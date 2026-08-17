@@ -33,7 +33,9 @@ export default function Navbar({
     function handleClickOutside(e: MouseEvent) {
       if (
         menuRef.current &&
-        !menuRef.current.contains(e.target as Node)
+        !menuRef.current.contains(
+          e.target as Node
+        )
       ) {
         setMenuOpen(false);
       }
@@ -81,6 +83,7 @@ export default function Navbar({
     <header
       className="
         w-full
+        overflow-visible
         rounded-2xl
         border
         border-white/[0.05]
@@ -90,55 +93,104 @@ export default function Navbar({
         duration-300
       "
     >
-      <div className="flex h-14 items-center justify-between px-5">
+      <div
+        className="
+          flex
+          h-14
+          items-center
+          justify-between
+          gap-3
+          px-3
+          sm:px-5
+        "
+      >
+        {/* LEFT */}
 
-        {/* Left */}
-
-        <div className="flex items-center gap-3 min-w-0">
+        <div
+          className="
+            flex
+            min-w-0
+            flex-1
+            items-center
+            gap-2.5
+            sm:gap-3
+          "
+        >
+          {/* MOBILE MENU */}
 
           <button
+            type="button"
             onClick={onOpenMenu}
+            aria-label="Open navigation menu"
             className="
               flex
-              h-9
-              w-9
+              h-10
+              w-10
+              shrink-0
               items-center
               justify-center
               rounded-xl
               border
-              border-white/[0.06]
+              border-white/[0.07]
               bg-white/[0.025]
+              text-zinc-300
               transition-all
               duration-300
+              active:scale-95
               hover:bg-white/[0.05]
+              hover:text-white
               lg:hidden
             "
           >
-            <Menu size={17} />
+            <Menu
+              size={18}
+              strokeWidth={1.8}
+            />
           </button>
 
-          <div className="min-w-0">
+          {/* PAGE TITLE */}
 
-            <h1 className="truncate text-[15px] font-semibold tracking-[-0.02em] text-white">
+          <div className="min-w-0">
+            <h1
+              className="
+                truncate
+                text-[14px]
+                font-semibold
+                tracking-[-0.02em]
+                text-white
+                sm:text-[15px]
+              "
+            >
               Mission Control
             </h1>
 
-            <p className="truncate text-[11px] text-zinc-500">
+            <p
+              className="
+                truncate
+                text-[10px]
+                text-zinc-500
+                sm:text-[11px]
+              "
+            >
               Everything looks healthy today.
             </p>
-
           </div>
-
         </div>
 
-        {/* Right */}
+        {/* RIGHT */}
 
-        <div className="flex items-center gap-2">
-
-          {/* Search */}
+        <div
+          className="
+            flex
+            shrink-0
+            items-center
+            gap-1.5
+            sm:gap-2
+          "
+        >
+          {/* SEARCH */}
 
           <div className="hidden lg:flex">
-
             <div
               className="
                 flex
@@ -174,40 +226,57 @@ export default function Navbar({
                 "
               />
             </div>
-
           </div>
 
-          {/* Notifications */}
+          {/* NOTIFICATIONS */}
 
           <button
+            type="button"
+            aria-label="Notifications"
             className="
               relative
               flex
-              h-9
-              w-9
+              h-10
+              w-10
+              shrink-0
               items-center
               justify-center
               rounded-xl
               border
               border-white/[0.05]
               bg-white/[0.025]
+              text-zinc-300
               transition-all
               duration-300
+              active:scale-95
               hover:bg-white/[0.05]
+              hover:text-white
             "
           >
-            <Bell size={16} />
+            <Bell
+              size={16}
+              strokeWidth={1.8}
+            />
 
-            <span className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-[#D4AF37]" />
-
+            <span
+              className="
+                absolute
+                right-2.5
+                top-2.5
+                h-1.5
+                w-1.5
+                rounded-full
+                bg-[#D4AF37]
+              "
+            />
           </button>
 
-          {/* Company Switcher */}
+          {/* COMPANY SWITCHER */}
 
           <button
+            type="button"
             className="
               hidden
-              md:flex
               h-9
               items-center
               gap-2
@@ -219,6 +288,7 @@ export default function Navbar({
               transition-all
               duration-300
               hover:bg-white/[0.05]
+              md:flex
             "
           >
             <div
@@ -246,33 +316,39 @@ export default function Navbar({
               size={14}
               className="text-zinc-500"
             />
-
           </button>
 
-          {/* Avatar */}
+          {/* USER MENU */}
 
           <div
             ref={menuRef}
-            className="relative"
+            className="relative shrink-0"
           >
-
             <button
+              type="button"
+              aria-label="Open account menu"
+              aria-expanded={menuOpen}
               onClick={() =>
-                setMenuOpen(!menuOpen)
+                setMenuOpen(
+                  (current) => !current
+                )
               }
               className="
                 flex
-                h-9
+                h-10
                 items-center
-                gap-2
+                gap-1.5
                 rounded-xl
                 border
                 border-white/[0.05]
                 bg-white/[0.025]
-                px-2
+                px-1.5
                 transition-all
                 duration-300
+                active:scale-95
                 hover:bg-white/[0.05]
+                sm:h-9
+                sm:px-2
               "
             >
               <div
@@ -294,33 +370,48 @@ export default function Navbar({
 
               <ChevronDown
                 size={14}
-                className={`hidden sm:block text-zinc-500 transition-transform duration-300 ${
-                  menuOpen ? "rotate-180" : ""
-                }`}
+                className={`
+                  hidden
+                  text-zinc-500
+                  transition-transform
+                  duration-300
+                  sm:block
+                  ${
+                    menuOpen
+                      ? "rotate-180"
+                      : ""
+                  }
+                `}
               />
-
             </button>
 
-            {menuOpen && (
+            {/* ACCOUNT DROPDOWN */}
 
+            {menuOpen && (
               <div
                 className="
                   absolute
                   right-0
-                  top-[48px]
+                  top-[calc(100%+10px)]
                   z-50
-                  w-56
+                  w-[min(224px,calc(100vw-24px))]
                   overflow-hidden
                   rounded-2xl
                   border
                   border-white/[0.06]
                   bg-[#0E141C]/95
+                  shadow-2xl
+                  shadow-black/40
                   backdrop-blur-2xl
                 "
               >
-
-                <div className="border-b border-white/[0.05] p-4">
-
+                <div
+                  className="
+                    border-b
+                    border-white/[0.05]
+                    p-4
+                  "
+                >
                   <p className="text-sm font-medium text-white">
                     Administrator
                   </p>
@@ -328,24 +419,28 @@ export default function Navbar({
                   <p className="mt-1 text-xs text-zinc-500">
                     Executive Workspace
                   </p>
-
                 </div>
 
                 <button
+                  type="button"
                   onClick={handleLogout}
                   disabled={loggingOut}
                   className="
                     flex
+                    min-h-11
                     w-full
                     items-center
                     gap-3
                     px-4
                     py-3
+                    text-left
                     text-sm
                     text-red-300
                     transition-all
                     duration-300
                     hover:bg-red-500/10
+                    disabled:cursor-not-allowed
+                    disabled:opacity-50
                   "
                 >
                   <LogOut size={15} />
@@ -353,17 +448,11 @@ export default function Navbar({
                   {loggingOut
                     ? "Logging out..."
                     : "Logout"}
-
                 </button>
-
               </div>
-
             )}
-
           </div>
-
         </div>
-
       </div>
     </header>
   );

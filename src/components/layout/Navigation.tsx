@@ -101,46 +101,93 @@ const sections = [
 
 export default function Navigation({
   collapsed = false,
+  mobile = false,
   onNavigate,
 }: NavigationProps) {
   const pathname = usePathname();
 
   return (
-    <nav className={collapsed ? "space-y-6" : "space-y-7"}>
+    <nav
+      className={`
+        ${
+          mobile
+            ? "space-y-7"
+            : collapsed
+              ? "space-y-6"
+              : "space-y-6 sm:space-y-7"
+        }
+      `}
+    >
       {sections.map((section) => (
         <section key={section.title}>
+          {/* SECTION LABEL */}
+
           {!collapsed && (
-            <p className="mb-3 px-4 text-[10px] font-medium uppercase tracking-[0.32em] text-zinc-600">
+            <p
+              className={`
+                mb-3
+                font-medium
+                uppercase
+                tracking-[0.32em]
+                text-zinc-600
+                ${
+                  mobile
+                    ? "px-3 text-[9px]"
+                    : "px-4 text-[10px]"
+                }
+              `}
+            >
               {section.title}
             </p>
           )}
 
-          <div className="space-y-1">
+          {/* NAV ITEMS */}
+
+          <div
+            className={`
+              ${
+                mobile
+                  ? "space-y-1.5"
+                  : "space-y-1"
+              }
+            `}
+          >
             {section.items.map((item) => {
               const Icon = item.icon;
 
               const active =
                 pathname === item.href ||
-                pathname.startsWith(`${item.href}/`);
+                pathname.startsWith(
+                  `${item.href}/`
+                );
 
               return (
                 <Link
                   key={item.href}
                   href={item.href}
                   onClick={onNavigate}
-                  title={collapsed ? item.label : undefined}
+                  title={
+                    collapsed
+                      ? item.label
+                      : undefined
+                  }
                   className="block"
                 >
                   <motion.div
                     whileHover={{
-                      x: collapsed ? 0 : 3,
-                      scale: 1.01,
+                      x:
+                        collapsed || mobile
+                          ? 0
+                          : 3,
+                      scale: mobile
+                        ? 1
+                        : 1.01,
                     }}
                     whileTap={{
                       scale: 0.985,
                     }}
                     transition={{
-                      duration: 0.26,
+                      duration: 0.22,
                       ease: "easeOut",
                     }}
                     className={`
@@ -151,11 +198,15 @@ export default function Navigation({
                       rounded-xl
                       transition-all
                       duration-300
+
                       ${
-                        collapsed
-                          ? "mx-auto h-11 w-11 items-center justify-center"
-                          : "h-11 items-center gap-3 px-4"
+                        mobile
+                          ? "min-h-[48px] gap-3 px-4 py-3"
+                          : collapsed
+                            ? "mx-auto h-11 w-11 items-center justify-center"
+                            : "min-h-11 items-center gap-3 px-4 py-2.5"
                       }
+
                       ${
                         active
                           ? `
@@ -176,19 +227,41 @@ export default function Navigation({
                       }
                     `}
                   >
+                    {/* ACTIVE INDICATOR */}
+
                     {active && (
                       <>
                         <motion.span
-                          layoutId="ArkenOne-nav-indicator"
-                          className="absolute bottom-[9px] left-0 top-[9px] w-[2px] rounded-r-full bg-[#D4AF37]"
+                          layoutId={
+                            mobile
+                              ? "ArkenOne-mobile-nav-indicator"
+                              : "ArkenOne-nav-indicator"
+                          }
+                          className="
+                            absolute
+                            bottom-2
+                            left-0
+                            top-2
+                            w-[2px]
+                            rounded-r-full
+                            bg-[#D4AF37]
+                          "
                         />
 
-                        <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(212,175,55,0.08),transparent_72%)]" />
+                        <div
+                          className="
+                            absolute
+                            inset-0
+                            bg-[linear-gradient(90deg,rgba(212,175,55,0.08),transparent_72%)]
+                          "
+                        />
                       </>
                     )}
 
+                    {/* ICON */}
+
                     <Icon
-                      size={17}
+                      size={mobile ? 18 : 17}
                       strokeWidth={1.9}
                       className={`
                         relative
@@ -204,17 +277,23 @@ export default function Navigation({
                       `}
                     />
 
+                    {/* LABEL */}
+
                     {!collapsed && (
                       <span
                         className={`
                           relative
                           z-10
                           truncate
-                          text-[13.5px]
                           font-medium
                           tracking-[0.01em]
                           transition-colors
                           duration-300
+                          ${
+                            mobile
+                              ? "text-[14px]"
+                              : "text-[13.5px]"
+                          }
                           ${
                             active
                               ? "text-white"

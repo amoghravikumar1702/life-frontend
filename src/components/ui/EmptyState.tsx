@@ -1,64 +1,55 @@
-"use client";
+// src/components/ui/EmptyState.tsx
 
 import { ReactNode } from "react";
-import { motion } from "framer-motion";
-import { Inbox } from "lucide-react";
-
-import Card from "./Card";
+import { FileSearch } from "lucide-react";
 
 interface EmptyStateProps {
   title: string;
-
   description?: string;
-
-  icon?: ReactNode;
-
   action?: ReactNode;
+  icon?: ReactNode;
 }
 
 export default function EmptyState({
   title,
   description,
-  icon,
   action,
+  icon,
 }: EmptyStateProps) {
   return (
-    <Card
-      padding="lg"
-      className="flex min-h-[360px] flex-col items-center justify-center text-center"
-    >
-      <motion.div
-        initial={{
-          opacity: 0,
-          scale: 0.9,
-        }}
-        animate={{
-          opacity: 1,
-          scale: 1,
-        }}
-        transition={{
-          duration: 0.35,
-        }}
-        className="flex h-20 w-20 items-center justify-center rounded-3xl border border-white/[0.06] bg-white/[0.03] text-[#D4AF37]"
+    <div className="flex min-h-[320px] flex-col items-center justify-center px-6 py-12 text-center">
+      <div
+        className="
+          flex
+          h-14
+          w-14
+          items-center
+          justify-center
+          rounded-2xl
+          border
+          border-white/[0.07]
+          bg-white/[0.025]
+          text-zinc-600
+        "
       >
-        {icon ?? <Inbox size={34} />}
-      </motion.div>
+        {icon ?? <FileSearch size={22} strokeWidth={1.6} />}
+      </div>
 
-      <h2 className="mt-8 text-2xl font-semibold tracking-tight text-white">
+      <h3 className="mt-5 text-lg font-semibold tracking-[-0.02em] text-white">
         {title}
-      </h2>
+      </h3>
 
       {description && (
-        <p className="mt-3 max-w-md text-base leading-7 text-zinc-400">
+        <p className="mx-auto mt-2 max-w-md text-sm leading-7 text-zinc-600">
           {description}
         </p>
       )}
 
       {action && (
-        <div className="mt-8">
+        <div className="mt-6">
           {action}
         </div>
       )}
-    </Card>
+    </div>
   );
 }

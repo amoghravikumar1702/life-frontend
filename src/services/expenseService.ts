@@ -8,25 +8,76 @@ import type {
 const supabase = createClient();
 
 /**
+ * Convert Supabase errors into useful console output.
+ */
+function logSupabaseError(
+  action: string,
+  error: unknown
+) {
+  if (error && typeof error === "object") {
+    const supabaseError = error as {
+      message?: string;
+      details?: string;
+      hint?: string;
+      code?: string;
+    };
+
+    console.error(
+      `[ExpenseService] ${action}`,
+      {
+        message: supabaseError.message,
+        details: supabaseError.details,
+        hint: supabaseError.hint,
+        code: supabaseError.code,
+      }
+    );
+
+    return;
+  }
+
+  console.error(
+    `[ExpenseService] ${action}`,
+    error
+  );
+}
+
+/**
  * Get all expenses for the current user.
  */
 export async function getExpenses(): Promise<Expense[]> {
   const {
     data: { user },
+    error: authError,
   } = await supabase.auth.getUser();
+
+  if (authError) {
+    logSupabaseError(
+      "Failed to get authenticated user:",
+      authError
+    );
+    throw authError;
+  }
 
   if (!user) {
     throw new Error("Unauthorized");
   }
 
-  const { data, error } = await supabase
+  const {
+    data,
+    error,
+  } = await supabase
     .from("expenses")
     .select("*")
     .eq("owner_id", user.id)
-    .order("expense_date", { ascending: false });
+    .order("expense_date", {
+      ascending: false,
+    });
 
   if (error) {
-    console.error("[ExpenseService] Failed to fetch expenses:", error);
+    logSupabaseError(
+      "Failed to fetch expenses:",
+      error
+    );
     throw error;
   }
 
@@ -41,13 +92,25 @@ export async function getExpense(
 ): Promise<Expense | null> {
   const {
     data: { user },
+    error: authError,
   } = await supabase.auth.getUser();
+
+  if (authError) {
+    logSupabaseError(
+      "Failed to get authenticated user:",
+      authError
+    );
+    throw authError;
+  }
 
   if (!user) {
     throw new Error("Unauthorized");
   }
 
-  const { data, error } = await supabase
+  const {
+    data,
+    error,
+  } = await supabase
     .from("expenses")
     .select("*")
     .eq("id", id)
@@ -55,7 +118,10 @@ export async function getExpense(
     .maybeSingle();
 
   if (error) {
-    console.error("[ExpenseService] Failed to fetch expense:", error);
+    logSupabaseError(
+      "Failed to fetch expense:",
+      error
+    );
     throw error;
   }
 
@@ -70,39 +136,89 @@ export async function createExpense(
 ): Promise<Expense> {
   const {
     data: { user },
+    error: authError,
   } = await supabase.auth.getUser();
+
+  if (authError) {
+    logSupabaseError(
+      "Failed to get authenticated user:",
+      authError
+    );
+    throw authError;
+  }
 
   if (!user) {
     throw new Error("Unauthorized");
   }
 
-  if (!input.amount || Number(input.amount) <= 0) {
-    throw new Error("Expense amount must be greater than zero.");
+  const amount = Number(input.amount);
+
+  if (
+    !Number.isFinite(amount) ||
+    amount <= 0
+  ) {
+    throw new Error(
+      "Expense amount must be greater than zero."
+    );
   }
 
-  if (!input.category?.trim()) {
-    throw new Error("Expense category is required.");
+  const category =
+    input.category?.trim();
+
+  if (!category) {
+    throw new Error(
+      "Expense category is required."
+    );
   }
 
-  const { data, error } = await supabase
+  const expenseDate =
+    input.expense_date ||
+    new Date()
+      .toISOString()
+      .split("T")[0];
+
+  const insertData = {
+    owner_id: user.id,
+    amount,
+    category,
+    description:
+      input.description?.trim() || null,
+    vendor:
+      input.vendor?.trim() || null,
+    expense_date: expenseDate,
+    is_recurring:
+      input.is_recurring ?? false,
+  };
+
+  console.log(
+    "[ExpenseService] Creating expense:",
+    insertData
+  );
+
+  const {
+    data,
+    error,
+  } = await supabase
     .from("expenses")
-    .insert({
-      owner_id: user.id,
-      amount: Number(input.amount),
-      category: input.category.trim(),
-      description: input.description?.trim() || null,
-      vendor: input.vendor?.trim() || null,
-      expense_date:
-        input.expense_date ||
-        new Date().toISOString().split("T")[0],
-      is_recurring: input.is_recurring ?? false,
-    })
+    .insert(insertData)
     .select()
     .single();
 
   if (error) {
-    console.error("[ExpenseService] Failed to create expense:", error);
-    throw error;
+    logSupabaseError(
+      "Failed to create expense:",
+      error
+    );
+    throw new Error(
+      error.message ||
+        "Failed to create expense."
+    );
+  }
+
+  if (!data) {
+    throw new Error(
+      "Expense was created but no record was returned."
+    );
   }
 
   return data as Expense;
@@ -117,28 +233,53 @@ export async function updateExpense(
 ): Promise<Expense> {
   const {
     data: { user },
+    error: authError,
   } = await supabase.auth.getUser();
+
+  if (authError) {
+    logSupabaseError(
+      "Failed to get authenticated user:",
+      authError
+    );
+    throw authError;
+  }
 
   if (!user) {
     throw new Error("Unauthorized");
   }
 
-  const updateData: Record<string, unknown> = {};
+  const updateData: Record<
+    string,
+    unknown
+  > = {};
 
   if (input.amount !== undefined) {
-    if (Number(input.amount) <= 0) {
-      throw new Error("Expense amount must be greater than zero.");
+    const amount =
+      Number(input.amount);
+
+    if (
+      !Number.isFinite(amount) ||
+      amount <= 0
+    ) {
+      throw new Error(
+        "Expense amount must be greater than zero."
+      );
     }
 
-    updateData.amount = Number(input.amount);
+    updateData.amount = amount;
   }
 
   if (input.category !== undefined) {
-    if (!input.category.trim()) {
-      throw new Error("Expense category is required.");
+    const category =
+      input.category.trim();
+
+    if (!category) {
+      throw new Error(
+        "Expense category is required."
+      );
     }
 
-    updateData.category = input.category.trim();
+    updateData.category = category;
   }
 
   if (input.description !== undefined) {
@@ -152,14 +293,21 @@ export async function updateExpense(
   }
 
   if (input.expense_date !== undefined) {
-    updateData.expense_date = input.expense_date;
+    updateData.expense_date =
+      input.expense_date;
   }
 
-  if (input.is_recurring !== undefined) {
-    updateData.is_recurring = input.is_recurring;
+  if (
+    input.is_recurring !== undefined
+  ) {
+    updateData.is_recurring =
+      input.is_recurring;
   }
 
-  const { data, error } = await supabase
+  const {
+    data,
+    error,
+  } = await supabase
     .from("expenses")
     .update(updateData)
     .eq("id", id)
@@ -168,7 +316,10 @@ export async function updateExpense(
     .single();
 
   if (error) {
-    console.error("[ExpenseService] Failed to update expense:", error);
+    logSupabaseError(
+      "Failed to update expense:",
+      error
+    );
     throw error;
   }
 
@@ -183,20 +334,34 @@ export async function deleteExpense(
 ): Promise<void> {
   const {
     data: { user },
+    error: authError,
   } = await supabase.auth.getUser();
+
+  if (authError) {
+    logSupabaseError(
+      "Failed to get authenticated user:",
+      authError
+    );
+    throw authError;
+  }
 
   if (!user) {
     throw new Error("Unauthorized");
   }
 
-  const { error } = await supabase
+  const {
+    error,
+  } = await supabase
     .from("expenses")
     .delete()
     .eq("id", id)
     .eq("owner_id", user.id);
 
   if (error) {
-    console.error("[ExpenseService] Failed to delete expense:", error);
+    logSupabaseError(
+      "Failed to delete expense:",
+      error
+    );
     throw error;
   }
 }

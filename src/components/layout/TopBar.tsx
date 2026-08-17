@@ -1,100 +1,158 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
 import {
+  Menu,
   ChevronDown,
   LogOut,
   Search,
 } from "lucide-react";
 
-export default function TopBar() {
+import { useEffect, useRef, useState } from "react";
+
+interface TopBarProps {
+  onMobileMenu?: () => void;
+}
+
+export default function TopBar({
+  onMobileMenu,
+}: TopBarProps) {
   const [menuOpen, setMenuOpen] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
+
+  const menuRef =
+    useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     function handleClick(event: MouseEvent) {
       if (
         menuRef.current &&
-        !menuRef.current.contains(event.target as Node)
+        !menuRef.current.contains(
+          event.target as Node
+        )
       ) {
         setMenuOpen(false);
       }
     }
 
-    document.addEventListener("mousedown", handleClick);
+    document.addEventListener(
+      "mousedown",
+      handleClick
+    );
 
     return () =>
-      document.removeEventListener("mousedown", handleClick);
+      document.removeEventListener(
+        "mousedown",
+        handleClick
+      );
   }, []);
 
   return (
-    <header className="relative z-50 mb-6">
+    <header className="relative z-50 mb-4 sm:mb-6">
       <div
         className="
           flex
-          h-16
+          min-h-16
           w-full
           items-center
           justify-between
-          rounded-3xl
+          gap-3
+          rounded-2xl
           border
           border-white/10
           bg-[#101010]/80
-          px-7
+          px-3
+          py-2.5
           backdrop-blur-2xl
           shadow-[0_12px_40px_rgba(0,0,0,0.25)]
+          sm:rounded-3xl
+          sm:px-5
+          lg:px-7
         "
       >
-        {/* Left */}
+        {/* ========================================================
+            LEFT
+        ======================================================== */}
 
-        <div className="flex items-center gap-4">
-          <div
+        <div className="flex min-w-0 items-center gap-3 sm:gap-4">
+          {/* Mobile menu */}
+          <button
+            type="button"
+            onClick={onMobileMenu}
+            aria-label="Open navigation"
             className="
               flex
-              h-11
-              w-11
+              h-10
+              w-10
+              shrink-0
               items-center
               justify-center
-              rounded-2xl
+              rounded-xl
               border
-              border-[#D4AF37]/20
-              bg-[#D4AF37]/10
+              border-white/10
+              bg-white/[0.03]
+              text-zinc-400
+              transition
+              hover:border-[#D4AF37]/30
+              hover:bg-white/[0.05]
+              hover:text-white
+              lg:hidden
             "
           >
-            <span className="text-lg font-semibold text-[#D4AF37]">
-              F
-            </span>
-          </div>
+            <Menu size={19} />
+          </button>
 
-          <div>
-            <h1 className="text-[17px] font-semibold tracking-tight text-white">
-              ArkenOne
-            </h1>
+          {/* Brand */}
+          <div className="flex min-w-0 items-center gap-3">
+            <div
+              className="
+                hidden
+                h-11
+                w-11
+                shrink-0
+                items-center
+                justify-center
+                rounded-2xl
+                border
+                border-[#D4AF37]/20
+                bg-[#D4AF37]/10
+                sm:flex
+              "
+            >
+              <span className="text-lg font-semibold text-[#D4AF37]">
+                A
+              </span>
+            </div>
 
-            <p className="mt-0.5 text-[11px] uppercase tracking-[0.18em] text-zinc-500">
-              Executive Operating System
-            </p>
+            <div className="min-w-0">
+              <h1 className="truncate text-[16px] font-semibold tracking-tight text-white sm:text-[17px]">
+                ArkenOne
+              </h1>
+
+              <p className="mt-0.5 hidden text-[10px] uppercase tracking-[0.18em] text-zinc-500 sm:block">
+                Executive Operating System
+              </p>
+            </div>
           </div>
         </div>
 
-        {/* Spacer */}
+        <div className="flex flex-1" />
 
-        <div className="flex-1" />
+        {/* ========================================================
+            RIGHT
+        ======================================================== */}
 
-        {/* Right */}
-
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           {/* Search */}
-
           <button
+            type="button"
             aria-label="Search"
             className="
               flex
-              h-11
-              w-11
+              h-10
+              w-10
+              shrink-0
               items-center
               justify-center
-              rounded-2xl
+              rounded-xl
               border
               border-white/10
               bg-white/[0.03]
@@ -105,53 +163,65 @@ export default function TopBar() {
             "
           >
             <Search
-              size={18}
+              size={17}
               className="text-zinc-400"
             />
           </button>
 
           {/* Profile */}
-
           <div
             ref={menuRef}
             className="relative"
           >
             <button
-              onClick={() => setMenuOpen((prev) => !prev)}
+              type="button"
+              onClick={() =>
+                setMenuOpen((prev) => !prev)
+              }
+              aria-expanded={menuOpen}
               className="
                 flex
+                h-10
                 items-center
-                gap-3
-                rounded-2xl
+                gap-2
+                rounded-xl
                 border
                 border-white/10
                 bg-white/[0.03]
-                px-3
-                py-2
+                px-2
                 transition-all
                 duration-200
                 hover:border-[#D4AF37]/30
                 hover:bg-white/[0.05]
+                sm:h-auto
+                sm:gap-3
+                sm:rounded-2xl
+                sm:px-3
+                sm:py-2
               "
             >
               <div
                 className="
                   flex
-                  h-10
-                  w-10
+                  h-8
+                  w-8
+                  shrink-0
                   items-center
                   justify-center
                   rounded-full
                   bg-[#D4AF37]/15
-                  text-sm
+                  text-xs
                   font-semibold
                   text-[#D4AF37]
+                  sm:h-10
+                  sm:w-10
+                  sm:text-sm
                 "
               >
                 A
               </div>
 
-              <div className="text-left leading-tight">
+              <div className="hidden text-left leading-tight sm:block">
                 <p className="text-sm font-medium text-white">
                   Administrator
                 </p>
@@ -162,10 +232,18 @@ export default function TopBar() {
               </div>
 
               <ChevronDown
-                size={16}
-                className={`text-zinc-500 transition-transform ${
-                  menuOpen ? "rotate-180" : ""
-                }`}
+                size={15}
+                className={`
+                  hidden
+                  text-zinc-500
+                  transition-transform
+                  sm:block
+                  ${
+                    menuOpen
+                      ? "rotate-180"
+                      : ""
+                  }
+                `}
               />
             </button>
 
@@ -186,8 +264,9 @@ export default function TopBar() {
                   backdrop-blur-2xl
                   shadow-[0_30px_80px_rgba(0,0,0,.55)]
                 "
->
+              >
                 <button
+                  type="button"
                   className="
                     flex
                     w-full

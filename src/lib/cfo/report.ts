@@ -1,3 +1,5 @@
+// src/lib/cfo/report.ts
+
 import { getCompanyProfile } from "./company";
 import { getFinancialMetrics } from "./finance";
 import { getCustomerMetrics } from "./customers";
@@ -10,16 +12,26 @@ import { ExecutiveReport } from "./types";
  * ARKENONE AI CFO — EXECUTIVE REPORT ENGINE
  * ============================================================
  *
- * This file prepares normalized financial intelligence.
+ * This file prepares normalized business intelligence for the
+ * ArkenOne AI CFO.
  *
  * IMPORTANT:
  *
  * - No OpenAI calls
  * - No OpenAI model configuration
  * - No API keys
- * - No environment-variable requirements
+ * - No hiring recommendations
+ * - No workforce capacity calculations
  *
- * The OpenAI layer consumes this report separately.
+ * The report contains the ACTUAL workforce count.
+ *
+ * The company profile is also carried through unchanged so
+ * downstream AI CFO components can reliably access:
+ *
+ * report.company.name
+ * report.company.industry
+ * report.company.employees
+ * etc.
  */
 
 /*
@@ -83,122 +95,15 @@ function safeText(
   value: unknown,
   fallback = ""
 ): string {
-  if (typeof value !== "string") {
+  if (
+    typeof value !== "string"
+  ) {
     return fallback;
   }
 
-  return value.trim();
-}
+  const cleaned = value.trim();
 
-/*
- * ============================================================
- * WORKFORCE INTELLIGENCE
- * ============================================================
- *
- * This calculates financial capacity.
- *
- * It is NOT an automatic hiring recommendation.
- */
-
-/*
- * Safety ceiling for malformed financial data.
- */
-const MAX_RECOMMENDED_EMPLOYEES = 1000;
-
-/*
- * Conservative MVP baseline.
- *
- * ₹25,000 monthly revenue ~= financial capacity for
- * one employee.
- */
-const MONTHLY_REVENUE_PER_EMPLOYEE = 25_000;
-
-function calculateRecommendedEmployees(
-  revenue: number,
-  expenses: number,
-  profit: number
-): number {
-  const monthlyRevenue =
-    safeNonNegativeNumber(revenue);
-
-  const monthlyExpenses =
-    safeNonNegativeNumber(expenses);
-
-  const monthlyProfit =
-    safeNumber(profit);
-
-  /*
-   * No meaningful revenue.
-   */
-  if (monthlyRevenue <= 0) {
-    return 0;
-  }
-
-  /*
-   * Base capacity.
-   */
-  let recommendedEmployees =
-    Math.floor(
-      monthlyRevenue /
-        MONTHLY_REVENUE_PER_EMPLOYEE
-    );
-
-  /*
-   * Meaningful revenue supports at least
-   * one employee in this baseline.
-   */
-  recommendedEmployees =
-    Math.max(
-      1,
-      recommendedEmployees
-    );
-
-  /*
-   * Loss-making business:
-   * reduce financial capacity conservatively.
-   */
-  if (monthlyProfit < 0) {
-    recommendedEmployees =
-      Math.floor(
-        recommendedEmployees * 0.75
-      );
-  }
-
-  /*
-   * Very high expense ratio:
-   * constrain workforce capacity.
-   */
-  const expenseRatio =
-    monthlyRevenue > 0
-      ? monthlyExpenses / monthlyRevenue
-      : 0;
-
-  if (expenseRatio >= 0.9) {
-    recommendedEmployees =
-      Math.floor(
-        recommendedEmployees * 0.75
-      );
-  }
-
-  /*
-   * Never return below one when revenue exists.
-   */
-  recommendedEmployees =
-    Math.max(
-      1,
-      recommendedEmployees
-    );
-
-  /*
-   * Safety ceiling.
-   */
-  recommendedEmployees =
-    Math.min(
-      MAX_RECOMMENDED_EMPLOYEES,
-      recommendedEmployees
-    );
-
-  return recommendedEmployees;
+  return cleaned || fallback;
 }
 
 /*
@@ -226,6 +131,103 @@ export async function buildExecutiveReport(): Promise<ExecutiveReport> {
 
   /*
    * ==========================================================
+   * NORMALIZE COMPANY PROFILE
+   * ==========================================================
+   *
+   * Keep the company identity deterministic.
+   *
+   * This is especially important for the AI CFO greeting.
+   *
+   * Example:
+   *
+   * Supabase
+   *   ↓
+   * company.company_name = "ARKENG"
+   *   ↓
+   * report.company.name = "ARKENG"
+   *   ↓
+   * Dashboard
+   *   ↓
+   * Good day, ARKENG
+   *
+   * The AI does not need to invent or infer the company name.
+   */
+
+  const companyReport =
+    {
+      ...company,
+
+      id:
+        safeText(
+          company.id,
+          ""
+        ),
+
+      name:
+        safeText(
+          company.name,
+          "Your Business"
+        ),
+
+      industry:
+        safeText(
+          company.industry,
+          "General"
+        ),
+
+      businessModel:
+        safeText(
+          company.businessModel,
+          "Unknown"
+        ),
+
+      yearsInBusiness:
+        safeNonNegativeNumber(
+          company.yearsInBusiness,
+          1
+        ),
+
+      employees:
+        safeNonNegativeInteger(
+          company.employees
+        ),
+
+      annualRevenue:
+        safeNonNegativeNumber(
+          company.annualRevenue
+        ),
+
+      monthlyRevenue:
+        safeNonNegativeNumber(
+          company.monthlyRevenue
+        ),
+
+      monthlyExpenses:
+        safeNonNegativeNumber(
+          company.monthlyExpenses
+        ),
+
+      businessGoal:
+        safeText(
+          company.businessGoal,
+          "Grow Revenue"
+        ),
+
+      growthStage:
+        safeText(
+          company.growthStage,
+          "Startup"
+        ),
+
+      riskAppetite:
+        safeText(
+          company.riskAppetite,
+          "Medium"
+        ),
+    };
+
+  /*
+   * ==========================================================
    * NORMALIZE FINANCIAL DATA
    * ==========================================================
    */
@@ -234,30 +236,54 @@ export async function buildExecutiveReport(): Promise<ExecutiveReport> {
     ExecutiveReport["finance"] = {
     ...finance,
 
+    /*
+     * Revenue
+     */
+
     revenue:
       safeNonNegativeNumber(
         finance.revenue
       ),
+
+    /*
+     * Expenses
+     */
 
     expenses:
       safeNonNegativeNumber(
         finance.expenses
       ),
 
+    /*
+     * Profit
+     */
+
     profit:
       safeNumber(
         finance.profit
       ),
+
+    /*
+     * Cash
+     */
 
     cash:
       safeNonNegativeNumber(
         finance.cash
       ),
 
+    /*
+     * Cash flow
+     */
+
     cashFlow:
       safeNumber(
         finance.cashFlow
       ),
+
+    /*
+     * Margins
+     */
 
     grossMargin:
       safeNumber(
@@ -269,20 +295,36 @@ export async function buildExecutiveReport(): Promise<ExecutiveReport> {
         finance.netMargin
       ),
 
+    /*
+     * Working capital
+     */
+
     workingCapital:
       safeNumber(
         finance.workingCapital
       ),
+
+    /*
+     * Runway
+     */
 
     cashRunwayDays:
       safeNonNegativeNumber(
         finance.cashRunwayDays
       ),
 
+    /*
+     * Monthly burn
+     */
+
     monthlyBurnRate:
       safeNonNegativeNumber(
         finance.monthlyBurnRate
       ),
+
+    /*
+     * Outstanding receivables
+     */
 
     outstanding:
       safeNonNegativeNumber(
@@ -295,10 +337,18 @@ export async function buildExecutiveReport(): Promise<ExecutiveReport> {
         finance.outstandingReceivables
       ),
 
+    /*
+     * Outstanding payables
+     */
+
     outstandingPayables:
       safeNonNegativeNumber(
         finance.outstandingPayables
       ),
+
+    /*
+     * Growth
+     */
 
     revenueGrowth:
       safeNumber(
@@ -309,6 +359,10 @@ export async function buildExecutiveReport(): Promise<ExecutiveReport> {
       safeNumber(
         finance.expenseGrowth
       ),
+
+    /*
+     * Financial health
+     */
 
     healthScore:
       Math.min(
@@ -394,37 +448,14 @@ export async function buildExecutiveReport(): Promise<ExecutiveReport> {
 
   /*
    * ==========================================================
-   * CURRENT WORKFORCE
+   * ACTUAL WORKFORCE
    * ==========================================================
    */
 
   const currentEmployees =
-    Math.min(
-      MAX_RECOMMENDED_EMPLOYEES,
-      safeNonNegativeInteger(
-        company.employees
-      )
+    safeNonNegativeInteger(
+      companyReport.employees
     );
-
-  /*
-   * ==========================================================
-   * FINANCIAL WORKFORCE CAPACITY
-   * ==========================================================
-   */
-
-  const recommendedEmployees =
-    calculateRecommendedEmployees(
-      financeReport.revenue,
-      financeReport.expenses,
-      financeReport.profit
-    );
-
-  const employeeDifference =
-    recommendedEmployees -
-    currentEmployees;
-
-  const financiallySustainableEmployees =
-    recommendedEmployees;
 
   /*
    * ==========================================================
@@ -441,71 +472,84 @@ export async function buildExecutiveReport(): Promise<ExecutiveReport> {
    * ==========================================================
    * WORKFORCE RATIONALE
    * ==========================================================
+   *
+   * Informational only.
+   *
+   * No workforce recommendation is calculated here.
    */
 
-  const formattedRevenue =
-    financeReport.revenue.toLocaleString(
-      "en-IN",
-      {
-        maximumFractionDigits: 0,
-      }
-    );
-
-  const formattedExpenses =
-    financeReport.expenses.toLocaleString(
-      "en-IN",
-      {
-        maximumFractionDigits: 0,
-      }
-    );
-
-  const formattedProfit =
-    financeReport.profit.toLocaleString(
-      "en-IN",
-      {
-        maximumFractionDigits: 0,
-      }
-    );
-
-  const rationale =
-    financeReport.revenue <= 0
-      ? "There is currently insufficient revenue data to establish a financially sustainable workforce."
-      : `Based on current monthly revenue of ₹${formattedRevenue}, expenses of ₹${formattedExpenses}, and profit of ₹${formattedProfit}, ArkenOne estimates a financial workforce capacity of ${recommendedEmployees} employee${
-          recommendedEmployees === 1
+  const workforceRationale =
+    currentEmployees === 0
+      ? "No employees are currently recorded in the company profile. The AI CFO can evaluate workforce requirements when the business provides sufficient financial and operational context."
+      : `The company currently has ${currentEmployees} recorded employee${
+          currentEmployees === 1
             ? ""
             : "s"
-        }. This is a financial capacity baseline, not an automatic hiring recommendation. Actual hiring decisions should also consider cash flow, receivables, runway, role cost and business objectives.`;
+        }. Workforce decisions should be evaluated by the AI CFO using actual revenue, expenses, profitability, cash flow, receivables, runway, role requirements and business objectives.`;
 
   /*
    * ==========================================================
    * RETURN NORMALIZED EXECUTIVE REPORT
    * ==========================================================
+   *
+   * IMPORTANT:
+   *
+   * companyReport is returned as "company".
+   *
+   * Therefore every downstream component receives:
+   *
+   * report.company.name
+   *
+   * which should contain the actual company name from Supabase.
    */
 
   return {
-    company,
+    /*
+     * Company profile
+     */
+
+    company:
+      companyReport,
+
+    /*
+     * Financial intelligence
+     */
 
     finance:
       financeReport,
 
+    /*
+     * Customer intelligence
+     */
+
     customers:
       customerReport,
 
+    /*
+     * Forecast
+     */
+
     forecast,
+
+    /*
+     * Risk engine
+     */
 
     risks: [],
 
-    financiallySustainableEmployees,
+    /*
+     * Workforce
+     *
+     * ONLY actual workforce data.
+     *
+     * No recommendation.
+     */
 
     workforce: {
       currentEmployees,
 
-      recommendedEmployees,
-
-      difference:
-        employeeDifference,
-
-      rationale,
+      rationale:
+        workforceRationale,
     },
   };
 }

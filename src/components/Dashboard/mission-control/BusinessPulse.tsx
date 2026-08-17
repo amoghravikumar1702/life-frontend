@@ -3,7 +3,9 @@
 import { motion } from "framer-motion";
 
 import {
+  ArrowDownRight,
   ArrowUpRight,
+  Minus,
   Activity,
   TrendingUp,
   Wallet,
@@ -26,23 +28,35 @@ interface Props {
   snapshot: Snapshot;
 }
 
+/* =========================================================
+   MONEY FORMATTER
+========================================================= */
+
 function money(value: number) {
   const amount = Number(value ?? 0);
 
+  if (!Number.isFinite(amount)) {
+    return "₹0";
+  }
+
   if (amount >= 10000000) {
-    return `₹${(amount / 10000000).toFixed(1)}Cr`;
+    return `₹${(amount / 10000000).toFixed(2)}Cr`;
   }
 
   if (amount >= 100000) {
-    return `₹${Math.round(amount / 100000)}L`;
+    return `₹${(amount / 100000).toFixed(2)}L`;
   }
 
   if (amount >= 1000) {
-    return `₹${Math.round(amount / 1000)}K`;
+    return `₹${(amount / 1000).toFixed(1)}K`;
   }
 
-  return `₹${Math.round(amount)}`;
+  return `₹${Math.round(amount).toLocaleString("en-IN")}`;
 }
+
+/* =========================================================
+   METRIC CARD
+========================================================= */
 
 function MetricCard({
   title,
@@ -74,16 +88,19 @@ function MetricCard({
         duration-300
         hover:border-[#D4AF37]/10
         hover:bg-white/[0.035]
+        sm:p-5
       "
     >
       <div className="flex items-start justify-between gap-3">
         <p
           className="
+            min-w-0
             text-[9px]
             font-medium
             uppercase
-            tracking-[0.28em]
+            tracking-[0.24em]
             text-zinc-600
+            sm:tracking-[0.28em]
           "
         >
           {title}
@@ -118,9 +135,11 @@ function MetricCard({
       <p
         className={`
           mt-5
-          text-[21px]
+          truncate
+          text-[20px]
           font-semibold
           tracking-[-0.03em]
+          sm:text-[21px]
           ${valueClassName}
         `}
       >
@@ -130,23 +149,48 @@ function MetricCard({
   );
 }
 
+/* =========================================================
+   BUSINESS PULSE
+========================================================= */
+
 export default function BusinessPulse({
   snapshot,
 }: Props) {
   const score = Math.max(
     0,
-    Math.min(100, Number(snapshot.healthScore ?? 0))
+    Math.min(
+      100,
+      Number(snapshot.healthScore ?? 0)
+    )
   );
 
-  const revenue = Number(snapshot.revenue ?? 0);
-  const expenses = Number(snapshot.expenses ?? 0);
-  const profit = Number(snapshot.profit ?? 0);
+  const revenue = Number(
+    snapshot.revenue ?? 0
+  );
+
+  const expenses = Number(
+    snapshot.expenses ?? 0
+  );
+
+  const profit = Number(
+    snapshot.profit ?? 0
+  );
+
   const cashAvailable = Number(
     snapshot.cashAvailable ?? 0
   );
+
   const receivables = Number(
     snapshot.outstandingReceivables ?? 0
   );
+
+  const customerCount = Number(
+    snapshot.customerCount ?? 0
+  );
+
+  /* =======================================================
+     HEALTH STATUS
+  ======================================================= */
 
   const healthColor =
     score >= 85
@@ -175,12 +219,27 @@ export default function BusinessPulse({
           ? "Moderate"
           : "Needs Attention";
 
+  /* =======================================================
+     TREND
+  ======================================================= */
+
   const trendColor =
     snapshot.trend === "Improving"
       ? "text-emerald-400"
       : snapshot.trend === "Stable"
         ? "text-zinc-400"
         : "text-red-400";
+
+  const TrendIcon =
+    snapshot.trend === "Improving"
+      ? ArrowUpRight
+      : snapshot.trend === "Declining"
+        ? ArrowDownRight
+        : Minus;
+
+  /* =======================================================
+     PROFIT
+  ======================================================= */
 
   const profitColor =
     profit > 0
@@ -206,36 +265,45 @@ export default function BusinessPulse({
       className="
         group
         relative
+        w-full
         overflow-hidden
-        rounded-[28px]
+        rounded-[24px]
         border
         border-white/[0.06]
         bg-[#101318]
         transition-all
         duration-300
         hover:border-white/[0.09]
+        sm:rounded-[28px]
       "
     >
-      {/* HEADER */}
+      {/* =====================================================
+          HEADER
+      ===================================================== */}
 
       <div
         className="
           flex
-          items-start
-          justify-between
+          flex-col
           gap-4
-          px-6
-          py-6
+          px-4
+          py-5
+          sm:flex-row
+          sm:items-start
+          sm:justify-between
+          sm:px-6
+          sm:py-6
         "
       >
-        <div>
+        <div className="min-w-0">
           <p
             className="
               text-[9px]
               font-medium
               uppercase
-              tracking-[0.34em]
+              tracking-[0.30em]
               text-zinc-500
+              sm:tracking-[0.34em]
             "
           >
             Business Pulse
@@ -244,10 +312,11 @@ export default function BusinessPulse({
           <h2
             className="
               mt-3
-              text-[22px]
+              text-[21px]
               font-semibold
               tracking-[-0.03em]
               text-white
+              sm:text-[22px]
             "
           >
             Financial Position
@@ -260,8 +329,8 @@ export default function BusinessPulse({
 
         <div
           className="
-            mt-1
             flex
+            w-fit
             shrink-0
             items-center
             gap-2
@@ -284,32 +353,27 @@ export default function BusinessPulse({
           />
 
           <span
-            className={`text-[11px] font-medium ${
-              score >= 85
-                ? "text-emerald-400"
-                : score >= 70
-                  ? "text-[#D4AF37]"
-                  : score >= 50
-                    ? "text-amber-400"
-                    : "text-red-400"
-            }`}
+            className={`text-[11px] font-medium ${healthColor}`}
           >
             {status}
           </span>
         </div>
       </div>
 
-      {/* HEALTH */}
+      {/* =====================================================
+          HEALTH
+      ===================================================== */}
 
-      <div className="border-t border-white/[0.05] px-6 py-5">
-        <div className="flex items-end justify-between">
-          <div>
+      <div className="border-t border-white/[0.05] px-4 py-5 sm:px-6">
+        <div className="flex items-end justify-between gap-5">
+          <div className="min-w-0">
             <p
               className="
                 text-[9px]
                 uppercase
-                tracking-[0.32em]
+                tracking-[0.28em]
                 text-zinc-600
+                sm:tracking-[0.32em]
               "
             >
               Financial Health
@@ -318,10 +382,11 @@ export default function BusinessPulse({
             <div className="mt-2 flex items-baseline gap-2">
               <span
                 className={`
-                  text-[40px]
+                  text-[38px]
                   font-semibold
                   leading-none
                   tracking-[-0.05em]
+                  sm:text-[40px]
                   ${healthColor}
                 `}
               >
@@ -334,13 +399,14 @@ export default function BusinessPulse({
             </div>
           </div>
 
-          <div className="text-right">
+          <div className="shrink-0 text-right">
             <p
               className="
                 text-[9px]
                 uppercase
-                tracking-[0.32em]
+                tracking-[0.28em]
                 text-zinc-600
+                sm:tracking-[0.32em]
               "
             >
               Trend
@@ -353,7 +419,7 @@ export default function BusinessPulse({
                 {snapshot.trend}
               </span>
 
-              <ArrowUpRight
+              <TrendIcon
                 size={14}
                 className={trendColor}
               />
@@ -363,8 +429,12 @@ export default function BusinessPulse({
 
         <div className="mt-5 h-1.5 overflow-hidden rounded-full bg-white/[0.06]">
           <motion.div
-            initial={{ width: 0 }}
-            animate={{ width: `${score}%` }}
+            initial={{
+              width: 0,
+            }}
+            animate={{
+              width: `${score}%`,
+            }}
             transition={{
               duration: 0.8,
               ease: "easeOut",
@@ -374,9 +444,11 @@ export default function BusinessPulse({
         </div>
       </div>
 
-      {/* KPI GRID */}
+      {/* =====================================================
+          KPI GRID
+      ===================================================== */}
 
-      <div className="grid grid-cols-3 gap-px bg-white/[0.05]">
+      <div className="grid grid-cols-2 gap-px bg-white/[0.05] sm:grid-cols-3">
         <MetricCard
           title="Revenue"
           value={money(revenue)}
@@ -420,32 +492,36 @@ export default function BusinessPulse({
 
         <MetricCard
           title="Customers"
-          value={String(
-            Number(snapshot.customerCount ?? 0)
+          value={customerCount.toLocaleString(
+            "en-IN"
           )}
           icon={Users}
         />
       </div>
 
-      {/* FINANCIAL POSITION NOTE */}
+      {/* =====================================================
+          NET POSITION
+      ===================================================== */}
 
       <div
         className="
           border-t
           border-white/[0.05]
-          px-6
+          px-4
           py-4
+          sm:px-6
         "
       >
         <div className="flex items-center justify-between gap-4">
-          <div>
+          <div className="min-w-0">
             <p
               className="
                 text-[9px]
                 font-medium
                 uppercase
-                tracking-[0.32em]
+                tracking-[0.28em]
                 text-zinc-600
+                sm:tracking-[0.32em]
               "
             >
               Net Position
@@ -454,13 +530,16 @@ export default function BusinessPulse({
             <p
               className={`
                 mt-1
+                truncate
                 text-xs
                 font-medium
                 ${profitColor}
               `}
             >
               {profit > 0
-                ? `Operating profit of ${money(profit)}`
+                ? `Operating profit of ${money(
+                    profit
+                  )}`
                 : profit < 0
                   ? `Operating loss of ${money(
                       Math.abs(profit)
@@ -472,6 +551,7 @@ export default function BusinessPulse({
           <ArrowUpRight
             size={15}
             className="
+              shrink-0
               text-[#D4AF37]
               transition-transform
               duration-300

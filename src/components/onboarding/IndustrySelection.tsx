@@ -1,5 +1,3 @@
-// src/components/onboarding/IndustrySelection.tsx
-
 "use client";
 
 import { useState } from "react";
@@ -9,7 +7,9 @@ import {
 } from "lucide-react";
 
 interface IndustrySelectionProps {
-  onContinue: (industry: string) => void;
+  onContinue: (
+    industry: string
+  ) => void;
 }
 
 const industries = [
@@ -30,7 +30,8 @@ const industries = [
 export default function IndustrySelection({
   onContinue,
 }: IndustrySelectionProps) {
-  const [industry, setIndustry] = useState("");
+  const [industry, setIndustry] =
+    useState("");
 
   function handleContinue() {
     if (!industry) {
@@ -60,7 +61,7 @@ export default function IndustrySelection({
             </p>
 
             <p className="mt-1 text-sm text-zinc-500">
-              Tell ArkenOne what you do
+              Define your business context
             </p>
           </div>
         </div>
@@ -71,20 +72,23 @@ export default function IndustrySelection({
           </h1>
 
           <p className="mt-3 text-sm leading-7 text-zinc-500">
-            This helps ArkenOne use the right financial
-            language and recommendations for your business.
+            This helps ArkenOne understand your
+            market and use the right financial context.
           </p>
         </div>
 
         <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {industries.map((item) => {
-            const selected = industry === item;
+            const selected =
+              industry === item;
 
             return (
               <button
                 key={item}
                 type="button"
-                onClick={() => setIndustry(item)}
+                onClick={() =>
+                  setIndustry(item)
+                }
                 className={`min-h-14 rounded-2xl border px-4 text-left text-sm transition ${
                   selected
                     ? "border-[#D4AF37]/45 bg-[#D4AF37]/[0.08] text-[#D4AF37]"

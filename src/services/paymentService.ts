@@ -4,7 +4,13 @@ import { getInvoiceById } from "./invoiceService";
 
 const supabase = createClient();
 
-export async function createPayment(payment: Payment) {
+/* =========================================================
+   CREATE MANUAL PAYMENT
+========================================================= */
+
+export async function createPayment(
+  payment: Payment
+) {
   const {
     data: { user },
     error: authError,
@@ -15,7 +21,9 @@ export async function createPayment(payment: Payment) {
   }
 
   if (!user) {
-    throw new Error("User is not authenticated.");
+    throw new Error(
+      "User is not authenticated."
+    );
   }
 
   const { data, error } = await supabase
@@ -23,19 +31,26 @@ export async function createPayment(payment: Payment) {
     .insert({
       invoice_id: payment.invoice_id,
       amount: payment.amount,
-      payment_method: payment.payment_method,
+
+      payment_method:
+        payment.payment_method,
+
       payment_reference:
         payment.payment_reference ??
         `MAN-${Date.now()}`,
+
       payment_status:
         payment.payment_status ??
         "Completed",
+
       paid_at:
         payment.paid_at ??
         new Date().toISOString(),
+
       razorpay_order_id:
         payment.razorpay_order_id ??
         null,
+
       owner_id: user.id,
     })
     .select()
@@ -46,11 +61,16 @@ export async function createPayment(payment: Payment) {
       "Payment Insert Error:",
       error
     );
+
     throw error;
   }
 
   return data;
 }
+
+/* =========================================================
+   UPDATE INVOICE AFTER MANUAL PAYMENT
+========================================================= */
 
 async function updateInvoicePaymentStatus(
   invoiceId: number,
@@ -92,9 +112,15 @@ async function updateInvoicePaymentStatus(
       "Invoice Update Error:",
       error
     );
+
     throw error;
   }
 }
+
+/* =========================================================
+   RECORD PAYMENT
+========================================================= */
+
 export async function recordPayment(
   payment: Payment
 ) {
@@ -116,10 +142,16 @@ export async function recordPayment(
     Number(payment.amount)
   );
 
-  console.log("Invoice updated.");
+  console.log(
+    "Invoice updated."
+  );
 
   return createdPayment;
 }
+
+/* =========================================================
+   GET ALL PAYMENTS
+========================================================= */
 
 export async function getPayments() {
   const { data, error } = await supabase
@@ -136,13 +168,20 @@ export async function getPayments() {
   return data;
 }
 
+/* =========================================================
+   GET PAYMENTS BY INVOICE
+========================================================= */
+
 export async function getPaymentsByInvoice(
   invoiceId: number
 ) {
   const { data, error } = await supabase
     .from("payments")
     .select("*")
-    .eq("invoice_id", invoiceId)
+    .eq(
+      "invoice_id",
+      invoiceId
+    )
     .order("paid_at", {
       ascending: false,
     });
@@ -153,6 +192,10 @@ export async function getPaymentsByInvoice(
 
   return data;
 }
+
+/* =========================================================
+   DELETE PAYMENT
+========================================================= */
 
 export async function deletePayment(
   id: number
@@ -170,24 +213,32 @@ export async function deletePayment(
     success: true,
   };
 }
-export async function collectPayment(
+
+/* =========================================================
+   CREATE CUSTOMER PAYMENT LINK
+========================================================= */
+
+export async function createPaymentLink(
   invoiceId: number
 ) {
   const response = await fetch(
-    "/api/payments/create-order",
+    "/api/payments/create-link",
     {
       method: "POST",
+
       headers: {
         "Content-Type":
           "application/json",
       },
+
       body: JSON.stringify({
         invoiceId,
       }),
     }
   );
 
-  const result = await response.json();
+  const result =
+    await response.json();
 
   if (!response.ok) {
     throw new Error(
@@ -209,5 +260,11 @@ export async function collectPayment(
   return {
     paymentUrl:
       result.data.paymentUrl,
+
+    token:
+      result.data.token,
+
+    expiresAt:
+      result.data.expiresAt,
   };
 }

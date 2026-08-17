@@ -3,66 +3,156 @@ import { signIn } from "./actions";
 
 export default function LoginPage() {
   return (
-    <main className="flex min-h-screen items-center justify-center bg-[#0B0B0C] px-6">
-      <form
-        action={signIn}
-        className="w-full max-w-md rounded-3xl border border-white/10 bg-white/5 p-8 backdrop-blur-xl"
-      >
-        <h1 className="mb-2 text-3xl font-semibold text-white">
-          Welcome back
-        </h1>
+    <main className="relative flex min-h-screen overflow-hidden bg-[#090A0B] text-white">
+      {/* Ambient lighting */}
+      <div className="pointer-events-none absolute left-1/2 top-[-280px] h-[560px] w-[760px] -translate-x-1/2 rounded-full bg-[#D4AF37]/[0.045] blur-[140px]" />
+      <div className="pointer-events-none absolute bottom-[-240px] right-[-180px] h-[460px] w-[460px] rounded-full bg-[#D4AF37]/[0.025] blur-[130px]" />
 
-        <p className="mb-8 text-sm text-gray-400">
-          Sign in to continue to ArkenOne.
-        </p>
+      <div className="relative z-10 mx-auto flex w-full max-w-7xl items-center justify-center px-6 py-12 sm:px-10 lg:px-16">
+        <div className="grid w-full max-w-5xl overflow-hidden rounded-[32px] border border-white/[0.08] bg-white/[0.025] shadow-[0_30px_100px_rgba(0,0,0,0.45)] backdrop-blur-2xl lg:grid-cols-[1.05fr_0.95fr]">
+          {/* Brand panel */}
+          <div className="relative hidden overflow-hidden border-r border-white/[0.06] p-12 lg:flex lg:flex-col lg:justify-between xl:p-16">
+            <div className="pointer-events-none absolute bottom-[-180px] left-[-140px] h-[420px] w-[420px] rounded-full bg-[#D4AF37]/[0.035] blur-[120px]" />
 
-        <div className="space-y-5">
-          <div>
-            <label className="mb-2 block text-sm font-medium text-gray-300">
-              Email
-            </label>
+            <div className="relative">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#D4AF37]/20 bg-[#D4AF37]/[0.07]">
+                  <span className="text-sm font-semibold tracking-tight text-[#D4AF37]">
+                    A
+                  </span>
+                </div>
 
-            <input
-              name="email"
-              type="email"
-              required
-              placeholder="Enter your email"
-              className="w-full rounded-xl border border-white/10 bg-[#111111] px-4 py-3 text-white outline-none transition focus:border-cyan-400"
-            />
+                <span className="text-lg font-medium tracking-[-0.02em] text-zinc-100">
+                  ArkenOne
+                </span>
+              </div>
+
+              <div className="mt-20 max-w-md">
+                <p className="text-[10px] font-medium uppercase tracking-[0.4em] text-[#D4AF37]">
+                  Financial Intelligence
+                </p>
+
+                <h2 className="mt-5 text-4xl font-light leading-[1.12] tracking-[-0.035em] text-zinc-100 xl:text-5xl">
+                  Your business.
+                  <br />
+                  <span className="text-zinc-500">
+                    Understood.
+                  </span>
+                </h2>
+
+                <p className="mt-7 max-w-sm text-sm leading-7 text-zinc-500">
+                  ArkenOne brings your financial operations,
+                  business intelligence, and AI CFO into one
+                  executive workspace.
+                </p>
+              </div>
+            </div>
+
+            <div className="relative">
+              <div className="h-px w-16 bg-[#D4AF37]/50" />
+
+              <p className="mt-4 text-[10px] uppercase tracking-[0.3em] text-zinc-600">
+                Executive Intelligence
+              </p>
+            </div>
           </div>
 
-          <div>
-            <label className="mb-2 block text-sm font-medium text-gray-300">
-              Password
-            </label>
+          {/* Login */}
+          <div className="flex items-center p-7 sm:p-10 lg:p-12 xl:p-16">
+            <form action={signIn} className="w-full">
+              {/* Mobile brand */}
+              <div className="mb-12 flex items-center gap-3 lg:hidden">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#D4AF37]/20 bg-[#D4AF37]/[0.07]">
+                  <span className="text-sm font-semibold text-[#D4AF37]">
+                    A
+                  </span>
+                </div>
 
-            <input
-              name="password"
-              type="password"
-              required
-              placeholder="Enter your password"
-              className="w-full rounded-xl border border-white/10 bg-[#111111] px-4 py-3 text-white outline-none transition focus:border-cyan-400"
-            />
+                <span className="text-lg font-medium text-zinc-100">
+                  ArkenOne
+                </span>
+              </div>
+
+              <div>
+                <p className="text-[10px] font-medium uppercase tracking-[0.35em] text-[#D4AF37]">
+                  Secure Access
+                </p>
+
+                <h1 className="mt-4 text-3xl font-light tracking-[-0.03em] text-zinc-100 sm:text-4xl">
+                  Welcome back
+                </h1>
+
+                <p className="mt-3 text-sm leading-6 text-zinc-500">
+                  Sign in to continue to your financial command center.
+                </p>
+              </div>
+
+              <div className="mt-9 space-y-5">
+                <div>
+                  <label
+                    htmlFor="email"
+                    className="mb-2.5 block text-xs font-medium uppercase tracking-[0.18em] text-zinc-500"
+                  >
+                    Email
+                  </label>
+
+                  <input
+                    id="email"
+                    name="email"
+                    type="email"
+                    required
+                    autoComplete="email"
+                    placeholder="you@company.com"
+                    className="h-14 w-full rounded-xl border border-white/[0.08] bg-black/20 px-4 text-sm text-zinc-100 outline-none transition placeholder:text-zinc-700 focus:border-[#D4AF37]/40 focus:bg-black/30 focus:ring-1 focus:ring-[#D4AF37]/10"
+                  />
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="password"
+                    className="mb-2.5 block text-xs font-medium uppercase tracking-[0.18em] text-zinc-500"
+                  >
+                    Password
+                  </label>
+
+                  <input
+                    id="password"
+                    name="password"
+                    type="password"
+                    required
+                    autoComplete="current-password"
+                    placeholder="Enter your password"
+                    className="h-14 w-full rounded-xl border border-white/[0.08] bg-black/20 px-4 text-sm text-zinc-100 outline-none transition placeholder:text-zinc-700 focus:border-[#D4AF37]/40 focus:bg-black/30 focus:ring-1 focus:ring-[#D4AF37]/10"
+                  />
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                className="mt-8 flex h-14 w-full items-center justify-center rounded-xl bg-[#D4AF37] text-sm font-semibold text-[#090A0B] transition duration-200 hover:brightness-110 hover:shadow-[0_0_30px_rgba(212,175,55,0.12)] active:scale-[0.995]"
+              >
+                Sign In
+              </button>
+
+              <div className="mt-7 border-t border-white/[0.06] pt-7 text-center">
+                <p className="text-sm text-zinc-600">
+                  Don't have an account?{" "}
+                  <Link
+                    href="/signup"
+                    className="font-medium text-[#D4AF37] transition hover:text-[#E5C65A]"
+                  >
+                    Create one
+                  </Link>
+                </p>
+              </div>
+
+              <p className="mt-8 text-center text-[10px] uppercase tracking-[0.25em] text-zinc-700">
+                Secure financial workspace
+              </p>
+            </form>
           </div>
         </div>
-
-        <button
-          type="submit"
-          className="mt-8 w-full rounded-xl bg-cyan-500 py-3 font-semibold text-black transition hover:bg-cyan-400"
-        >
-          Sign In
-        </button>
-
-        <div className="mt-6 text-center text-sm text-gray-400">
-          Don't have an account?{" "}
-          <Link
-            href="/signup"
-            className="font-medium text-cyan-400 hover:underline"
-          >
-            Create one
-          </Link>
-        </div>
-      </form>
+      </div>
     </main>
   );
 }

@@ -3,6 +3,7 @@ import { QueryClient } from "@tanstack/react-query";
 
 type PaymentCheckoutParams = {
   invoiceId: number;
+  amount: number;
   customerName: string;
   customerEmail?: string;
   customerPhone?: string;
@@ -11,6 +12,7 @@ type PaymentCheckoutParams = {
 
 export async function openRazorpayCheckout({
   invoiceId,
+  amount,
   customerName,
   customerEmail,
   customerPhone,
@@ -22,170 +24,254 @@ export async function openRazorpayCheckout({
     throw new Error("Failed to load Razorpay.");
   }
 
-  const response = await fetch("/api/payments/create-order", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      invoiceId,
-    }),
-  });
+  const response = await fetch(
+    "/api/payments/create-order",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        invoiceId,
+        amount,
+      }),
+    }
+  );
 
   const result = await response.json();
 
   if (!response.ok) {
     throw new Error(
-      result.message ?? "Failed to create payment order."
+      result.message ??
+        result.error ??
+        "Failed to create payment order."
     );
   }
 
   const order = result.data;
 
-  if (!order?.id || !order?.amount || !order?.currency) {
-    throw new Error("Invalid Razorpay order returned by the server.");
+  if (
+    !order?.id ||
+    !order?.amount ||
+    !order?.currency
+  ) {
+    throw new Error(
+      "Invalid Razorpay order returned by the server."
+    );
   }
 
-  const Razorpay = (window as any).Razorpay;
+  const Razorpay =
+    (window as any).Razorpay;
 
   if (!Razorpay) {
-    throw new Error("Razorpay Checkout is not available.");
+    throw new Error(
+      "Razorpay Checkout is not available."
+    );
   }
 
-  const paymentObject = new Razorpay({
-    key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+  const paymentObject =
+    new Razorpay({
+      key:
+        process.env
+          .NEXT_PUBLIC_RAZORPAY_KEY_ID,
 
-    amount: order.amount,
+      amount:
+        order.amount,
 
-    currency: order.currency,
+      currency:
+        order.currency,
 
-    name: "ArkenOne",
+      name:
+        "ArkenOne",
 
-    description: `Invoice ${order.receipt ?? ""}`,
+      description:
+        `Payment for Invoice ${order.invoiceNumber}`,
 
-    order_id: order.id,
+      order_id:
+        order.id,
 
-    prefill: {
-      name: customerName,
-      email: customerEmail,
-      contact: customerPhone,
-    },
+      prefill: {
+        name:
+          customerName,
 
-    theme: {
-      color: "#D4AF37",
-    },
+        email:
+          customerEmail,
 
-    modal: {
-      ondismiss() {
-        console.log("Payment cancelled.");
+        contact:
+          customerPhone,
       },
-    },
 
-    handler: async (paymentResponse: any) => {
-      try {
-        const verifyResponse = await fetch(
-          "/api/payments/verify",
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
+      /*
+       * UPI FIRST
+       */
+
+      config: {
+        display: {
+          blocks: {
+            upi: {
+              name: "Pay using UPI",
+
+              instruments: [
+                {
+                  method: "upi",
+                },
+              ],
             },
-            body: JSON.stringify(paymentResponse),
+
+            other: {
+              name: "Other payment methods",
+
+              instruments: [
+                {
+                  method: "card",
+                },
+                {
+                  method: "netbanking",
+                },
+                {
+                  method: "wallet",
+                },
+              ],
+            },
+          },
+
+          sequence: [
+            "block.upi",
+            "block.other",
+          ],
+
+          preferences: {
+            show_default_blocks: true,
+          },
+        },
+      },
+
+      theme: {
+        color:
+          "#D4AF37",
+      },
+
+      modal: {
+        ondismiss() {
+          console.log(
+            "Payment cancelled."
+          );
+        },
+      },
+
+      handler: async (
+        paymentResponse: any
+      ) => {
+        try {
+          const verifyResponse =
+            await fetch(
+              "/api/payments/verify",
+              {
+                method: "POST",
+
+                headers: {
+                  "Content-Type":
+                    "application/json",
+                },
+
+                body:
+                  JSON.stringify(
+                    paymentResponse
+                  ),
+              }
+            );
+
+          const verifyResult =
+            await verifyResponse.json();
+
+          if (
+            !verifyResponse.ok
+          ) {
+            throw new Error(
+              verifyResult.message ??
+                "Payment verification failed."
+            );
           }
-        );
 
-        const verifyResult =
-          await verifyResponse.json();
+          const paidAmount =
+            Number(
+              verifyResult
+                ?.data
+                ?.amount ??
+                amount
+            );
 
-        if (!verifyResponse.ok) {
-          throw new Error(
-            verifyResult.message ??
-              "Payment verification failed."
+          alert(
+            `Payment Successful!\n\n₹${paidAmount.toLocaleString(
+              "en-IN",
+              {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              }
+            )} received.`
+          );
+
+          await Promise.all([
+            queryClient.invalidateQueries({
+              queryKey:
+                ["dashboard"],
+            }),
+
+            queryClient.invalidateQueries({
+              queryKey:
+                ["customers"],
+            }),
+
+            queryClient.invalidateQueries({
+              queryKey:
+                ["invoices"],
+            }),
+
+            queryClient.invalidateQueries({
+              queryKey:
+                ["business-health"],
+            }),
+
+            queryClient.invalidateQueries({
+              queryKey:
+                ["financial-analysis"],
+            }),
+
+            queryClient.invalidateQueries({
+              queryKey:
+                ["ai-cfo"],
+            }),
+          ]);
+
+          window.location.reload();
+        } catch (error) {
+          console.error(
+            "RAZORPAY VERIFICATION ERROR:",
+            error
+          );
+
+          alert(
+            error instanceof Error
+              ? error.message
+              : "Payment verification failed."
           );
         }
-
-        alert("Payment Successful!");
-
-        await Promise.all([
-          queryClient.invalidateQueries({
-            queryKey: ["dashboard"],
-          }),
-
-          queryClient.invalidateQueries({
-            queryKey: ["customers"],
-          }),
-
-          queryClient.invalidateQueries({
-            queryKey: ["invoices"],
-          }),
-
-          queryClient.invalidateQueries({
-            queryKey: ["business-health"],
-          }),
-
-          queryClient.invalidateQueries({
-            queryKey: ["financial-analysis"],
-          }),
-
-          queryClient.invalidateQueries({
-            queryKey: ["ai-cfo"],
-          }),
-        ]);
-      } catch (error) {
-        console.error(
-          "RAZORPAY VERIFICATION ERROR:",
-          error
-        );
-
-        console.error(
-          "RAZORPAY VERIFICATION ERROR JSON:",
-          JSON.stringify(error, null, 2)
-        );
-
-        alert(
-          error instanceof Error
-            ? error.message
-            : "Payment verification failed."
-        );
-      }
-    },
-  });
+      },
+    });
 
   paymentObject.on(
     "payment.failed",
-    function (response: any) {
+    function (
+      response: any
+    ) {
       console.error(
         "RAZORPAY PAYMENT FAILED:",
-        JSON.stringify(response, null, 2)
-      );
-
-      console.error(
-        "RAZORPAY ERROR CODE:",
-        response?.error?.code
-      );
-
-      console.error(
-        "RAZORPAY ERROR DESCRIPTION:",
-        response?.error?.description
-      );
-
-      console.error(
-        "RAZORPAY ERROR SOURCE:",
-        response?.error?.source
-      );
-
-      console.error(
-        "RAZORPAY ERROR STEP:",
-        response?.error?.step
-      );
-
-      console.error(
-        "RAZORPAY ERROR REASON:",
-        response?.error?.reason
+        response
       );
 
       const description =
-        response?.error?.description ??
+        response?.error
+          ?.description ??
         "Your payment could not be completed.";
 
       alert(

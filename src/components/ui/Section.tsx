@@ -1,74 +1,49 @@
-"use client";
+// src/components/ui/Section.tsx
 
 import { ReactNode } from "react";
-import { motion } from "framer-motion";
-import clsx from "clsx";
 
 interface SectionProps {
   title?: string;
-
   subtitle?: string;
-
-  action?: ReactNode;
-
   children: ReactNode;
-
-  className?: string;
-
-  contentClassName?: string;
+  actions?: ReactNode;
 }
 
 export default function Section({
   title,
   subtitle,
-  action,
   children,
-  className,
-  contentClassName,
+  actions,
 }: SectionProps) {
   return (
-    <motion.section
-      layout
-      initial={{
-        opacity: 0,
-        y: 18,
-      }}
-      animate={{
-        opacity: 1,
-        y: 0,
-      }}
-      transition={{
-        duration: 0.3,
-      }}
-      className={clsx("space-y-6", className)}
-    >
-      {(title || action) && (
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-          <div>
+    <section className="overflow-hidden rounded-[30px] border border-white/[0.06] bg-[#101214]">
+      {(title || subtitle || actions) && (
+        <div className="flex flex-col gap-4 border-b border-white/[0.05] px-6 py-6 sm:px-7 sm:py-6 md:flex-row md:items-center md:justify-between">
+          <div className="min-w-0">
             {title && (
-              <h2 className="text-2xl font-semibold tracking-tight text-white">
+              <h2 className="text-lg font-semibold tracking-[-0.02em] text-white">
                 {title}
               </h2>
             )}
 
             {subtitle && (
-              <p className="mt-2 max-w-2xl text-sm leading-6 text-zinc-400">
+              <p className="mt-1.5 text-xs text-zinc-600">
                 {subtitle}
               </p>
             )}
           </div>
 
-          {action && (
-            <div className="flex items-center gap-3">
-              {action}
+          {actions && (
+            <div className="shrink-0">
+              {actions}
             </div>
           )}
         </div>
       )}
 
-      <div className={clsx(contentClassName)}>
+      <div className="p-6 sm:p-7">
         {children}
       </div>
-    </motion.section>
+    </section>
   );
 }

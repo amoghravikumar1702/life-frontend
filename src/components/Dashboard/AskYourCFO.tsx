@@ -1,5 +1,3 @@
-// src/components/Dashboard/AskYourCFO.tsx
-
 "use client";
 
 import { useState } from "react";
@@ -14,13 +12,25 @@ import {
 
 interface CFOAnswer {
   answer: string;
-  nextStep: string;
-  financialImpact: string;
+  decision: string;
+  action: string;
+  financialImpact: {
+    amount: number;
+    explanation: string;
+  };
   confidence: number;
 }
 
 interface Props {
   className?: string;
+}
+
+function formatCurrency(value: number) {
+  const amount = Number(value ?? 0);
+
+  return `₹${amount.toLocaleString("en-IN", {
+    maximumFractionDigits: 2,
+  })}`;
 }
 
 export default function AskYourCFO({
@@ -29,13 +39,21 @@ export default function AskYourCFO({
   const [question, setQuestion] = useState("");
   const [answer, setAnswer] =
     useState<CFOAnswer | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+
+  const [loading, setLoading] =
+    useState(false);
+
+  const [error, setError] =
+    useState("");
 
   async function askCFO() {
-    const cleanQuestion = question.trim();
+    const cleanQuestion =
+      question.trim();
 
-    if (!cleanQuestion || loading) {
+    if (
+      !cleanQuestion ||
+      loading
+    ) {
       return;
     }
 
@@ -48,16 +66,21 @@ export default function AskYourCFO({
         "/api/ai-cfo/ask",
         {
           method: "POST",
+
           headers: {
-            "Content-Type": "application/json",
+            "Content-Type":
+              "application/json",
           },
+
           body: JSON.stringify({
-            question: cleanQuestion,
+            question:
+              cleanQuestion,
           }),
         }
       );
 
-      const data = await response.json();
+      const data =
+        await response.json();
 
       if (!response.ok) {
         throw new Error(
@@ -66,24 +89,107 @@ export default function AskYourCFO({
         );
       }
 
-      if (
-        typeof data?.answer !== "string" ||
-        !data.answer.trim()
-      ) {
+      /*
+       * IMPORTANT
+       *
+       * The API route returns:
+       *
+       * {
+       *   data: {
+       *     answer,
+       *     decision,
+       *     action,
+       *     financialImpact,
+       *     confidence
+       *   }
+       * }
+       *
+       * Therefore we read data.data.
+       */
+
+      if (!data?.data) {
         throw new Error(
           "The CFO returned an empty response."
         );
       }
 
-      const rawAnswer =
-        data.answer.trim();
+      const raw = data.data;
 
-      setAnswer({
-        answer: rawAnswer,
-        nextStep: "",
-        financialImpact: "",
-        confidence: 0,
-      });
+      const normalizedAnswer: CFOAnswer = {
+        answer:
+          typeof raw.answer ===
+          "string"
+            ? raw.answer.trim()
+            : "",
+
+        decision:
+          typeof raw.decision ===
+          "string"
+            ? raw.decision.trim()
+            : "",
+
+        action:
+          typeof raw.action ===
+          "string"
+            ? raw.action.trim()
+            : "",
+
+        financialImpact: {
+          amount:
+            Number.isFinite(
+              Number(
+                raw.financialImpact
+                  ?.amount
+              )
+            )
+              ? Number(
+                  raw.financialImpact
+                    .amount
+                )
+              : 0,
+
+          explanation:
+            typeof raw
+              .financialImpact
+              ?.explanation ===
+            "string"
+              ? raw.financialImpact
+                  .explanation
+                  .trim()
+              : "",
+        },
+
+        confidence:
+          Number.isFinite(
+            Number(
+              raw.confidence
+            )
+          )
+            ? Math.min(
+                100,
+                Math.max(
+                  0,
+                  Number(
+                    raw.confidence
+                  )
+                )
+              )
+            : 0,
+      };
+
+      if (
+        !normalizedAnswer.answer ||
+        !normalizedAnswer.decision ||
+        !normalizedAnswer.action
+      ) {
+        throw new Error(
+          "The CFO returned an incomplete response."
+        );
+      }
+
+      setAnswer(
+        normalizedAnswer
+      );
 
       setQuestion("");
     } catch (error) {
@@ -117,6 +223,9 @@ export default function AskYourCFO({
         ${className}
       `}
     >
+
+      {/* GOLD AMBIENT LIGHT */}
+
       <div
         className="
           pointer-events-none
@@ -147,6 +256,9 @@ export default function AskYourCFO({
       />
 
       <div className="relative">
+
+        {/* HEADER */}
+
         <div
           className="
             border-b
@@ -167,7 +279,9 @@ export default function AskYourCFO({
               gap-5
             "
           >
+
             <div className="flex items-center gap-4">
+
               <div
                 className="
                   flex
@@ -191,6 +305,7 @@ export default function AskYourCFO({
               </div>
 
               <div>
+
                 <p
                   className="
                     text-[11px]
@@ -212,7 +327,9 @@ export default function AskYourCFO({
                 >
                   Financial decision intelligence
                 </p>
+
               </div>
+
             </div>
 
             <div
@@ -229,10 +346,14 @@ export default function AskYourCFO({
                 size={15}
                 strokeWidth={1.7}
               />
+
               Private intelligence
             </div>
+
           </div>
         </div>
+
+        {/* MAIN */}
 
         <div
           className="
@@ -244,7 +365,9 @@ export default function AskYourCFO({
             lg:py-11
           "
         >
+
           <div className="max-w-4xl">
+
             <div
               className="
                 inline-flex
@@ -258,6 +381,7 @@ export default function AskYourCFO({
                 py-1.5
               "
             >
+
               <Sparkles
                 size={13}
                 strokeWidth={1.8}
@@ -275,6 +399,7 @@ export default function AskYourCFO({
               >
                 Ask Your CFO
               </span>
+
             </div>
 
             <p
@@ -286,11 +411,15 @@ export default function AskYourCFO({
                 text-zinc-500
               "
             >
-              Ask ArkenOne to evaluate your
-              financial position and determine
-              your next move.
+              Ask ArkenOne to evaluate
+              your financial position
+              and determine your next
+              move.
             </p>
+
           </div>
+
+          {/* INPUT */}
 
           <div
             className="
@@ -307,14 +436,18 @@ export default function AskYourCFO({
               sm:flex-row
             "
           >
+
             <input
               value={question}
               onChange={(event) =>
-                setQuestion(event.target.value)
+                setQuestion(
+                  event.target.value
+                )
               }
               onKeyDown={(event) => {
                 if (
-                  event.key === "Enter" &&
+                  event.key ===
+                    "Enter" &&
                   !event.shiftKey
                 ) {
                   event.preventDefault();
@@ -341,7 +474,9 @@ export default function AskYourCFO({
 
             <button
               type="button"
-              onClick={() => void askCFO()}
+              onClick={() =>
+                void askCFO()
+              }
               disabled={
                 loading ||
                 !question.trim()
@@ -368,25 +503,32 @@ export default function AskYourCFO({
                 disabled:shadow-none
               "
             >
+
               {loading ? (
                 <>
                   <Loader2
                     size={17}
                     className="animate-spin"
                   />
+
                   Thinking
                 </>
               ) : (
                 <>
                   Ask CFO
+
                   <ArrowUpRight
                     size={17}
                     strokeWidth={1.8}
                   />
                 </>
               )}
+
             </button>
+
           </div>
+
+          {/* SUGGESTIONS */}
 
           <div
             className="
@@ -396,13 +538,16 @@ export default function AskYourCFO({
               gap-2
             "
           >
+
             {suggestions.map(
               (suggestion) => (
                 <button
                   key={suggestion}
                   type="button"
                   onClick={() =>
-                    setQuestion(suggestion)
+                    setQuestion(
+                      suggestion
+                    )
                   }
                   disabled={loading}
                   className="
@@ -426,7 +571,10 @@ export default function AskYourCFO({
                 </button>
               )
             )}
+
           </div>
+
+          {/* ERROR */}
 
           {error && (
             <div
@@ -447,6 +595,8 @@ export default function AskYourCFO({
             </div>
           )}
 
+          {/* CFO RESPONSE */}
+
           {answer && (
             <motion.div
               initial={{
@@ -466,6 +616,9 @@ export default function AskYourCFO({
                 bg-[#111419]
               "
             >
+
+              {/* RESPONSE HEADER */}
+
               <div
                 className="
                   flex
@@ -477,7 +630,9 @@ export default function AskYourCFO({
                   py-5
                 "
               >
+
                 <div className="flex items-center gap-3">
+
                   <Brain
                     size={17}
                     strokeWidth={1.7}
@@ -495,6 +650,7 @@ export default function AskYourCFO({
                   >
                     CFO Analysis
                   </p>
+
                 </div>
 
                 <span
@@ -507,9 +663,13 @@ export default function AskYourCFO({
                 >
                   Live analysis
                 </span>
+
               </div>
 
+              {/* ANSWER */}
+
               <div className="p-6 sm:p-7">
+
                 <p
                   className="
                     whitespace-pre-line
@@ -520,10 +680,196 @@ export default function AskYourCFO({
                 >
                   {answer.answer}
                 </p>
+
               </div>
+
+              {/* DECISION */}
+
+              <div
+                className="
+                  border-t
+                  border-white/[0.05]
+                  p-6
+                  sm:p-7
+                "
+              >
+
+                <p
+                  className="
+                    text-[10px]
+                    font-medium
+                    uppercase
+                    tracking-[0.3em]
+                    text-zinc-600
+                  "
+                >
+                  Decision
+                </p>
+
+                <p
+                  className="
+                    mt-3
+                    text-sm
+                    leading-7
+                    text-zinc-300
+                  "
+                >
+                  {answer.decision}
+                </p>
+
+              </div>
+
+              {/* ACTION + IMPACT */}
+
+              <div
+                className="
+                  grid
+                  border-t
+                  border-white/[0.05]
+                  md:grid-cols-2
+                "
+              >
+
+                <div
+                  className="
+                    border-b
+                    border-white/[0.05]
+                    p-6
+                    md:border-b-0
+                    md:border-r
+                    sm:p-7
+                  "
+                >
+
+                  <p
+                    className="
+                      text-[10px]
+                      uppercase
+                      tracking-[0.3em]
+                      text-zinc-600
+                    "
+                  >
+                    Next Action
+                  </p>
+
+                  <p
+                    className="
+                      mt-3
+                      text-sm
+                      leading-7
+                      text-zinc-300
+                    "
+                  >
+                    {answer.action}
+                  </p>
+
+                </div>
+
+                <div
+                  className="
+                    p-6
+                    sm:p-7
+                  "
+                >
+
+                  <p
+                    className="
+                      text-[10px]
+                      uppercase
+                      tracking-[0.3em]
+                      text-zinc-600
+                    "
+                  >
+                    Financial Impact
+                  </p>
+
+                  <p
+                    className="
+                      mt-3
+                      text-lg
+                      font-medium
+                      leading-7
+                      text-zinc-200
+                    "
+                  >
+                    {answer.financialImpact
+                      .amount > 0
+                      ? formatCurrency(
+                          answer
+                            .financialImpact
+                            .amount
+                        )
+                      : "No specific amount"}
+                  </p>
+
+                  {answer
+                    .financialImpact
+                    .explanation && (
+                    <p
+                      className="
+                        mt-2
+                        text-xs
+                        leading-5
+                        text-zinc-600
+                      "
+                    >
+                      {
+                        answer
+                          .financialImpact
+                          .explanation
+                      }
+                    </p>
+                  )}
+
+                </div>
+
+              </div>
+
+              {/* CONFIDENCE */}
+
+              <div
+                className="
+                  flex
+                  items-center
+                  justify-between
+                  border-t
+                  border-white/[0.05]
+                  px-6
+                  py-4
+                "
+              >
+
+                <span
+                  className="
+                    text-[10px]
+                    uppercase
+                    tracking-[0.28em]
+                    text-zinc-600
+                  "
+                >
+                  CFO confidence
+                </span>
+
+                <span
+                  className="
+                    text-xs
+                    font-medium
+                    text-[#D4AF37]
+                  "
+                >
+                  {Math.round(
+                    answer.confidence
+                  )}
+                  %
+                </span>
+
+              </div>
+
             </motion.div>
           )}
+
         </div>
+
       </div>
     </section>
   );

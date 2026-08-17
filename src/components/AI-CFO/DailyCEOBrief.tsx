@@ -5,12 +5,6 @@
 import { motion } from "framer-motion";
 import { Sparkles } from "lucide-react";
 
-/*
- * ============================================================
- * TYPES
- * ============================================================
- */
-
 interface Finance {
   revenue: number;
   expenses: number;
@@ -25,12 +19,6 @@ interface Props {
   finance: Finance;
 }
 
-/*
- * ============================================================
- * HELPERS
- * ============================================================
- */
-
 function formatCurrency(value: number) {
   const amount = Number(value ?? 0);
 
@@ -39,12 +27,6 @@ function formatCurrency(value: number) {
   })}`;
 }
 
-/*
- * ============================================================
- * COMPONENT
- * ============================================================
- */
-
 export default function DailyCEOBrief({
   greeting,
   executiveBrief,
@@ -52,10 +34,6 @@ export default function DailyCEOBrief({
 }: Props) {
   return (
     <section className="mx-auto max-w-7xl space-y-8">
-
-      {/* =====================================================
-          EXECUTIVE BRIEF
-      ===================================================== */}
 
       <motion.section
         initial={{
@@ -86,8 +64,6 @@ export default function DailyCEOBrief({
         "
       >
 
-        {/* Ambient gold light */}
-
         <div
           className="
             pointer-events-none
@@ -104,8 +80,6 @@ export default function DailyCEOBrief({
 
         <div className="relative">
 
-          {/* AI CFO identity */}
-
           <div className="flex items-center gap-3">
 
             <div
@@ -121,17 +95,14 @@ export default function DailyCEOBrief({
                 bg-[#D4AF37]/[0.07]
               "
             >
-
               <Sparkles
                 size={17}
                 strokeWidth={1.8}
                 className="text-[#D4AF37]"
               />
-
             </div>
 
             <div>
-
               <p
                 className="
                   text-[10px]
@@ -147,12 +118,9 @@ export default function DailyCEOBrief({
               <p className="mt-1 text-xs text-zinc-500">
                 Executive Intelligence
               </p>
-
             </div>
 
           </div>
-
-          {/* Greeting */}
 
           <h1
             className="
@@ -170,8 +138,6 @@ export default function DailyCEOBrief({
 
           <div className="mt-6 h-px w-full bg-white/[0.05]" />
 
-          {/* Executive brief */}
-
           <p
             className="
               mt-7
@@ -186,12 +152,7 @@ export default function DailyCEOBrief({
           </p>
 
         </div>
-
       </motion.section>
-
-      {/* =====================================================
-          FINANCIAL POSITION
-      ===================================================== */}
 
       <motion.section
         initial={{
@@ -216,8 +177,6 @@ export default function DailyCEOBrief({
         "
       >
 
-        {/* Header */}
-
         <div
           className="
             flex
@@ -235,7 +194,6 @@ export default function DailyCEOBrief({
         >
 
           <div>
-
             <p
               className="
                 text-[10px]
@@ -259,7 +217,6 @@ export default function DailyCEOBrief({
             >
               Current financial picture
             </h2>
-
           </div>
 
           <p className="text-xs text-zinc-600">
@@ -267,8 +224,6 @@ export default function DailyCEOBrief({
           </p>
 
         </div>
-
-        {/* Financial metrics */}
 
         <div
           className="
@@ -282,10 +237,7 @@ export default function DailyCEOBrief({
           "
         >
 
-          {/* Revenue */}
-
           <div className="min-h-[130px] px-6 py-7 sm:px-8">
-
             <p
               className="
                 text-[10px]
@@ -312,13 +264,9 @@ export default function DailyCEOBrief({
             <p className="mt-2 text-xs text-zinc-600">
               Recorded revenue
             </p>
-
           </div>
 
-          {/* Expenses */}
-
           <div className="min-h-[130px] px-6 py-7 sm:px-8">
-
             <p
               className="
                 text-[10px]
@@ -345,18 +293,14 @@ export default function DailyCEOBrief({
             <p className="mt-2 text-xs text-zinc-600">
               Recorded expenses
             </p>
-
           </div>
 
-          {/* Profit */}
-
           <div className="min-h-[130px] px-6 py-7 sm:px-8">
-
             <p
               className="
                 text-[10px]
                 uppercase
-                tracking-[-0.03em]
+                tracking-[0.3em]
                 text-zinc-500
               "
             >
@@ -382,13 +326,9 @@ export default function DailyCEOBrief({
             <p className="mt-2 text-xs text-zinc-600">
               Revenue less expenses
             </p>
-
           </div>
 
-          {/* Receivables */}
-
           <div className="min-h-[130px] px-6 py-7 sm:px-8">
-
             <p
               className="
                 text-[10px]
@@ -417,11 +357,9 @@ export default function DailyCEOBrief({
             <p className="mt-2 text-xs text-zinc-600">
               Outstanding customer balances
             </p>
-
           </div>
 
         </div>
-
       </motion.section>
 
     </section>

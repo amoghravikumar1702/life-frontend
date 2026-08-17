@@ -18,10 +18,21 @@ export default async function DashboardPage() {
     .from("companies")
     .select("industry")
     .eq("owner_id", user.id)
-    .single();
+    .maybeSingle();
 
+  /*
+   * A company may not exist yet immediately after signup.
+   *
+   * In that case, send the user through onboarding instead
+   * of crashing the dashboard.
+   */
   if (error) {
-    throw new Error(error.message);
+    console.error(
+      "[Dashboard] Failed to load company:",
+      error
+    );
+
+    redirect("/onboarding");
   }
 
   if (!company?.industry) {

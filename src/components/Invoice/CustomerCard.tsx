@@ -14,95 +14,264 @@ export default function CustomerCard({
   email,
   phone,
 }: CustomerCardProps) {
+  const displayName = name?.trim() || "Unknown Customer";
+
   const initials =
-    name
-      ?.split(" ")
+    displayName
+      .split(" ")
+      .filter(Boolean)
       .map((word) => word[0])
       .join("")
       .slice(0, 2)
       .toUpperCase() || "--";
 
   return (
-    <GlassPanel className="p-8">
+    <GlassPanel className="h-full p-6 sm:p-8">
 
-      <div className="flex items-center gap-5">
+      {/* HEADER */}
 
-        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[var(--primary)] text-xl font-bold text-black">
+      <div className="flex items-center gap-4 sm:gap-5">
+
+        <div
+          className="
+            flex
+            h-14
+            w-14
+            shrink-0
+            items-center
+            justify-center
+            rounded-2xl
+            border
+            border-[#D4AF37]/15
+            bg-[#D4AF37]/[0.07]
+            text-base
+            font-semibold
+            text-[#D4AF37]
+            sm:h-16
+            sm:w-16
+            sm:text-lg
+          "
+        >
           {initials}
         </div>
 
-        <div>
+        <div className="min-w-0">
 
-          <p className="text-sm uppercase tracking-[0.2em] text-[var(--text-secondary)]">
+          <p
+            className="
+              text-[9px]
+              font-medium
+              uppercase
+              tracking-[0.28em]
+              text-zinc-600
+            "
+          >
             Customer
           </p>
 
-          <h2 className="mt-2 text-2xl font-semibold">
-            {name || "Unknown Customer"}
+          <h2
+            className="
+              mt-2
+              truncate
+              text-xl
+              font-semibold
+              tracking-[-0.025em]
+              text-white
+              sm:text-2xl
+            "
+          >
+            {displayName}
           </h2>
 
         </div>
 
       </div>
 
-      <div className="mt-8 space-y-5">
+      {/* CUSTOMER INFORMATION */}
 
-        <div className="flex items-center gap-4">
+      <div className="mt-7 space-y-1 border-t border-white/[0.05] pt-6">
 
-          <Mail
-            size={18}
-            className="text-[var(--primary)]"
-          />
+        {/* EMAIL */}
 
-          <div>
+        <div
+          className="
+            flex
+            items-center
+            gap-4
+            rounded-xl
+            px-2
+            py-3
+            transition-colors
+            hover:bg-white/[0.02]
+          "
+        >
 
-            <p className="text-xs uppercase tracking-wider text-[var(--text-muted)]">
+          <div
+            className="
+              flex
+              h-9
+              w-9
+              shrink-0
+              items-center
+              justify-center
+              rounded-xl
+              border
+              border-white/[0.06]
+              bg-white/[0.02]
+            "
+          >
+            <Mail
+              size={15}
+              strokeWidth={1.8}
+              className="text-zinc-500"
+            />
+          </div>
+
+          <div className="min-w-0">
+
+            <p
+              className="
+                text-[9px]
+                font-medium
+                uppercase
+                tracking-[0.22em]
+                text-zinc-600
+              "
+            >
               Email
             </p>
 
-            <p className="mt-1">
-              {email || "Not Available"}
+            <p
+              className="
+                mt-1
+                truncate
+                text-sm
+                text-zinc-300
+              "
+            >
+              {email || "Not available"}
             </p>
 
           </div>
 
         </div>
 
-        <div className="flex items-center gap-4">
+        {/* PHONE */}
 
-          <Phone
-            size={18}
-            className="text-[var(--primary)]"
-          />
+        <div
+          className="
+            flex
+            items-center
+            gap-4
+            rounded-xl
+            px-2
+            py-3
+            transition-colors
+            hover:bg-white/[0.02]
+          "
+        >
 
-          <div>
+          <div
+            className="
+              flex
+              h-9
+              w-9
+              shrink-0
+              items-center
+              justify-center
+              rounded-xl
+              border
+              border-white/[0.06]
+              bg-white/[0.02]
+            "
+          >
+            <Phone
+              size={15}
+              strokeWidth={1.8}
+              className="text-zinc-500"
+            />
+          </div>
 
-            <p className="text-xs uppercase tracking-wider text-[var(--text-muted)]">
+          <div className="min-w-0">
+
+            <p
+              className="
+                text-[9px]
+                font-medium
+                uppercase
+                tracking-[0.22em]
+                text-zinc-600
+              "
+            >
               Phone
             </p>
 
-            <p className="mt-1">
-              {phone || "Not Available"}
+            <p
+              className="
+                mt-1
+                truncate
+                text-sm
+                text-zinc-300
+              "
+            >
+              {phone || "Not available"}
             </p>
 
           </div>
 
         </div>
 
-        <div className="flex items-center gap-4">
+        {/* CUSTOMER TYPE */}
 
-          <User
-            size={18}
-            className="text-[var(--primary)]"
-          />
+        <div
+          className="
+            flex
+            items-center
+            gap-4
+            rounded-xl
+            px-2
+            py-3
+            transition-colors
+            hover:bg-white/[0.02]
+          "
+        >
+
+          <div
+            className="
+              flex
+              h-9
+              w-9
+              shrink-0
+              items-center
+              justify-center
+              rounded-xl
+              border
+              border-[#D4AF37]/10
+              bg-[#D4AF37]/[0.05]
+            "
+          >
+            <User
+              size={15}
+              strokeWidth={1.8}
+              className="text-[#D4AF37]"
+            />
+          </div>
 
           <div>
 
-            <p className="text-xs uppercase tracking-wider text-[var(--text-muted)]">
+            <p
+              className="
+                text-[9px]
+                font-medium
+                uppercase
+                tracking-[0.22em]
+                text-zinc-600
+              "
+            >
               Customer Type
             </p>
 
-            <p className="mt-1">
+            <p className="mt-1 text-sm text-zinc-300">
               Business
             </p>
 
