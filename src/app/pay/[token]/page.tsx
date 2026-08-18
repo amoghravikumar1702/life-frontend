@@ -1,3 +1,5 @@
+// src/app/pay/[token]/page.tsx
+
 import { supabaseAdmin } from "@/lib/server/supabase";
 import PayButton from "@/components/PaymentPortal/PayButton";
 import DirectUPIPayment from "@/components/PaymentPortal/DirectUPIPayment";
@@ -64,7 +66,9 @@ export default async function PaymentPage({
 
   if (
     invoice.payment_token_expires_at &&
-    new Date(invoice.payment_token_expires_at) < new Date()
+    new Date(
+      invoice.payment_token_expires_at
+    ) < new Date()
   ) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-slate-50 px-6">
@@ -74,15 +78,17 @@ export default async function PaymentPage({
           </h1>
 
           <p className="mt-4 text-gray-600">
-            This payment link has expired. Please request
-            a new payment link from the business.
+            This payment link has expired. Please
+            request a new payment link from the
+            business.
           </p>
         </div>
       </main>
     );
   }
 
-  const balanceDue = Number(invoice.balance_due ?? 0);
+  const balanceDue =
+    Number(invoice.balance_due ?? 0);
 
   /*
    * =========================================================
@@ -118,7 +124,8 @@ export default async function PaymentPage({
           </h1>
 
           <p className="mt-3 text-gray-600">
-            This invoice has already been paid successfully.
+            This invoice has already been paid
+            successfully.
           </p>
 
           <div className="mt-8 rounded-xl bg-green-50 p-4">
@@ -139,9 +146,6 @@ export default async function PaymentPage({
    * =========================================================
    * LOAD BUSINESS PAYMENT SETTINGS
    * =========================================================
-   *
-   * invoices already contain owner_id in your database.
-   * We use that to find the business's payment settings.
    */
 
   const {
@@ -161,7 +165,10 @@ export default async function PaymentPage({
       payment_bank_ifsc,
       payment_razorpay_account_id
     `)
-    .eq("owner_id", invoice.owner_id)
+    .eq(
+      "owner_id",
+      invoice.owner_id
+    )
     .maybeSingle();
 
   if (companyError) {
@@ -178,7 +185,8 @@ export default async function PaymentPage({
    */
 
   const paymentMethod =
-    company?.payment_method ?? "razorpay";
+    company?.payment_method ??
+    "razorpay";
 
   const paymentDisplayName =
     company?.payment_display_name ||
@@ -242,10 +250,13 @@ export default async function PaymentPage({
 
             <h1 className="mt-1 text-4xl font-bold text-[#B08D22]">
               ₹
-              {balanceDue.toLocaleString("en-IN", {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2,
-              })}
+              {balanceDue.toLocaleString(
+                "en-IN",
+                {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                }
+              )}
             </h1>
           </div>
 
@@ -257,36 +268,44 @@ export default async function PaymentPage({
             <h3 className="mt-1 text-lg font-semibold text-slate-800">
               {new Date(
                 invoice.due_date
-              ).toLocaleDateString("en-IN", {
-                day: "numeric",
-                month: "long",
-                year: "numeric",
-              })}
+              ).toLocaleDateString(
+                "en-IN",
+                {
+                  day: "numeric",
+                  month: "long",
+                  year: "numeric",
+                }
+              )}
             </h3>
           </div>
 
         </div>
 
-        {/* =====================================================
-            PAYMENT METHOD
-        ====================================================== */}
+        {/* PAYMENT METHOD */}
 
         {paymentMethod === "upi" &&
         company?.payment_upi_id ? (
           <DirectUPIPayment
-            invoiceId={invoice.id}
-            invoiceNumber={invoice.invoice_number}
-            amount={balanceDue}
-            businessName={paymentDisplayName}
-            upiId={company.payment_upi_id}
-          />
+  invoiceId={invoice.id}
+  invoiceNumber={invoice.invoice_number}
+  amount={balanceDue}
+  businessName={paymentDisplayName}
+  upiId={company.payment_upi_id}
+  paymentToken={token}
+/>
         ) : paymentMethod === "razorpay" ? (
           <PayButton
             invoiceId={invoice.id}
             amount={balanceDue}
-            customerName={invoice.customer}
-            customerEmail={invoice.customer_email}
-            customerPhone={invoice.customer_phone}
+            customerName={
+              invoice.customer
+            }
+            customerEmail={
+              invoice.customer_email
+            }
+            customerPhone={
+              invoice.customer_phone
+            }
           />
         ) : (
           <div className="mt-8 rounded-2xl border border-slate-200 bg-slate-50 p-5">
@@ -295,18 +314,23 @@ export default async function PaymentPage({
             </p>
 
             <p className="mt-2 text-sm text-slate-500">
-              Please transfer the amount using the bank
-              details provided by the business.
+              Please transfer the amount using
+              the bank details provided by the
+              business.
             </p>
 
             {company?.payment_bank_name && (
               <div className="mt-5 space-y-3 text-sm">
+
                 <div>
                   <p className="text-slate-400">
                     Bank
                   </p>
+
                   <p className="font-semibold">
-                    {company.payment_bank_name}
+                    {
+                      company.payment_bank_name
+                    }
                   </p>
                 </div>
 
@@ -314,8 +338,11 @@ export default async function PaymentPage({
                   <p className="text-slate-400">
                     Account Holder
                   </p>
+
                   <p className="font-semibold">
-                    {company.payment_bank_account_name}
+                    {
+                      company.payment_bank_account_name
+                    }
                   </p>
                 </div>
 
@@ -323,8 +350,11 @@ export default async function PaymentPage({
                   <p className="text-slate-400">
                     Account Number
                   </p>
+
                   <p className="font-semibold">
-                    {company.payment_bank_account_number}
+                    {
+                      company.payment_bank_account_number
+                    }
                   </p>
                 </div>
 
@@ -332,10 +362,14 @@ export default async function PaymentPage({
                   <p className="text-slate-400">
                     IFSC
                   </p>
+
                   <p className="font-semibold">
-                    {company.payment_bank_ifsc}
+                    {
+                      company.payment_bank_ifsc
+                    }
                   </p>
                 </div>
+
               </div>
             )}
           </div>

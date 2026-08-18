@@ -1,42 +1,37 @@
+"use client";
+
+import { createPaymentLink } from "@/services/paymentService";
+
+export type CollectPaymentResult = {
+  paymentUrl: string;
+  paymentToken?: string;
+};
+
 export async function collectPayment(
   invoiceId: number
-) {
-  const response =
-    await fetch(
-      "/api/payments/create-link",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type":
-            "application/json",
-        },
-        body: JSON.stringify({
-          invoiceId,
-        }),
-      }
-    );
-
-  const result =
-    await response.json();
-
-  if (!response.ok) {
+): Promise<CollectPaymentResult> {
+  if (
+    !Number.isInteger(invoiceId) ||
+    invoiceId <= 0
+  ) {
     throw new Error(
-      result.message ??
-        result.error ??
-        "Failed to generate payment link."
+      "Invalid invoice ID."
     );
   }
 
-  if (
-    !result.data?.paymentUrl
-  ) {
+  const result =
+    await createPaymentLink(invoiceId);
+
+  if (!result?.paymentUrl) {
     throw new Error(
-      "Payment URL was not returned by the server."
+      "Payment link could not be created."
     );
   }
 
   return {
-    paymentUrl:
-      result.data.paymentUrl,
+    paymentUrl: result.paymentUrl,
+
+    paymentToken:
+      result.paymentToken,
   };
 }

@@ -1,241 +1,765 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import {
+  ArrowLeft,
+  CheckCircle2,
+  Loader2,
+  CreditCard,
+  IndianRupee,
+} from "lucide-react";
 
-import { Invoice } from "@/types/invoice";
+import { useRecordPayment } from "@/components/Payment/mutations/paymentMutations";
 
-import { usePendingInvoices } from "./queries/paymentQueries";
-import { useRecordPayment } from "./mutations/paymentMutations";
+type InvoiceOption = {
+  id: number;
+  invoice_number: string;
+  customer: string;
+  total: number;
+  amount_paid: number;
+  balance_due: number;
+};
 
-export default function PaymentForm() {
-  const {
-    data: invoices = [],
-    isLoading,
-  } = usePendingInvoices();
+type PaymentFormProps = {
+  invoices?: InvoiceOption[];
+};
+
+export default function PaymentForm({
+  invoices = [],
+}: PaymentFormProps) {
+  const router = useRouter();
 
   const paymentMutation = useRecordPayment();
 
-  const [selectedInvoice, setSelectedInvoice] = useState("");
-
-  const [selectedInvoiceData, setSelectedInvoiceData] =
-    useState<Invoice | null>(null);
+  const [selectedInvoice, setSelectedInvoice] =
+    useState("");
 
   const [amount, setAmount] = useState("");
 
   const [paymentMethod, setPaymentMethod] =
-    useState("Cash");
+    useState("upi");
 
-  const [referenceNumber, setReferenceNumber] =
+  const [paymentReference, setPaymentReference] =
     useState("");
 
-  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+
+  const selectedInvoiceData =
+    invoices.find(
+      (invoice) =>
+        invoice.id === Number(selectedInvoice)
+    ) ?? null;
+
+  const maxAmount =
+    selectedInvoiceData?.balance_due ?? 0;
 
   function handleInvoiceChange(
-    e: React.ChangeEvent<HTMLSelectElement>
+    value: string
   ) {
-    const id = Number(e.target.value);
-
-    setSelectedInvoice(e.target.value);
+    setSelectedInvoice(value);
+    setError("");
 
     const invoice = invoices.find(
-      (inv) => inv.id === id
+      (item) => item.id === Number(value)
     );
 
-    if (!invoice) {
-      setSelectedInvoiceData(null);
+    if (invoice) {
+      setAmount(
+        Number(invoice.balance_due).toFixed(2)
+      );
+    } else {
       setAmount("");
+    }
+  }
+
+  async function handleSubmit(
+    event: React.FormEvent<HTMLFormElement>
+  ) {
+    event.preventDefault();
+
+    setError("");
+
+    const invoiceId =
+      Number(selectedInvoice);
+
+    const paymentAmount =
+      Number(amount);
+
+    if (
+      !Number.isInteger(invoiceId) ||
+      invoiceId <= 0
+    ) {
+      setError(
+        "Please select an invoice."
+      );
       return;
     }
 
-    setSelectedInvoiceData(invoice);
-    setAmount(String(invoice.balance_due));
+    if (
+      !Number.isFinite(paymentAmount) ||
+      paymentAmount <= 0
+    ) {
+      setError(
+        "Please enter a valid payment amount."
+      );
+      return;
+    }
+
+    if (
+      selectedInvoiceData &&
+      paymentAmount >
+        Number(selectedInvoiceData.balance_due)
+    ) {
+      setError(
+        "Payment amount cannot be greater than the invoice balance."
+      );
+      return;
+    }
+
+    try {
+      await paymentMutation.mutateAsync({
+        invoiceId,
+        amount: paymentAmount,
+        paymentMethod,
+        paymentReference:
+          paymentReference.trim() || null,
+        paymentStatus: "completed",
+      });
+
+      router.push(
+        `/invoices/${invoiceId}`
+      );
+
+      router.refresh();
+    } catch (error) {
+      console.error(
+        "Record payment error:",
+        error
+      );
+
+      setError(
+        error instanceof Error
+          ? error.message
+          : "Failed to record payment."
+      );
+    }
   }
+
+  const isSubmitting =
+    paymentMutation.isPending;
 
   return (
-    <section className="mt-10 rounded-3xl border border-white/10 bg-gradient-to-br from-[#111827] to-[#0B1220] p-8 shadow-2xl">
-      <h2 className="mb-8 text-3xl font-bold">
-        Record Payment
-      </h2>
+    <div className="mx-auto w-full max-w-3xl">
+      {/* BACK */}
 
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-        <select
-          value={selectedInvoice}
-          onChange={handleInvoiceChange}
-          disabled={isLoading}
-          className="rounded-xl border border-white/10 bg-[#0B1220] p-4 outline-none focus:border-cyan-400"
+      <button
+        type="button"
+        onClick={() => router.back()}
+        className="
+          mb-6
+          inline-flex
+          h-10
+          items-center
+          gap-2
+          rounded-xl
+          border
+          border-white/[0.06]
+          bg-white/[0.02]
+          px-3.5
+          text-xs
+          font-medium
+          text-zinc-500
+          transition-all
+          duration-200
+          hover:border-white/[0.12]
+          hover:bg-white/[0.04]
+          hover:text-white
+        "
+      >
+        <ArrowLeft size={14} />
+        Back
+      </button>
+
+      {/* HEADER */}
+
+      <div className="mb-6">
+        <p
+          className="
+            text-[9px]
+            font-medium
+            uppercase
+            tracking-[0.30em]
+            text-zinc-600
+          "
         >
-          <option value="">
-            {isLoading
-              ? "Loading invoices..."
-              : "Select Invoice"}
-          </option>
+          Payments
+        </p>
 
-          {invoices.map((invoice) => (
-            <option
-              key={invoice.id}
-              value={invoice.id}
-            >
-              {invoice.invoice_number} • {invoice.customer}
-              {" • "}
-              Balance INR{" "}
-              {Number(invoice.balance_due).toLocaleString(
-                "en-IN"
-              )}
-            </option>
-          ))}
-        </select>
-
-        <input
-          type="number"
-          value={amount}
-          disabled={!selectedInvoice}
-          max={selectedInvoiceData?.balance_due}
-          onChange={(e) => setAmount(e.target.value)}
-          placeholder="Amount Received"
-          className="rounded-xl border border-white/10 bg-[#0B1220] p-4 outline-none focus:border-cyan-400 disabled:cursor-not-allowed disabled:opacity-50"
-        />
-
-        <select
-          value={paymentMethod}
-          onChange={(e) =>
-            setPaymentMethod(e.target.value)
-          }
-          className="rounded-xl border border-white/10 bg-[#0B1220] p-4 outline-none focus:border-cyan-400"
+        <h1
+          className="
+            mt-2
+            text-3xl
+            font-semibold
+            tracking-[-0.04em]
+            text-white
+          "
         >
-          <option>Cash</option>
-          <option>UPI</option>
-          <option>Bank Transfer</option>
-          <option>Cheque</option>
-          <option>Card</option>
-        </select>
+          Record Payment
+        </h1>
 
-        <input
-          value={referenceNumber}
-          onChange={(e) =>
-            setReferenceNumber(e.target.value)
-          }
-          placeholder="Reference Number (Optional)"
-          className="rounded-xl border border-white/10 bg-[#0B1220] p-4 outline-none focus:border-cyan-400"
-        />
+        <p className="mt-2 text-sm text-zinc-500">
+          Record a payment received against an
+          outstanding invoice.
+        </p>
       </div>
 
-      {selectedInvoiceData && (
-        <div className="mt-8 rounded-2xl border border-cyan-500/20 bg-cyan-500/5 p-6">
-          <h3 className="mb-4 text-lg font-semibold text-cyan-400">
-            Invoice Summary
-          </h3>
+      {/* FORM */}
 
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-            <div>
-              <p className="text-sm text-gray-400">
-                Invoice Total
-              </p>
+      <form
+        onSubmit={handleSubmit}
+        className="
+          overflow-hidden
+          rounded-[28px]
+          border
+          border-white/[0.06]
+          bg-[#101318]
+        "
+      >
+        {/* TOP GOLD LINE */}
 
-              <p className="mt-1 text-xl font-semibold">
-                INR{" "}
-                {Number(
-                  selectedInvoiceData.total
-                ).toLocaleString("en-IN")}
-              </p>
+        <div
+          className="
+            h-px
+            w-full
+            bg-gradient-to-r
+            from-transparent
+            via-[#D4AF37]/30
+            to-transparent
+          "
+        />
+
+        <div className="space-y-7 p-6 sm:p-8">
+          {/* INVOICE */}
+
+          <div>
+            <label
+              htmlFor="invoice"
+              className="
+                mb-2
+                block
+                text-[10px]
+                font-medium
+                uppercase
+                tracking-[0.24em]
+                text-zinc-500
+              "
+            >
+              Invoice
+            </label>
+
+            {invoices.length === 0 ? (
+              <div
+                className="
+                  rounded-xl
+                  border
+                  border-amber-400/10
+                  bg-amber-400/[0.03]
+                  px-4
+                  py-3
+                  text-sm
+                  text-amber-400/80
+                "
+              >
+                No invoices are available for
+                payment recording.
+              </div>
+            ) : (
+              <select
+                id="invoice"
+                value={selectedInvoice}
+                onChange={(event) =>
+                  handleInvoiceChange(
+                    event.target.value
+                  )
+                }
+                disabled={isSubmitting}
+                className="
+                  h-12
+                  w-full
+                  rounded-xl
+                  border
+                  border-white/[0.08]
+                  bg-white/[0.025]
+                  px-4
+                  text-sm
+                  text-white
+                  outline-none
+                  transition
+                  focus:border-[#D4AF37]/30
+                  disabled:cursor-not-allowed
+                  disabled:opacity-50
+                "
+              >
+                <option
+                  value=""
+                  className="bg-[#101318]"
+                >
+                  Select an invoice
+                </option>
+
+                {invoices.map(
+                  (invoice) => (
+                    <option
+                      key={invoice.id}
+                      value={invoice.id}
+                      className="bg-[#101318]"
+                    >
+                      {invoice.invoice_number} —{" "}
+                      {invoice.customer} — ₹
+                      {Number(
+                        invoice.balance_due
+                      ).toLocaleString(
+                        "en-IN"
+                      )}{" "}
+                      due
+                    </option>
+                  )
+                )}
+              </select>
+            )}
+          </div>
+
+          {/* SELECTED INVOICE SUMMARY */}
+
+          {selectedInvoiceData && (
+            <div
+              className="
+                grid
+                grid-cols-1
+                gap-3
+                sm:grid-cols-3
+              "
+            >
+              <div
+                className="
+                  rounded-2xl
+                  border
+                  border-white/[0.06]
+                  bg-white/[0.018]
+                  p-4
+                "
+              >
+                <p className="text-[9px] uppercase tracking-[0.20em] text-zinc-600">
+                  Invoice
+                </p>
+
+                <p className="mt-2 text-sm font-medium text-white">
+                  {
+                    selectedInvoiceData.invoice_number
+                  }
+                </p>
+              </div>
+
+              <div
+                className="
+                  rounded-2xl
+                  border
+                  border-white/[0.06]
+                  bg-white/[0.018]
+                  p-4
+                "
+              >
+                <p className="text-[9px] uppercase tracking-[0.20em] text-zinc-600">
+                  Customer
+                </p>
+
+                <p className="mt-2 truncate text-sm font-medium text-white">
+                  {
+                    selectedInvoiceData.customer
+                  }
+                </p>
+              </div>
+
+              <div
+                className="
+                  rounded-2xl
+                  border
+                  border-[#D4AF37]/10
+                  bg-[#D4AF37]/[0.04]
+                  p-4
+                "
+              >
+                <p className="text-[9px] uppercase tracking-[0.20em] text-[#D4AF37]/60">
+                  Balance Due
+                </p>
+
+                <p className="mt-2 text-sm font-semibold text-[#F3D37A]">
+                  ₹
+                  {Number(
+                    selectedInvoiceData.balance_due
+                  ).toLocaleString(
+                    "en-IN",
+                    {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    }
+                  )}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* AMOUNT */}
+
+          <div>
+            <label
+              htmlFor="amount"
+              className="
+                mb-2
+                block
+                text-[10px]
+                font-medium
+                uppercase
+                tracking-[0.24em]
+                text-zinc-500
+              "
+            >
+              Payment Amount
+            </label>
+
+            <div className="relative">
+              <div
+                className="
+                  pointer-events-none
+                  absolute
+                  inset-y-0
+                  left-4
+                  flex
+                  items-center
+                  text-zinc-500
+                "
+              >
+                <IndianRupee size={16} />
+              </div>
+
+              <input
+                id="amount"
+                type="number"
+                min="0.01"
+                step="0.01"
+                max={
+                  maxAmount > 0
+                    ? maxAmount
+                    : undefined
+                }
+                value={amount}
+                onChange={(event) =>
+                  setAmount(
+                    event.target.value
+                  )
+                }
+                disabled={
+                  isSubmitting ||
+                  !selectedInvoice
+                }
+                placeholder="0.00"
+                className="
+                  h-12
+                  w-full
+                  rounded-xl
+                  border
+                  border-white/[0.08]
+                  bg-white/[0.025]
+                  pl-11
+                  pr-4
+                  text-sm
+                  text-white
+                  outline-none
+                  transition
+                  placeholder:text-zinc-700
+                  focus:border-[#D4AF37]/30
+                  disabled:cursor-not-allowed
+                  disabled:opacity-50
+                "
+              />
             </div>
 
-            <div>
-              <p className="text-sm text-gray-400">
-                Amount Paid
-              </p>
-
-              <p className="mt-1 text-xl font-semibold text-green-400">
-                INR{" "}
-                {Number(
-                  selectedInvoiceData.amount_paid
-                ).toLocaleString("en-IN")}
-              </p>
-            </div>
-
-            <div>
-              <p className="text-sm text-gray-400">
-                Balance Due
-              </p>
-
-              <p className="mt-1 text-xl font-semibold text-orange-400">
-                INR{" "}
+            {selectedInvoiceData && (
+              <p className="mt-2 text-[11px] text-zinc-600">
+                Maximum recordable amount: ₹
                 {Number(
                   selectedInvoiceData.balance_due
-                ).toLocaleString("en-IN")}
+                ).toLocaleString(
+                  "en-IN",
+                  {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  }
+                )}
               </p>
+            )}
+          </div>
+
+          {/* PAYMENT METHOD */}
+
+          <div>
+            <label
+              htmlFor="paymentMethod"
+              className="
+                mb-2
+                block
+                text-[10px]
+                font-medium
+                uppercase
+                tracking-[0.24em]
+                text-zinc-500
+              "
+            >
+              Payment Method
+            </label>
+
+            <div className="relative">
+              <div
+                className="
+                  pointer-events-none
+                  absolute
+                  inset-y-0
+                  left-4
+                  flex
+                  items-center
+                  text-zinc-500
+                "
+              >
+                <CreditCard size={16} />
+              </div>
+
+              <select
+                id="paymentMethod"
+                value={paymentMethod}
+                onChange={(event) =>
+                  setPaymentMethod(
+                    event.target.value
+                  )
+                }
+                disabled={isSubmitting}
+                className="
+                  h-12
+                  w-full
+                  appearance-none
+                  rounded-xl
+                  border
+                  border-white/[0.08]
+                  bg-white/[0.025]
+                  pl-11
+                  pr-4
+                  text-sm
+                  capitalize
+                  text-white
+                  outline-none
+                  transition
+                  focus:border-[#D4AF37]/30
+                  disabled:cursor-not-allowed
+                  disabled:opacity-50
+                "
+              >
+                <option
+                  value="upi"
+                  className="bg-[#101318]"
+                >
+                  UPI
+                </option>
+
+                <option
+                  value="cash"
+                  className="bg-[#101318]"
+                >
+                  Cash
+                </option>
+
+                <option
+                  value="bank_transfer"
+                  className="bg-[#101318]"
+                >
+                  Bank Transfer
+                </option>
+
+                <option
+                  value="card"
+                  className="bg-[#101318]"
+                >
+                  Card
+                </option>
+
+                <option
+                  value="other"
+                  className="bg-[#101318]"
+                >
+                  Other
+                </option>
+              </select>
             </div>
           </div>
+
+          {/* REFERENCE */}
+
+          <div>
+            <label
+              htmlFor="paymentReference"
+              className="
+                mb-2
+                block
+                text-[10px]
+                font-medium
+                uppercase
+                tracking-[0.24em]
+                text-zinc-500
+              "
+            >
+              Payment Reference
+              <span className="ml-2 normal-case tracking-normal text-zinc-700">
+                Optional
+              </span>
+            </label>
+
+            <input
+              id="paymentReference"
+              type="text"
+              value={paymentReference}
+              onChange={(event) =>
+                setPaymentReference(
+                  event.target.value
+                )
+              }
+              disabled={isSubmitting}
+              placeholder="UPI reference, transaction ID, etc."
+              className="
+                h-12
+                w-full
+                rounded-xl
+                border
+                border-white/[0.08]
+                bg-white/[0.025]
+                px-4
+                text-sm
+                text-white
+                outline-none
+                transition
+                placeholder:text-zinc-700
+                focus:border-[#D4AF37]/30
+                disabled:cursor-not-allowed
+                disabled:opacity-50
+              "
+            />
+          </div>
+
+          {/* ERROR */}
+
+          {error && (
+            <div
+              className="
+                rounded-xl
+                border
+                border-red-400/15
+                bg-red-400/[0.04]
+                px-4
+                py-3
+              "
+            >
+              <p className="text-xs leading-5 text-red-400">
+                {error}
+              </p>
+            </div>
+          )}
+
+          {/* SUBMIT */}
+
+          <div
+            className="
+              flex
+              flex-col-reverse
+              gap-3
+              border-t
+              border-white/[0.05]
+              pt-6
+              sm:flex-row
+              sm:justify-end
+            "
+          >
+            <button
+              type="button"
+              onClick={() => router.back()}
+              disabled={isSubmitting}
+              className="
+                inline-flex
+                h-11
+                items-center
+                justify-center
+                rounded-xl
+                border
+                border-white/[0.07]
+                bg-white/[0.02]
+                px-5
+                text-sm
+                font-medium
+                text-zinc-400
+                transition
+                hover:border-white/[0.12]
+                hover:bg-white/[0.04]
+                hover:text-white
+                disabled:cursor-not-allowed
+                disabled:opacity-50
+              "
+            >
+              Cancel
+            </button>
+
+            <button
+              type="submit"
+              disabled={
+                isSubmitting ||
+                invoices.length === 0
+              }
+              className="
+                inline-flex
+                h-11
+                items-center
+                justify-center
+                gap-2
+                rounded-xl
+                border
+                border-[#D4AF37]/20
+                bg-[#D4AF37]/10
+                px-6
+                text-sm
+                font-medium
+                text-[#F3D37A]
+                transition-all
+                duration-200
+                hover:border-[#D4AF37]/30
+                hover:bg-[#D4AF37]/15
+                disabled:cursor-not-allowed
+                disabled:opacity-40
+              "
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2
+                    size={15}
+                    className="animate-spin"
+                  />
+                  Recording...
+                </>
+              ) : (
+                <>
+                  <CheckCircle2 size={15} />
+                  Record Payment
+                </>
+              )}
+            </button>
+          </div>
         </div>
-      )}
-
-      <div className="mt-8 flex justify-end">
-        <button
-          onClick={async () => {
-            if (!selectedInvoice) {
-              alert("Please select an invoice.");
-              return;
-            }
-
-            if (!amount || Number(amount) <= 0) {
-              alert("Please enter a valid payment amount.");
-              return;
-            }
-
-            if (
-              selectedInvoiceData &&
-              Number(amount) >
-                Number(selectedInvoiceData.balance_due)
-            ) {
-              alert(
-                "Payment cannot exceed the outstanding balance."
-              );
-              return;
-            }
-
-            try {
-              setSaving(true);
-
-              await paymentMutation.mutateAsync({
-                invoice_id: Number(selectedInvoice),
-                amount: Number(amount),
-                payment_method: paymentMethod,
-                payment_reference:
-                  referenceNumber.trim() ||
-                  `MAN-${crypto
-                    .randomUUID()
-                    .slice(0, 8)
-                    .toUpperCase()}`,
-                payment_status: "Completed",
-                paid_at: new Date().toISOString(),
-              });
-
-              alert("✅ Payment recorded successfully!");
-
-              setSelectedInvoice("");
-              setSelectedInvoiceData(null);
-              setAmount("");
-              setPaymentMethod("Cash");
-              setReferenceNumber("");
-            } catch (error: any) {
-  console.error("Payment Error:", error);
-
-  if (error?.message) {
-    alert(error.message);
-  } else {
-    alert(JSON.stringify(error, null, 2));
-  }
-} finally {
-  setSaving(false);
-}
-}}
-          disabled={saving || paymentMutation.isPending}
-          className="rounded-xl bg-emerald-500 px-8 py-4 text-lg font-semibold text-white transition hover:bg-emerald-400 disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          {saving || paymentMutation.isPending
-            ? "Recording..."
-            : "💰 Record Payment"}
-        </button>
-      </div>
-    </section>
+      </form>
+    </div>
   );
 }

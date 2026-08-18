@@ -1,6 +1,7 @@
 // src/app/invoices/page.tsx
 
 import InvoiceList from "@/components/Invoice/InvoiceList";
+import PendingPaymentPopup from "@/components/Payment/PendingPaymentPopup";
 
 export default function InvoicesPage() {
   return (
@@ -8,6 +9,9 @@ export default function InvoicesPage() {
       <div className="mx-auto w-full max-w-7xl min-w-0">
         <InvoiceList />
       </div>
+
+      {/* Pending customer payment confirmation popup */}
+      <PendingPaymentPopup />
     </main>
   );
 }
