@@ -5,7 +5,6 @@ import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
 
 import {
-  Activity,
   BarChart3,
   Brain,
   Building2,
@@ -34,7 +33,6 @@ const sections = [
       },
     ],
   },
-
   {
     title: "Operations",
     items: [
@@ -55,7 +53,6 @@ const sections = [
       },
     ],
   },
-
   {
     title: "Intelligence",
     items: [
@@ -64,7 +61,6 @@ const sections = [
         href: "/dashboard/ai-cfo",
         icon: Brain,
       },
-      
       {
         label: "Financial Analysis",
         href: "/dashboard/financial-analysis",
@@ -77,7 +73,6 @@ const sections = [
       },
     ],
   },
-
   {
     title: "Company",
     items: [
@@ -104,69 +99,44 @@ export default function Navigation({
 
   return (
     <nav
-      className={`
-        ${
-          mobile
-            ? "space-y-7"
-            : collapsed
-              ? "space-y-6"
-              : "space-y-6 sm:space-y-7"
-        }
-      `}
+      className={
+        mobile
+          ? "space-y-7"
+          : collapsed
+            ? "space-y-6"
+            : "space-y-6 sm:space-y-7"
+      }
     >
       {sections.map((section) => (
         <section key={section.title}>
-          {/* SECTION LABEL */}
-
           {!collapsed && (
             <p
-              className={`
-                mb-3
-                font-medium
-                uppercase
-                tracking-[0.32em]
-                text-zinc-600
-                ${
-                  mobile
-                    ? "px-3 text-[9px]"
-                    : "px-4 text-[10px]"
-                }
-              `}
+              className={`mb-3 px-4 font-medium uppercase tracking-[0.32em] text-zinc-600 ${
+                mobile ? "text-[9px]" : "text-[10px]"
+              }`}
             >
               {section.title}
             </p>
           )}
 
-          {/* NAV ITEMS */}
-
           <div
-            className={`
-              ${
-                mobile
-                  ? "space-y-1.5"
-                  : "space-y-1"
-              }
-            `}
+            className={
+              mobile ? "space-y-1.5" : "space-y-1"
+            }
           >
             {section.items.map((item) => {
               const Icon = item.icon;
 
               const active =
                 pathname === item.href ||
-                pathname.startsWith(
-                  `${item.href}/`
-                );
+                pathname.startsWith(`${item.href}/`);
 
               return (
                 <Link
                   key={item.href}
                   href={item.href}
                   onClick={onNavigate}
-                  title={
-                    collapsed
-                      ? item.label
-                      : undefined
-                  }
+                  title={collapsed ? item.label : undefined}
                   className="block"
                 >
                   <motion.div
@@ -175,9 +145,7 @@ export default function Navigation({
                         collapsed || mobile
                           ? 0
                           : 3,
-                      scale: mobile
-                        ? 1
-                        : 1.01,
+                      scale: mobile ? 1 : 1.01,
                     }}
                     whileTap={{
                       scale: 0.985,
@@ -205,26 +173,11 @@ export default function Navigation({
 
                       ${
                         active
-                          ? `
-                            border
-                            border-[#D4AF37]/12
-                            bg-white/[0.035]
-                            text-white
-                            shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]
-                          `
-                          : `
-                            border
-                            border-transparent
-                            text-zinc-500
-                            hover:border-white/[0.04]
-                            hover:bg-white/[0.025]
-                            hover:text-zinc-100
-                          `
+                          ? "border border-[#D4AF37]/12 bg-white/[0.035] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]"
+                          : "border border-transparent text-zinc-500 hover:border-white/[0.04] hover:bg-white/[0.025] hover:text-zinc-100"
                       }
                     `}
                   >
-                    {/* ACTIVE INDICATOR */}
-
                     {active && (
                       <>
                         <motion.span
@@ -254,8 +207,6 @@ export default function Navigation({
                       </>
                     )}
 
-                    {/* ICON */}
-
                     <Icon
                       size={mobile ? 18 : 17}
                       strokeWidth={1.9}
@@ -272,8 +223,6 @@ export default function Navigation({
                         }
                       `}
                     />
-
-                    {/* LABEL */}
 
                     {!collapsed && (
                       <span
