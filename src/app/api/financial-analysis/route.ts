@@ -25,6 +25,7 @@ function getMonthLabel(monthKey: string) {
     1
   ).toLocaleDateString("en-IN", {
     month: "short",
+    year: "numeric",
   });
 }
 
@@ -43,7 +44,23 @@ export async function GET() {
       error: authError,
     } = await supabase.auth.getUser();
 
-    if (authError || !user) {
+    if (authError) {
+      console.error(
+        "[Financial Analysis] Auth error:",
+        authError
+      );
+
+      return NextResponse.json(
+        {
+          error: "Unable to verify your session.",
+        },
+        {
+          status: 401,
+        }
+      );
+    }
+
+    if (!user) {
       return NextResponse.json(
         {
           error: "Unauthorized.",
@@ -130,8 +147,6 @@ export async function GET() {
      * REVENUE
      *
      * Revenue = total invoice value.
-     *
-     * This matches the Dashboard financial position.
      * =========================================================
      */
 
@@ -147,7 +162,7 @@ export async function GET() {
      * =========================================================
      * CASH INFLOW
      *
-     * Cash inflow = money actually received.
+     * Actual money received.
      * =========================================================
      */
 
@@ -176,9 +191,6 @@ export async function GET() {
     /*
      * =========================================================
      * PROFIT
-     *
-     * Profit is based on revenue,
-     * not cash received.
      * =========================================================
      */
 
@@ -196,7 +208,8 @@ export async function GET() {
      * =========================================================
      */
 
-    const cashOutflow = totalExpenses;
+    const cashOutflow =
+      totalExpenses;
 
     const netCashFlow =
       cashInflow - cashOutflow;
@@ -205,52 +218,72 @@ export async function GET() {
      * =========================================================
      * ANALYSIS PERIOD
      *
-     * Represents the earliest and latest
-     * financial activity currently available.
+     * Full calendar month(s) containing activity.
      * =========================================================
      */
 
     const activityDates = [
       ...(invoices ?? []).map(
-        (invoice) => invoice.created_at
+        (invoice) =>
+          invoice.created_at
       ),
+
       ...(expenses ?? []).map(
-        (expense) => expense.created_at
+        (expense) =>
+          expense.created_at
       ),
     ].filter(
       (date): date is string =>
         Boolean(date)
     );
 
-    const sortedActivityDates =
-      activityDates
-        .map(
-          (date) =>
-            new Date(date)
-        )
-        .filter(
-          (date) =>
-            !Number.isNaN(
-              date.getTime()
-            )
-        )
-        .sort(
-          (a, b) =>
-            a.getTime() -
-            b.getTime()
-        );
+    const validDates = activityDates
+      .map(
+        (date) =>
+          new Date(date)
+      )
+      .filter(
+        (date) =>
+          !Number.isNaN(
+            date.getTime()
+          )
+      )
+      .sort(
+        (a, b) =>
+          a.getTime() -
+          b.getTime()
+      );
 
-    const periodStart =
-      sortedActivityDates.length > 0
-        ? sortedActivityDates[0].toISOString()
-        : null;
+    let periodStart: string | null =
+      null;
 
-    const periodEnd =
-      sortedActivityDates.length > 0
-        ? sortedActivityDates[
-            sortedActivityDates.length - 1
-          ].toISOString()
-        : null;
+    let periodEnd: string | null =
+      null;
+
+    if (validDates.length > 0) {
+      const first = validDates[0];
+
+      const last =
+        validDates[
+          validDates.length - 1
+        ];
+
+      periodStart = new Date(
+        first.getFullYear(),
+        first.getMonth(),
+        1
+      ).toISOString();
+
+      periodEnd = new Date(
+        last.getFullYear(),
+        last.getMonth() + 1,
+        0,
+        23,
+        59,
+        59,
+        999
+      ).toISOString();
+    }
 
     /*
      * =========================================================
@@ -340,7 +373,7 @@ export async function GET() {
     }
 
     /*
-     * Keep the latest 7 months.
+     * Latest 7 months
      */
 
     const monthlyData =
