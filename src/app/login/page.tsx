@@ -6,11 +6,15 @@ export default function LoginPage() {
     <main className="relative flex min-h-screen overflow-hidden bg-[#090A0B] text-white">
       {/* Ambient lighting */}
       <div className="pointer-events-none absolute left-1/2 top-[-280px] h-[560px] w-[760px] -translate-x-1/2 rounded-full bg-[#D4AF37]/[0.045] blur-[140px]" />
+
       <div className="pointer-events-none absolute bottom-[-240px] right-[-180px] h-[460px] w-[460px] rounded-full bg-[#D4AF37]/[0.025] blur-[130px]" />
 
       <div className="relative z-10 mx-auto flex w-full max-w-7xl items-center justify-center px-6 py-12 sm:px-10 lg:px-16">
         <div className="grid w-full max-w-5xl overflow-hidden rounded-[32px] border border-white/[0.08] bg-white/[0.025] shadow-[0_30px_100px_rgba(0,0,0,0.45)] backdrop-blur-2xl lg:grid-cols-[1.05fr_0.95fr]">
-          {/* Brand panel */}
+          
+          {/* ========================================================
+              BRAND PANEL
+          ======================================================== */}
           <div className="relative hidden overflow-hidden border-r border-white/[0.06] p-12 lg:flex lg:flex-col lg:justify-between xl:p-16">
             <div className="pointer-events-none absolute bottom-[-180px] left-[-140px] h-[420px] w-[420px] rounded-full bg-[#D4AF37]/[0.035] blur-[120px]" />
 
@@ -57,9 +61,12 @@ export default function LoginPage() {
             </div>
           </div>
 
-          {/* Login */}
+          {/* ========================================================
+              LOGIN
+          ======================================================== */}
           <div className="flex items-center p-7 sm:p-10 lg:p-12 xl:p-16">
             <form action={signIn} className="w-full">
+
               {/* Mobile brand */}
               <div className="mb-12 flex items-center gap-3 lg:hidden">
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#D4AF37]/20 bg-[#D4AF37]/[0.07]">
@@ -73,6 +80,7 @@ export default function LoginPage() {
                 </span>
               </div>
 
+              {/* Heading */}
               <div>
                 <p className="text-[10px] font-medium uppercase tracking-[0.35em] text-[#D4AF37]">
                   Secure Access
@@ -87,7 +95,12 @@ export default function LoginPage() {
                 </p>
               </div>
 
+              {/* ====================================================
+                  FORM FIELDS
+              ==================================================== */}
               <div className="mt-9 space-y-5">
+
+                {/* Email */}
                 <div>
                   <label
                     htmlFor="email"
@@ -107,13 +120,24 @@ export default function LoginPage() {
                   />
                 </div>
 
+                {/* Password */}
                 <div>
-                  <label
-                    htmlFor="password"
-                    className="mb-2.5 block text-xs font-medium uppercase tracking-[0.18em] text-zinc-500"
-                  >
-                    Password
-                  </label>
+                  <div className="mb-2.5 flex items-center justify-between">
+                    <label
+                      htmlFor="password"
+                      className="block text-xs font-medium uppercase tracking-[0.18em] text-zinc-500"
+                    >
+                      Password
+                    </label>
+
+                    {/* Forgot Password */}
+                    <Link
+                      href="/forgot-password"
+                      className="text-xs font-medium text-zinc-500 transition-colors hover:text-[#D4AF37]"
+                    >
+                      Forgot password?
+                    </Link>
+                  </div>
 
                   <input
                     id="password"
@@ -127,6 +151,7 @@ export default function LoginPage() {
                 </div>
               </div>
 
+              {/* Sign In */}
               <button
                 type="submit"
                 className="mt-8 flex h-14 w-full items-center justify-center rounded-xl bg-[#D4AF37] text-sm font-semibold text-[#090A0B] transition duration-200 hover:brightness-110 hover:shadow-[0_0_30px_rgba(212,175,55,0.12)] active:scale-[0.995]"
@@ -134,6 +159,7 @@ export default function LoginPage() {
                 Sign In
               </button>
 
+              {/* Sign Up */}
               <div className="mt-7 border-t border-white/[0.06] pt-7 text-center">
                 <p className="text-sm text-zinc-600">
                   Don't have an account?{" "}
@@ -146,6 +172,7 @@ export default function LoginPage() {
                 </p>
               </div>
 
+              {/* Footer */}
               <p className="mt-8 text-center text-[10px] uppercase tracking-[0.25em] text-zinc-700">
                 Secure financial workspace
               </p>
