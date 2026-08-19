@@ -64,11 +64,7 @@ const sections = [
         href: "/dashboard/ai-cfo",
         icon: Brain,
       },
-      {
-        label: "Business Health",
-        href: "/dashboard/business-health",
-        icon: Activity,
-      },
+      
       {
         label: "Financial Analysis",
         href: "/dashboard/financial-analysis",
