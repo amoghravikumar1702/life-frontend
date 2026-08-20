@@ -1,3 +1,5 @@
+// src/app/onboarding/actions.ts
+
 "use server";
 
 import { redirect } from "next/navigation";
@@ -48,7 +50,10 @@ function cleanNumber(
     return fallback;
   }
 
-  return Math.max(0, Math.floor(number));
+  return Math.max(
+    0,
+    Math.floor(number)
+  );
 }
 
 function cleanRevenue(
@@ -74,13 +79,8 @@ function cleanRevenue(
 export async function saveOnboardingData(
   data: OnboardingData
 ) {
-  const supabase = await createClient();
-
-  /*
-   * ============================================================
-   * AUTH
-   * ============================================================
-   */
+  const supabase =
+    await createClient();
 
   const {
     data: { user },
@@ -102,12 +102,6 @@ export async function saveOnboardingData(
     redirect("/login");
   }
 
-  /*
-   * ============================================================
-   * BUSINESS DATA
-   * ============================================================
-   */
-
   const companyName =
     cleanString(data.companyName);
 
@@ -124,19 +118,17 @@ export async function saveOnboardingData(
     cleanString(data.industry);
 
   const yearsInBusiness =
-    cleanNumber(data.yearsInBusiness);
+    cleanNumber(
+      data.yearsInBusiness
+    );
 
   const employees =
     cleanNumber(data.employees);
 
   const startingRevenue =
-    cleanRevenue(data.startingRevenue);
-
-  /*
-   * ============================================================
-   * PAYMENT DATA
-   * ============================================================
-   */
+    cleanRevenue(
+      data.startingRevenue
+    );
 
   const paymentMethod =
     cleanString(
@@ -183,12 +175,6 @@ export async function saveOnboardingData(
       data.paymentRazorpayAccountId
     );
 
-  /*
-   * ============================================================
-   * VALIDATION
-   * ============================================================
-   */
-
   if (!companyName) {
     throw new Error(
       "Please enter your business name."
@@ -213,38 +199,23 @@ export async function saveOnboardingData(
     );
   }
 
-  if (
-    !Number.isFinite(yearsInBusiness) ||
-    yearsInBusiness < 0
-  ) {
+  if (yearsInBusiness < 0) {
     throw new Error(
       "Please enter a valid number of years in business."
     );
   }
 
-  if (
-    !Number.isFinite(employees) ||
-    employees < 0
-  ) {
+  if (employees < 0) {
     throw new Error(
       "Please enter a valid employee count."
     );
   }
 
-  if (
-    !Number.isFinite(startingRevenue) ||
-    startingRevenue < 0
-  ) {
+  if (startingRevenue < 0) {
     throw new Error(
       "Please enter a valid starting revenue."
     );
   }
-
-  /*
-   * ============================================================
-   * PAYMENT VALIDATION
-   * ============================================================
-   */
 
   const validPaymentMethods = [
     "razorpay",
@@ -284,8 +255,7 @@ export async function saveOnboardingData(
   }
 
   if (
-    paymentMethod ===
-      "bank_transfer" &&
+    paymentMethod === "bank_transfer" &&
     (!paymentBankName ||
       !paymentBankAccountName ||
       !paymentBankAccountNumber ||
@@ -304,12 +274,6 @@ export async function saveOnboardingData(
       "Please connect or provide your Razorpay account."
     );
   }
-
-  /*
-   * ============================================================
-   * FIND EXISTING COMPANY
-   * ============================================================
-   */
 
   const {
     data: existingCompany,
@@ -330,19 +294,6 @@ export async function saveOnboardingData(
       `Unable to find your business profile. [${lookupError.code}] ${lookupError.message}`
     );
   }
-
-  /*
-   * ============================================================
-   * CANONICAL COMPANY DATA
-   * ============================================================
-   *
-   * IMPORTANT:
-   *
-   * These are ONLY columns that currently exist
-   * in the companies table.
-   *
-   * ============================================================
-   */
 
   const companyData = {
     company_name:
@@ -387,44 +338,33 @@ export async function saveOnboardingData(
         : "",
 
     payment_bank_name:
-      paymentMethod ===
-      "bank_transfer"
+      paymentMethod === "bank_transfer"
         ? paymentBankName
         : "",
 
     payment_bank_account_name:
-      paymentMethod ===
-      "bank_transfer"
+      paymentMethod === "bank_transfer"
         ? paymentBankAccountName
         : "",
 
     payment_bank_account_number:
-      paymentMethod ===
-      "bank_transfer"
+      paymentMethod === "bank_transfer"
         ? paymentBankAccountNumber
         : "",
 
     payment_bank_ifsc:
-      paymentMethod ===
-      "bank_transfer"
+      paymentMethod === "bank_transfer"
         ? paymentBankIfsc
         : "",
 
     payment_razorpay_account_id:
-      paymentMethod ===
-      "razorpay"
+      paymentMethod === "razorpay"
         ? paymentRazorpayAccountId
         : "",
 
     onboarding_completed_at:
       new Date().toISOString(),
   };
-
-  /*
-   * ============================================================
-   * UPDATE EXISTING COMPANY
-   * ============================================================
-   */
 
   if (existingCompany) {
     console.log(
@@ -463,12 +403,6 @@ export async function saveOnboardingData(
 
     redirect("/dashboard");
   }
-
-  /*
-   * ============================================================
-   * CREATE NEW COMPANY
-   * ============================================================
-   */
 
   console.log(
     "[Onboarding] Creating company for:",
@@ -549,32 +483,27 @@ export async function saveOnboardingData(
           : "",
 
       payment_bank_name:
-        paymentMethod ===
-        "bank_transfer"
+        paymentMethod === "bank_transfer"
           ? paymentBankName
           : "",
 
       payment_bank_account_name:
-        paymentMethod ===
-        "bank_transfer"
+        paymentMethod === "bank_transfer"
           ? paymentBankAccountName
           : "",
 
       payment_bank_account_number:
-        paymentMethod ===
-        "bank_transfer"
+        paymentMethod === "bank_transfer"
           ? paymentBankAccountNumber
           : "",
 
       payment_bank_ifsc:
-        paymentMethod ===
-        "bank_transfer"
+        paymentMethod === "bank_transfer"
           ? paymentBankIfsc
           : "",
 
       payment_razorpay_account_id:
-        paymentMethod ===
-        "razorpay"
+        paymentMethod === "razorpay"
           ? paymentRazorpayAccountId
           : "",
 
@@ -599,12 +528,6 @@ export async function saveOnboardingData(
 
   redirect("/dashboard");
 }
-
-/*
- * ============================================================
- * LEGACY COMPATIBILITY
- * ============================================================
- */
 
 export async function saveIndustry(
   industry: string

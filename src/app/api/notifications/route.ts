@@ -1,57 +1,84 @@
-import { NextRequest } from "next/server";
+import { NextResponse } from "next/server";
 
-import { ApiResponse } from "@/lib/api-response";
-import { handleApiError } from "@/lib/error-handler";
 import { createClient } from "@/lib/supabase/server";
 
 export async function GET() {
   try {
     const supabase = await createClient();
 
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
+
+    if (userError || !user) {
+      return NextResponse.json(
+        {
+          error: "Unauthorized",
+        },
+        {
+          status: 401,
+        }
+      );
+    }
+
     const { data, error } = await supabase
-      .from("notifications")
-      .select("*")
-      .order("created_at", { ascending: false });
+      .from("user_notifications")
+      .select(`
+        id,
+        user_id,
+        type,
+        title,
+        message,
+        link,
+        is_read,
+        created_at
+      `)
+      .eq("user_id", user.id)
+      .order("created_at", {
+        ascending: false,
+      })
+      .limit(30);
 
     if (error) {
-      return ApiResponse.error(
-        "Failed to fetch notifications",
-        500
+      console.error(
+        "[Notifications API] Load error:",
+        error
+      );
+
+      return NextResponse.json(
+        {
+          error: "Unable to load notifications.",
+        },
+        {
+          status: 500,
+        }
       );
     }
 
-    return ApiResponse.success(data);
-  } catch (error) {
-    return handleApiError(error);
-  }
-}
+    const unreadCount =
+      (data ?? []).filter(
+        (notification) =>
+          !notification.is_read
+      ).length;
 
-export async function POST(request: NextRequest) {
-  try {
-    const supabase = await createClient();
-
-    const body = await request.json();
-
-    const { error } = await supabase
-      .from("notifications")
-      .insert({
-        title: body.title,
-        message: body.message,
-        type: body.type,
-        is_read: false,
-      });
-
-    if (error) {
-      return ApiResponse.error(
-        "Failed to create notification",
-        500
-      );
-    }
-
-    return ApiResponse.success({
-      created: true,
+    return NextResponse.json({
+      notifications: data ?? [],
+      unreadCount,
     });
   } catch (error) {
-    return handleApiError(error);
+    console.error(
+      "[Notifications API] Unexpected error:",
+      error
+    );
+
+    return NextResponse.json(
+      {
+        error: "Unable to load notifications.",
+      },
+      {
+        status: 500,
+      }
+    );
   }
 }

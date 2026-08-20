@@ -7,17 +7,22 @@ import { ApiResponse } from "@/lib/api-response";
 import { handleApiError } from "@/lib/error-handler";
 import { supabaseAdmin } from "@/lib/server/supabase";
 import { razorpay } from "@/lib/server/razorpay";
-import { createNotification } from "@/services/notificationService";
+import { getNotifications } from "@/services/notificationService";
+import { createNotification } from "@/services/notificationServerService";
 
-export async function POST(
-  request: NextRequest
-) {
+export async function POST(request: NextRequest) {
   try {
     const {
       razorpay_order_id,
       razorpay_payment_id,
       razorpay_signature,
     } = await request.json();
+
+    /*
+     * =========================================================
+     * 1. VALIDATE REQUEST
+     * =========================================================
+     */
 
     if (
       !razorpay_order_id ||
@@ -30,13 +35,13 @@ export async function POST(
       );
     }
 
-    /* =========================================================
-       1. VERIFY RAZORPAY SIGNATURE
-    ========================================================= */
+    /*
+     * =========================================================
+     * 2. VERIFY RAZORPAY SIGNATURE
+     * =========================================================
+     */
 
-    const secret =
-      process.env
-        .RAZORPAY_KEY_SECRET;
+    const secret = process.env.RAZORPAY_KEY_SECRET;
 
     if (!secret) {
       throw new Error(
@@ -44,26 +49,37 @@ export async function POST(
       );
     }
 
-    const generatedSignature =
-      crypto
-        .createHmac(
-          "sha256",
-          secret
-        )
-        .update(
-          `${razorpay_order_id}|${razorpay_payment_id}`
-        )
-        .digest("hex");
+    const generatedSignature = crypto
+      .createHmac("sha256", secret)
+      .update(
+        `${razorpay_order_id}|${razorpay_payment_id}`
+      )
+      .digest("hex");
 
-    const signaturesMatch =
-      crypto.timingSafeEqual(
-        Buffer.from(
-          generatedSignature
-        ),
-        Buffer.from(
-          razorpay_signature
-        )
+    const generatedBuffer = Buffer.from(
+      generatedSignature,
+      "utf8"
+    );
+
+    const receivedBuffer = Buffer.from(
+      razorpay_signature,
+      "utf8"
+    );
+
+    if (
+      generatedBuffer.length !==
+      receivedBuffer.length
+    ) {
+      return ApiResponse.error(
+        "Invalid payment signature",
+        400
       );
+    }
+
+    const signaturesMatch = crypto.timingSafeEqual(
+      generatedBuffer,
+      receivedBuffer
+    );
 
     if (!signaturesMatch) {
       return ApiResponse.error(
@@ -72,9 +88,11 @@ export async function POST(
       );
     }
 
-    /* =========================================================
-       2. PREVENT DUPLICATE RECONCILIATION
-    ========================================================= */
+    /*
+     * =========================================================
+     * 3. PREVENT DUPLICATE RECONCILIATION
+     * =========================================================
+     */
 
     const {
       data: existingPayment,
@@ -96,18 +114,19 @@ export async function POST(
       return ApiResponse.success({
         verified: true,
         alreadyProcessed: true,
-        amount:
-          Number(
-            existingPayment.amount
-          ),
+        amount: Number(
+          existingPayment.amount
+        ),
         message:
           "Payment already processed.",
       });
     }
 
-    /* =========================================================
-       3. FETCH ACTUAL PAYMENT FROM RAZORPAY
-    ========================================================= */
+    /*
+     * =========================================================
+     * 4. FETCH PAYMENT FROM RAZORPAY
+     * =========================================================
+     */
 
     const razorpayPayment =
       await razorpay.payments.fetch(
@@ -141,9 +160,11 @@ export async function POST(
       );
     }
 
-    /* =========================================================
-       4. FETCH RAZORPAY ORDER
-    ========================================================= */
+    /*
+     * =========================================================
+     * 5. FETCH RAZORPAY ORDER
+     * =========================================================
+     */
 
     const razorpayOrder =
       await razorpay.orders.fetch(
@@ -157,9 +178,11 @@ export async function POST(
       );
     }
 
-    /* =========================================================
-       5. ENSURE PAYMENT AMOUNT MATCHES ORDER
-    ========================================================= */
+    /*
+     * =========================================================
+     * 6. VERIFY PAYMENT AMOUNT
+     * =========================================================
+     */
 
     const paymentAmountInPaise =
       Number(
@@ -194,9 +217,11 @@ export async function POST(
     const paymentAmount =
       paymentAmountInPaise / 100;
 
-    /* =========================================================
-       6. FIND ARKENONE INVOICE
-    ========================================================= */
+    /*
+     * =========================================================
+     * 7. FIND ARKENONE INVOICE
+     * =========================================================
+     */
 
     const {
       data: invoice,
@@ -221,9 +246,11 @@ export async function POST(
       );
     }
 
-    /* =========================================================
-       7. VALIDATE AGAINST CURRENT BALANCE
-    ========================================================= */
+    /*
+     * =========================================================
+     * 8. VALIDATE CURRENT BALANCE
+     * =========================================================
+     */
 
     const currentBalance =
       Number(
@@ -260,9 +287,11 @@ export async function POST(
       );
     }
 
-    /* =========================================================
-       8. CALCULATE NEW FINANCIAL STATE
-    ========================================================= */
+    /*
+     * =========================================================
+     * 9. CALCULATE NEW FINANCIAL STATE
+     * =========================================================
+     */
 
     const previousAmountPaid =
       Number(
@@ -273,42 +302,55 @@ export async function POST(
       previousAmountPaid +
       paymentAmount;
 
+    const invoiceTotal =
+      Number(
+        invoice.total ?? 0
+      );
+
     const newBalanceDue =
       Math.max(
-        Number(
-          invoice.total ?? 0
-        ) - newAmountPaid,
+        invoiceTotal -
+          newAmountPaid,
         0
       );
 
-    let newStatus =
-      "Partially Paid";
-
-    if (
+    const newStatus =
       newBalanceDue <= 0.01
-    ) {
-      newStatus = "Paid";
-    }
+        ? "Paid"
+        : "Partially Paid";
 
-    /* =========================================================
-       9. RECORD PAYMENT
-    ========================================================= */
+    /*
+     * =========================================================
+     * 10. RECORD PAYMENT
+     * =========================================================
+     */
 
     const {
       error: paymentError,
     } = await supabaseAdmin
       .from("payments")
       .insert({
-        invoice_id: invoice.id,
-        owner_id: invoice.owner_id,
-        amount: paymentAmount,
+        invoice_id:
+          invoice.id,
+
+        owner_id:
+          invoice.owner_id,
+
+        amount:
+          paymentAmount,
+
         payment_method:
           razorpayPayment.method ??
           "Razorpay",
+
         payment_reference:
           razorpay_payment_id,
-        payment_status: "Completed",
+
+        payment_status:
+          "Completed",
+
         razorpay_order_id,
+
         paid_at:
           new Date().toISOString(),
       });
@@ -317,36 +359,45 @@ export async function POST(
       throw paymentError;
     }
 
-    /* =========================================================
-       10. UPDATE INVOICE
-    ========================================================= */
+    /*
+     * =========================================================
+     * 11. UPDATE INVOICE
+     * =========================================================
+     */
+
+    const invoiceUpdate: Record<
+      string,
+      unknown
+    > = {
+      status: newStatus,
+      amount_paid:
+        newAmountPaid,
+      balance_due:
+        newBalanceDue,
+    };
+
+    /*
+     * Remove payment token only when
+     * invoice is completely paid.
+     */
+
+    if (
+      newBalanceDue <= 0.01
+    ) {
+      invoiceUpdate.payment_token =
+        null;
+
+      invoiceUpdate.payment_token_expires_at =
+        null;
+    }
 
     const {
       error: invoiceUpdateError,
     } = await supabaseAdmin
       .from("invoices")
-      .update({
-        status: newStatus,
-        amount_paid:
-          newAmountPaid,
-        balance_due:
-          newBalanceDue,
-
-        /**
-         * Keep the payment link alive when
-         * money is still outstanding.
-         *
-         * Remove it only after the invoice
-         * is completely paid.
-         */
-        ...(newBalanceDue <= 0.01
-          ? {
-              payment_token: null,
-              payment_token_expires_at:
-                null,
-            }
-          : {}),
-      })
+      .update(
+        invoiceUpdate
+      )
       .eq(
         "id",
         invoice.id
@@ -356,32 +407,64 @@ export async function POST(
       throw invoiceUpdateError;
     }
 
-    /* =========================================================
-       11. CREATE NOTIFICATION
-    ========================================================= */
+    /*
+     * =========================================================
+     * 12. CREATE NOTIFICATION
+     * =========================================================
+     *
+     * IMPORTANT:
+     * createNotification is intentionally called
+     * with userId because the notification service
+     * accepts userId as its canonical field.
+     *
+     * invoice.owner_id is the authenticated workspace
+     * owner receiving the notification.
+     */
 
-    await createNotification({
-      ownerId: invoice.owner_id,
-      title:
-        newStatus === "Paid"
-          ? "Invoice Paid"
-          : "Partial Payment Received",
+    try {
+      await createNotification({
+        userId:
+          invoice.owner_id,
 
-      message:
-        newStatus === "Paid"
-          ? `Invoice ${invoice.invoice_number} has been paid in full.`
-          : `₹${paymentAmount.toLocaleString(
-              "en-IN"
-            )} received for Invoice ${invoice.invoice_number}. ₹${newBalanceDue.toLocaleString(
-              "en-IN"
-            )} remains due.`,
+        title:
+          newStatus === "Paid"
+            ? "Invoice Paid"
+            : "Partial Payment Received",
 
-      type: "payment",
-    });
+        message:
+          newStatus === "Paid"
+            ? `Invoice ${invoice.invoice_number} has been paid in full.`
+            : `₹${paymentAmount.toLocaleString(
+                "en-IN"
+              )} received for Invoice ${
+                invoice.invoice_number
+              }. ₹${newBalanceDue.toLocaleString(
+                "en-IN"
+              )} remains due.`,
 
-    /* =========================================================
-       12. CREATE EVENT
-    ========================================================= */
+        type:
+          "payment_received",
+
+        link:
+          `/invoices/${invoice.id}`,
+      });
+    } catch (notificationError) {
+      /*
+       * Notification failure must NEVER
+       * cause a successful payment to fail.
+       */
+
+      console.error(
+        "Failed to create payment notification:",
+        notificationError
+      );
+    }
+
+    /*
+     * =========================================================
+     * 13. CREATE PAYMENT EVENT
+     * =========================================================
+     */
 
     try {
       await createEvent({
@@ -389,9 +472,7 @@ export async function POST(
           invoice.owner_id,
 
         type:
-          newStatus === "Paid"
-            ? "payment_received"
-            : "payment_received",
+          "payment_received",
 
         title:
           newStatus === "Paid"
@@ -436,15 +517,23 @@ export async function POST(
         },
       });
     } catch (eventError) {
+      /*
+       * Event creation is supplementary.
+       * Never fail a successful payment because
+       * the event system has an issue.
+       */
+
       console.error(
         "Failed to create payment event:",
         eventError
       );
     }
 
-    /* =========================================================
-       13. REVALIDATE
-    ========================================================= */
+    /*
+     * =========================================================
+     * 14. REVALIDATE ARKENONE PAGES
+     * =========================================================
+     */
 
     revalidatePath(
       "/dashboard"
@@ -458,9 +547,11 @@ export async function POST(
       `/invoices/${invoice.id}`
     );
 
-    /* =========================================================
-       14. RESPONSE
-    ========================================================= */
+    /*
+     * =========================================================
+     * 15. SUCCESS RESPONSE
+     * =========================================================
+     */
 
     return ApiResponse.success({
       verified: true,

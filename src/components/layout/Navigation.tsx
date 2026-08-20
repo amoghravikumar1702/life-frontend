@@ -14,6 +14,7 @@ import {
   Receipt,
   Settings,
   Users,
+  WalletCards,
 } from "lucide-react";
 
 interface NavigationProps {
@@ -33,6 +34,7 @@ const sections = [
       },
     ],
   },
+
   {
     title: "Operations",
     items: [
@@ -47,12 +49,18 @@ const sections = [
         icon: FileText,
       },
       {
+        label: "Record Payment",
+        href: "/record-payment",
+        icon: WalletCards,
+      },
+      {
         label: "Expenses",
         href: "/expenses",
         icon: Receipt,
       },
     ],
   },
+
   {
     title: "Intelligence",
     items: [
@@ -73,6 +81,7 @@ const sections = [
       },
     ],
   },
+
   {
     title: "Company",
     items: [

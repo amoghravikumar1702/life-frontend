@@ -1,3 +1,5 @@
+// src/app/onboarding/page.tsx
+
 "use client";
 
 import { useState } from "react";
@@ -6,6 +8,7 @@ import BusinessIdentityStep from "@/components/onboarding/BusinessIdentityStep";
 import IndustrySelection from "@/components/onboarding/IndustrySelection";
 import FinancialSetupStep from "@/components/onboarding/FinancialSetupStep";
 import PaymentSetupStep from "@/components/onboarding/PaymentSetupStep";
+import CustomerImportStep from "@/components/onboarding/CustomerImportStep";
 
 import {
   saveOnboardingData,
@@ -16,7 +19,8 @@ type OnboardingStep =
   | "identity"
   | "industry"
   | "financial"
-  | "payment";
+  | "payment"
+  | "customers";
 
 type BusinessData = Pick<
   OnboardingData,
@@ -85,6 +89,9 @@ export default function OnboardingPage() {
   const [isSaving, setIsSaving] =
     useState(false);
 
+  const [saveError, setSaveError] =
+    useState("");
+
   function handleIdentityContinue(
     identity: BusinessData
   ) {
@@ -106,32 +113,42 @@ export default function OnboardingPage() {
     setStep("payment");
   }
 
-  async function handlePaymentContinue(
+  function handlePaymentContinue(
     paymentData: PaymentData
   ) {
     if (isSaving) {
       return;
     }
 
+    setPayment(paymentData);
+    setStep("customers");
+  }
+
+  async function handleCustomerImportComplete() {
+    if (isSaving) {
+      return;
+    }
+
     try {
       setIsSaving(true);
-
-      setPayment(paymentData);
+      setSaveError("");
 
       await saveOnboardingData({
         ...business,
-
         industry,
-
-        startingRevenue:
-          revenue,
-
-        ...paymentData,
+        startingRevenue: revenue,
+        ...payment,
       });
     } catch (error) {
       console.error(
         "[Onboarding] Failed to complete onboarding:",
         error
+      );
+
+      setSaveError(
+        error instanceof Error
+          ? error.message
+          : "Unable to complete onboarding. Please try again."
       );
 
       setIsSaving(false);
@@ -160,9 +177,7 @@ export default function OnboardingPage() {
 
         {step === "financial" && (
           <FinancialSetupStep
-            initialRevenue={
-              revenue
-            }
+            initialRevenue={revenue}
             onContinue={
               handleFinancialContinue
             }
@@ -177,7 +192,37 @@ export default function OnboardingPage() {
             }
           />
         )}
+
+        {step === "customers" && (
+          <CustomerImportStep
+            onComplete={
+              handleCustomerImportComplete
+            }
+          />
+        )}
       </div>
+
+      {saveError && (
+        <div className="fixed bottom-5 left-1/2 z-[60] w-[calc(100%-2rem)] max-w-md -translate-x-1/2 rounded-2xl border border-red-500/15 bg-[#151112] px-5 py-4 shadow-2xl">
+          <p className="text-xs font-medium text-red-300">
+            Onboarding could not be completed
+          </p>
+
+          <p className="mt-1 text-xs leading-5 text-red-400/70">
+            {saveError}
+          </p>
+
+          <button
+            type="button"
+            onClick={() =>
+              setSaveError("")
+            }
+            className="mt-3 text-[11px] font-medium text-zinc-500 transition hover:text-zinc-200"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
 
       {isSaving && (
         <div className="pointer-events-none fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4 backdrop-blur-sm">
@@ -189,7 +234,7 @@ export default function OnboardingPage() {
             </p>
 
             <p className="mt-1 text-xs text-zinc-600">
-              Saving your business and payment setup.
+              Saving your business and customer setup.
             </p>
           </div>
         </div>
