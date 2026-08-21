@@ -20,12 +20,6 @@ export default async function DashboardPage() {
     .eq("owner_id", user.id)
     .maybeSingle();
 
-  /*
-   * A company may not exist yet immediately after signup.
-   *
-   * In that case, send the user through onboarding instead
-   * of crashing the dashboard.
-   */
   if (error) {
     console.error(
       "[Dashboard] Failed to load company:",

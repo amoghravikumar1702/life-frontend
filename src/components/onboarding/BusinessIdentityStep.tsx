@@ -1,3 +1,5 @@
+// src/components/onboarding/BusinessIdentityStep.tsx
+
 "use client";
 
 import { useState } from "react";
@@ -6,9 +8,10 @@ import {
   Building2,
   UserRound,
   Phone,
-  BriefcaseBusiness,
   Users,
   CalendarDays,
+  ShieldCheck,
+  Loader2,
 } from "lucide-react";
 
 interface BusinessIdentity {
@@ -36,6 +39,28 @@ const businessModels = [
   "Manufacturing",
   "Other",
 ];
+
+function normalizePhone(
+  value: string
+): string {
+  const digits = value.replace(/\D/g, "");
+
+  if (!digits) {
+    return "";
+  }
+
+  if (digits.startsWith("91") && digits.length === 12) {
+    return `+${digits}`;
+  }
+
+  if (digits.length === 10) {
+    return `+91${digits}`;
+  }
+
+  return value.startsWith("+")
+    ? `+${digits}`
+    : `+91${digits}`;
+}
 
 export default function BusinessIdentityStep({
   initialData,
@@ -78,6 +103,7 @@ export default function BusinessIdentityStep({
   const valid =
     companyName.trim().length > 0 &&
     ownerName.trim().length > 0 &&
+    phone.replace(/\D/g, "").length === 10 &&
     businessModel.length > 0 &&
     Number(yearsInBusiness) >= 0 &&
     Number(employees) >= 0;
@@ -95,7 +121,7 @@ export default function BusinessIdentityStep({
         ownerName.trim(),
 
       phone:
-        phone.trim(),
+        normalizePhone(phone),
 
       businessModel,
 
@@ -219,8 +245,8 @@ export default function BusinessIdentityStep({
               className="mb-2.5 block text-[10px] font-semibold uppercase tracking-[0.2em] text-zinc-600"
             >
               Phone
-              <span className="ml-2 normal-case tracking-normal text-zinc-700">
-                optional
+              <span className="ml-2 normal-case tracking-normal text-[#D4AF37]/70">
+                verification required
               </span>
             </label>
 
@@ -241,10 +267,18 @@ export default function BusinessIdentityStep({
                     event.target.value
                   )
                 }
-                placeholder="+91"
+                placeholder="+91 98765 43210"
                 className="h-14 w-full bg-transparent text-sm text-white outline-none placeholder:text-zinc-700"
               />
             </div>
+
+            <p className="mt-2 flex items-center gap-1.5 text-[10px] text-zinc-700">
+              <ShieldCheck
+                size={11}
+                className="text-[#D4AF37]/70"
+              />
+              Used to protect your one-time trial.
+            </p>
           </div>
 
           <div>
@@ -343,6 +377,27 @@ export default function BusinessIdentityStep({
             Enter 0 if you currently run the
             business yourself.
           </p>
+        </div>
+
+        <div className="mt-8 rounded-xl border border-[#D4AF37]/10 bg-[#D4AF37]/[0.025] px-4 py-3.5">
+          <div className="flex items-start gap-3">
+            <ShieldCheck
+              size={15}
+              className="mt-0.5 shrink-0 text-[#D4AF37]"
+            />
+
+            <div>
+              <p className="text-[11px] font-medium text-zinc-300">
+                One verified phone. One ArkenOne trial.
+              </p>
+
+              <p className="mt-1 text-[10px] leading-5 text-zinc-700">
+                Your phone number is verified to help
+                prevent repeated trials through multiple
+                email addresses.
+              </p>
+            </div>
+          </div>
         </div>
 
         <div className="mt-8 flex justify-end">

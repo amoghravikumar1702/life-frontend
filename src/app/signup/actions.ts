@@ -1,3 +1,5 @@
+// src/app/signup/actions.ts
+
 "use server";
 
 import { redirect } from "next/navigation";
@@ -6,11 +8,14 @@ import { createClient } from "@/lib/supabase/server";
 export async function signUp(
   formData: FormData
 ): Promise<void> {
-  const supabase = await createClient();
+  const supabase =
+    await createClient();
 
   const email = String(
     formData.get("email") ?? ""
-  ).trim();
+  )
+    .trim()
+    .toLowerCase();
 
   const password = String(
     formData.get("password") ?? ""
@@ -28,19 +33,14 @@ export async function signUp(
     );
   }
 
-  /*
-   * ============================================================
-   * CREATE AUTH USER
-   * ============================================================
-   */
-
   const {
     data: authData,
     error: authError,
-  } = await supabase.auth.signUp({
-    email,
-    password,
-  });
+  } =
+    await supabase.auth.signUp({
+      email,
+      password,
+    });
 
   if (authError) {
     console.error(
@@ -48,10 +48,13 @@ export async function signUp(
       authError
     );
 
-    throw new Error(authError.message);
+    throw new Error(
+      authError.message
+    );
   }
 
-  const user = authData.user;
+  const user =
+    authData.user;
 
   if (!user) {
     throw new Error(
@@ -60,27 +63,43 @@ export async function signUp(
   }
 
   /*
-   * ============================================================
-   * CREATE COMPANY
-   * ============================================================
+   * ------------------------------------------------------------
+   * IMPORTANT
+   * ------------------------------------------------------------
    *
-   * Every ArkenOne user must have exactly one company.
+   * We do NOT create a trial here.
    *
-   * Onboarding will populate the business-specific
-   * information later.
+   * Trial creation only happens after:
+   *
+   * 1. Business onboarding
+   * 2. Phone verification
+   * 3. Trial eligibility check
+   *
+   * This prevents multiple emails from automatically
+   * receiving multiple trials.
    */
 
   const {
     error: companyError,
-  } = await supabase
-    .from("companies")
-    .insert({
-      owner_id: user.id,
-      company_name: "My Company",
-      industry: null,
-      starting_revenue: 0,
-      employee_count: 0,
-    });
+  } =
+    await supabase
+      .from("companies")
+      .insert({
+        owner_id:
+          user.id,
+
+        company_name:
+          "My Company",
+
+        industry:
+          null,
+
+        starting_revenue:
+          0,
+
+        employee_count:
+          0,
+      });
 
   if (companyError) {
     console.error(
@@ -92,12 +111,6 @@ export async function signUp(
       "Account created, but we could not create your business profile."
     );
   }
-
-  /*
-   * ============================================================
-   * CONTINUE TO ONBOARDING
-   * ============================================================
-   */
 
   redirect("/onboarding");
 }

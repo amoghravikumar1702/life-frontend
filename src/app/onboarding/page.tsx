@@ -234,7 +234,8 @@ export default function OnboardingPage() {
             </p>
 
             <p className="mt-1 text-xs text-zinc-600">
-              Saving your business and customer setup.
+              Saving your business and
+              customer setup.
             </p>
           </div>
         </div>

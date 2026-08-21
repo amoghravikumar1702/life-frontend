@@ -10,6 +10,7 @@ import {
   Building2,
   FileBarChart2,
   FileText,
+  HelpCircle,
   LayoutDashboard,
   Receipt,
   Settings,
@@ -97,6 +98,17 @@ const sections = [
       },
     ],
   },
+
+  {
+    title: "Learn",
+    items: [
+      {
+        label: "How ArkenOne Works",
+        href: "/walkthrough",
+        icon: HelpCircle,
+      },
+    ],
+  },
 ];
 
 export default function Navigation({
@@ -130,7 +142,9 @@ export default function Navigation({
 
           <div
             className={
-              mobile ? "space-y-1.5" : "space-y-1"
+              mobile
+                ? "space-y-1.5"
+                : "space-y-1"
             }
           >
             {section.items.map((item) => {
@@ -138,23 +152,32 @@ export default function Navigation({
 
               const active =
                 pathname === item.href ||
-                pathname.startsWith(`${item.href}/`);
+                pathname.startsWith(
+                  `${item.href}/`
+                );
 
               return (
                 <Link
                   key={item.href}
                   href={item.href}
                   onClick={onNavigate}
-                  title={collapsed ? item.label : undefined}
+                  title={
+                    collapsed
+                      ? item.label
+                      : undefined
+                  }
                   className="block"
                 >
                   <motion.div
                     whileHover={{
                       x:
-                        collapsed || mobile
+                        collapsed ||
+                        mobile
                           ? 0
                           : 3,
-                      scale: mobile ? 1 : 1.01,
+                      scale: mobile
+                        ? 1
+                        : 1.01,
                     }}
                     whileTap={{
                       scale: 0.985,
@@ -217,7 +240,9 @@ export default function Navigation({
                     )}
 
                     <Icon
-                      size={mobile ? 18 : 17}
+                      size={
+                        mobile ? 18 : 17
+                      }
                       strokeWidth={1.9}
                       className={`
                         relative
