@@ -1,6 +1,6 @@
 "use server";
 
-import { cookies, headers } from "next/headers";
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import crypto from "crypto";
 
@@ -108,32 +108,6 @@ function getPasswordError(password: string): string | null {
 }
 
 /**
- * Resolves the best available client IP.
- *
- * x-real-ip is preferred.
- * x-forwarded-for is only used as a fallback.
- */
-function getClientIp(requestHeaders: Headers): string | null {
-  const realIp = requestHeaders.get("x-real-ip")?.trim();
-
-  if (realIp) {
-    return realIp;
-  }
-
-  const forwardedFor = requestHeaders.get("x-forwarded-for");
-
-  if (forwardedFor) {
-    const firstIp = forwardedFor.split(",")[0]?.trim();
-
-    if (firstIp) {
-      return firstIp;
-    }
-  }
-
-  return null;
-}
-
-/**
  * Converts a FormData value into a boolean checkbox state.
  *
  * HTML checkboxes normally submit "on" when checked.
@@ -234,6 +208,10 @@ export async function signUp(formData: FormData) {
    * ============================================================
    * DEVICE IDENTIFIER
    * ============================================================
+   *
+   * We keep the anonymous device identifier because it provides
+   * an additional abuse-control signal without blocking every
+   * user on the same shared network.
    */
 
   const cookieStore = await cookies();
@@ -268,40 +246,17 @@ export async function signUp(formData: FormData) {
 
   /*
    * ============================================================
-   * REQUEST IP
+   * SIGNUP RATE LIMIT — DEVICE
    * ============================================================
-   */
-
-  const requestHeaders = await headers();
-
-  const ip = getClientIp(requestHeaders);
-
-  /*
-   * ============================================================
-   * ATOMIC RATE LIMIT — IP
-   * ============================================================
-   */
-
-  if (ip) {
-    const ipLimit =
-      await checkAndRecordSignupAttempt(
-        "ip",
-        ip
-      );
-
-    if (!ipLimit.allowed) {
-      redirectWithError(
-        ipLimit.reason === "already_used"
-          ? "This network has already been used to create a DhanarkOS trial recently."
-          : "Too many signup attempts. Please try again later."
-      );
-    }
-  }
-
-  /*
-   * ============================================================
-   * ATOMIC RATE LIMIT — DEVICE
-   * ============================================================
+   *
+   * IP/network-based trial blocking has intentionally been
+   * removed.
+   *
+   * Shared networks such as offices, homes, colleges, hostels,
+   * coworking spaces, mobile carriers, and VPNs can legitimately
+   * contain many different users.
+   *
+   * We therefore do NOT use the network/IP as a trial identity.
    */
 
   const deviceLimit =
@@ -320,8 +275,14 @@ export async function signUp(formData: FormData) {
 
   /*
    * ============================================================
-   * ATOMIC RATE LIMIT — EMAIL
+   * SIGNUP RATE LIMIT — EMAIL
    * ============================================================
+   *
+   * Email remains an important identity signal.
+   *
+   * This prevents the same email address from repeatedly
+   * attempting to create trials while still allowing legitimate
+   * users on the same network to sign up.
    */
 
   const emailLimit =
@@ -381,12 +342,7 @@ export async function signUp(formData: FormData) {
    * Record successful signup only after Supabase has
    * successfully created the user.
    *
-   * recordSuccessfulSignup expects:
-   *
-   *   (type, identifier)
-   *
-   * Therefore we record the successful signup against each
-   * identifier independently.
+   * We intentionally do NOT record an IP/network identifier.
    */
 
   try {
@@ -399,13 +355,6 @@ export async function signUp(formData: FormData) {
       "device",
       deviceId
     );
-
-    if (ip) {
-      await recordSuccessfulSignup(
-        "ip",
-        ip
-      );
-    }
   } catch (recordError) {
     /*
      * The account already exists at this point.
