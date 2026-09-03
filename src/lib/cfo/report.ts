@@ -9,11 +9,11 @@ import { ExecutiveReport } from "./types";
 
 /*
  * ============================================================
- * ARKENONE AI CFO — EXECUTIVE REPORT ENGINE
+ * DhanarkOS AI CFO — EXECUTIVE REPORT ENGINE
  * ============================================================
  *
  * This file prepares normalized business intelligence for the
- * ArkenOne AI CFO.
+ * DhanarkOS AI CFO.
  *
  * IMPORTANT:
  *

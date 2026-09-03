@@ -5,18 +5,19 @@ import {
   ArrowRight,
   Check,
   ChevronLeft,
-  ChevronRight,
 } from "lucide-react";
 
+import DhanarkLogo from "@/components/brand/DhanarkLogo";
+
 const STORAGE_KEY =
-  "arkenone_dashboard_tutorial_completed";
+  "DhanarkOS_dashboard_tutorial_completed";
 
 const steps = [
   {
     eyebrow: "01 · COMMAND CENTER",
-    title: "Welcome to ArkenOne.",
+    title: "Welcome to DhanarkOS.",
     description:
-      "This is your financial command center. ArkenOne brings your business finances, customers, invoices, payments, expenses, and intelligence together in one workspace.",
+      "This is your financial command center. DhanarkOS brings your business finances, customers, invoices, payments, expenses, and intelligence together in one workspace.",
   },
   {
     eyebrow: "02 · FINANCIAL POSITION",
@@ -43,7 +44,7 @@ const steps = [
       "Financial Analysis and Executive Reports give you deeper visibility when the high-level dashboard isn't enough.",
   },
   {
-    eyebrow: "06 · ARKENONE",
+    eyebrow: "06 · DhanarkOS",
     title: "One financial operating system.",
     description:
       "The goal is simple: give you one clear financial picture of your business and help you act on it.",
@@ -51,11 +52,8 @@ const steps = [
 ];
 
 export default function DashboardTutorial() {
-  const [open, setOpen] =
-    useState(false);
-
-  const [step, setStep] =
-    useState(0);
+  const [open, setOpen] = useState(false);
+  const [step, setStep] = useState(0);
 
   useEffect(() => {
     const completed =
@@ -84,15 +82,12 @@ export default function DashboardTutorial() {
       return;
     }
 
-    setStep(
-      (current) => current + 1
-    );
+    setStep((current) => current + 1);
   }
 
   function previous() {
-    setStep(
-      (current) =>
-        Math.max(0, current - 1)
+    setStep((current) =>
+      Math.max(0, current - 1)
     );
   }
 
@@ -100,8 +95,7 @@ export default function DashboardTutorial() {
     return null;
   }
 
-  const current =
-    steps[step];
+  const current = steps[step];
 
   return (
     <div
@@ -132,34 +126,32 @@ export default function DashboardTutorial() {
         {/* PROGRESS */}
 
         <div className="flex gap-1.5 px-6 pt-6">
-          {steps.map(
-            (_, index) => (
+          {steps.map((_, index) => (
+            <div
+              key={index}
+              className="
+                h-1
+                flex-1
+                overflow-hidden
+                rounded-full
+                bg-white/[0.06]
+              "
+            >
               <div
-                key={index}
-                className="
-                  h-1
-                  flex-1
-                  overflow-hidden
+                className={`
+                  h-full
                   rounded-full
-                  bg-white/[0.06]
-                "
-              >
-                <div
-                  className={`
-                    h-full
-                    rounded-full
-                    transition-all
-                    duration-300
-                    ${
-                      index <= step
-                        ? "bg-[#D4AF37]"
-                        : "bg-transparent"
-                    }
-                  `}
-                />
-              </div>
-            )
-          )}
+                  transition-all
+                  duration-300
+                  ${
+                    index <= step
+                      ? "bg-[#D4AF37]"
+                      : "bg-transparent"
+                  }
+                `}
+              />
+            </div>
+          ))}
         </div>
 
         {/* CONTENT */}
@@ -172,15 +164,18 @@ export default function DashboardTutorial() {
               w-12
               items-center
               justify-center
+              overflow-hidden
               rounded-2xl
               border
               border-[#D4AF37]/20
               bg-[#D4AF37]/[0.07]
             "
           >
-            <span className="text-sm font-semibold text-[#D4AF37]">
-              A
-            </span>
+            <DhanarkLogo
+              variant="mark"
+              href=""
+              className="h-8 w-8"
+            />
           </div>
 
           <p
@@ -223,9 +218,7 @@ export default function DashboardTutorial() {
 
           <div className="mt-7 flex items-center gap-2">
             <span className="text-[10px] text-zinc-500">
-              {String(
-                step + 1
-              ).padStart(2, "0")}
+              {String(step + 1).padStart(2, "0")}
             </span>
 
             <span className="text-[10px] text-zinc-800">
@@ -233,9 +226,7 @@ export default function DashboardTutorial() {
             </span>
 
             <span className="text-[10px] text-zinc-700">
-              {String(
-                steps.length
-              ).padStart(2, "0")}
+              {String(steps.length).padStart(2, "0")}
             </span>
           </div>
         </div>
@@ -295,10 +286,7 @@ export default function DashboardTutorial() {
                   hover:text-white
                 "
               >
-                <ChevronLeft
-                  size={14}
-                />
-
+                <ChevronLeft size={14} />
                 Back
               </button>
             )}
@@ -322,20 +310,14 @@ export default function DashboardTutorial() {
                 hover:bg-[#E2C04A]
               "
             >
-              {step ===
-              steps.length - 1
-                ? "Enter ArkenOne"
+              {step === steps.length - 1
+                ? "Enter DhanarkOS"
                 : "Next"}
 
-              {step ===
-              steps.length - 1 ? (
-                <Check
-                  size={14}
-                />
+              {step === steps.length - 1 ? (
+                <Check size={14} />
               ) : (
-                <ArrowRight
-                  size={14}
-                />
+                <ArrowRight size={14} />
               )}
             </button>
           </div>

@@ -5,7 +5,7 @@ export async function GET() {
   try {
     return ApiResponse.success({
       status: "ok",
-      service: "ArkenOne API",
+      service: "DhanarkOS API",
       timestamp: new Date().toISOString(),
     });
   } catch (error) {

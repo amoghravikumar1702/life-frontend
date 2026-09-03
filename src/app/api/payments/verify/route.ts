@@ -7,27 +7,68 @@ import { ApiResponse } from "@/lib/api-response";
 import { handleApiError } from "@/lib/error-handler";
 import { supabaseAdmin } from "@/lib/server/supabase";
 import { razorpay } from "@/lib/server/razorpay";
-import { getNotifications } from "@/services/notificationService";
 import { createNotification } from "@/services/notificationServerService";
+
+function verifySignature(
+  orderId: string,
+  paymentId: string,
+  receivedSignature: string,
+  secret: string
+) {
+  const generatedSignature = crypto
+    .createHmac("sha256", secret)
+    .update(`${orderId}|${paymentId}`)
+    .digest("hex");
+
+  const expected = Buffer.from(
+    generatedSignature,
+    "utf8"
+  );
+
+  const received = Buffer.from(
+    receivedSignature,
+    "utf8"
+  );
+
+  if (expected.length !== received.length) {
+    return false;
+  }
+
+  return crypto.timingSafeEqual(
+    expected,
+    received
+  );
+}
 
 export async function POST(request: NextRequest) {
   try {
-    const {
-      razorpay_order_id,
-      razorpay_payment_id,
-      razorpay_signature,
-    } = await request.json();
+    const body = await request.json();
+
+    const razorpayOrderId =
+      typeof body?.razorpay_order_id === "string"
+        ? body.razorpay_order_id.trim()
+        : "";
+
+    const razorpayPaymentId =
+      typeof body?.razorpay_payment_id === "string"
+        ? body.razorpay_payment_id.trim()
+        : "";
+
+    const razorpaySignature =
+      typeof body?.razorpay_signature === "string"
+        ? body.razorpay_signature.trim()
+        : "";
 
     /*
      * =========================================================
-     * 1. VALIDATE REQUEST
+     * 1. VALIDATE INPUT
      * =========================================================
      */
 
     if (
-      !razorpay_order_id ||
-      !razorpay_payment_id ||
-      !razorpay_signature
+      !razorpayOrderId ||
+      !razorpayPaymentId ||
+      !razorpaySignature
     ) {
       return ApiResponse.error(
         "Missing payment details",
@@ -41,7 +82,8 @@ export async function POST(request: NextRequest) {
      * =========================================================
      */
 
-    const secret = process.env.RAZORPAY_KEY_SECRET;
+    const secret =
+      process.env.RAZORPAY_KEY_SECRET;
 
     if (!secret) {
       throw new Error(
@@ -49,26 +91,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const generatedSignature = crypto
-      .createHmac("sha256", secret)
-      .update(
-        `${razorpay_order_id}|${razorpay_payment_id}`
-      )
-      .digest("hex");
-
-    const generatedBuffer = Buffer.from(
-      generatedSignature,
-      "utf8"
-    );
-
-    const receivedBuffer = Buffer.from(
-      razorpay_signature,
-      "utf8"
-    );
-
     if (
-      generatedBuffer.length !==
-      receivedBuffer.length
+      !verifySignature(
+        razorpayOrderId,
+        razorpayPaymentId,
+        razorpaySignature,
+        secret
+      )
     ) {
       return ApiResponse.error(
         "Invalid payment signature",
@@ -76,61 +105,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const signaturesMatch = crypto.timingSafeEqual(
-      generatedBuffer,
-      receivedBuffer
-    );
-
-    if (!signaturesMatch) {
-      return ApiResponse.error(
-        "Invalid payment signature",
-        400
-      );
-    }
-
     /*
      * =========================================================
-     * 3. PREVENT DUPLICATE RECONCILIATION
+     * 3. FETCH RAZORPAY PAYMENT
      * =========================================================
-     */
-
-    const {
-      data: existingPayment,
-      error: duplicateError,
-    } = await supabaseAdmin
-      .from("payments")
-      .select("id, amount")
-      .eq(
-        "payment_reference",
-        razorpay_payment_id
-      )
-      .maybeSingle();
-
-    if (duplicateError) {
-      throw duplicateError;
-    }
-
-    if (existingPayment) {
-      return ApiResponse.success({
-        verified: true,
-        alreadyProcessed: true,
-        amount: Number(
-          existingPayment.amount
-        ),
-        message:
-          "Payment already processed.",
-      });
-    }
-
-    /*
-     * =========================================================
-     * 4. FETCH PAYMENT FROM RAZORPAY
-     * =========================================================
+     *
+     * Never trust amount/status/method from the browser.
      */
 
     const razorpayPayment =
       await razorpay.payments.fetch(
-        razorpay_payment_id
+        razorpayPaymentId
       );
 
     if (!razorpayPayment) {
@@ -140,15 +125,24 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    /*
+     * Payment must belong to the exact order.
+     */
+
     if (
       razorpayPayment.order_id !==
-      razorpay_order_id
+      razorpayOrderId
     ) {
       return ApiResponse.error(
         "Payment does not belong to this order.",
         400
       );
     }
+
+    /*
+     * Only captured payments can change
+     * invoice financial state.
+     */
 
     if (
       razorpayPayment.status !==
@@ -162,13 +156,13 @@ export async function POST(request: NextRequest) {
 
     /*
      * =========================================================
-     * 5. FETCH RAZORPAY ORDER
+     * 4. FETCH RAZORPAY ORDER
      * =========================================================
      */
 
     const razorpayOrder =
       await razorpay.orders.fetch(
-        razorpay_order_id
+        razorpayOrderId
       );
 
     if (!razorpayOrder) {
@@ -179,9 +173,21 @@ export async function POST(request: NextRequest) {
     }
 
     /*
-     * =========================================================
-     * 6. VERIFY PAYMENT AMOUNT
-     * =========================================================
+     * Currency must match.
+     */
+
+    if (
+      razorpayPayment.currency !==
+      razorpayOrder.currency
+    ) {
+      return ApiResponse.error(
+        "Payment currency does not match the order.",
+        400
+      );
+    }
+
+    /*
+     * Payment amount must equal the order amount.
      */
 
     const paymentAmountInPaise =
@@ -195,16 +201,22 @@ export async function POST(request: NextRequest) {
       );
 
     if (
+      !Number.isInteger(
+        paymentAmountInPaise
+      ) ||
+      !Number.isInteger(
+        orderAmountInPaise
+      ) ||
       paymentAmountInPaise !==
-      orderAmountInPaise
+        orderAmountInPaise
     ) {
       console.error(
-        "PAYMENT / ORDER AMOUNT MISMATCH",
+        "[PAYMENT VERIFY] Amount mismatch",
         {
+          razorpayPaymentId,
+          razorpayOrderId,
           paymentAmountInPaise,
           orderAmountInPaise,
-          razorpay_payment_id,
-          razorpay_order_id,
         }
       );
 
@@ -219,8 +231,10 @@ export async function POST(request: NextRequest) {
 
     /*
      * =========================================================
-     * 7. FIND ARKENONE INVOICE
+     * 5. FIND INVOICE USING RAZORPAY ORDER
      * =========================================================
+     *
+     * The browser cannot choose the invoice.
      */
 
     const {
@@ -231,7 +245,7 @@ export async function POST(request: NextRequest) {
       .select("*")
       .eq(
         "razorpay_order_id",
-        razorpay_order_id
+        razorpayOrderId
       )
       .maybeSingle();
 
@@ -248,7 +262,86 @@ export async function POST(request: NextRequest) {
 
     /*
      * =========================================================
-     * 8. VALIDATE CURRENT BALANCE
+     * 6. VERIFY ORDER METADATA
+     * =========================================================
+     *
+     * This provides another server-side binding between
+     * Razorpay and the invoice.
+     */
+
+    const orderNotes =
+      razorpayOrder.notes ?? {};
+
+    if (
+      String(
+        orderNotes.invoiceId ?? ""
+      ) !== String(invoice.id)
+    ) {
+      console.error(
+        "[PAYMENT VERIFY] Order/invoice mismatch",
+        {
+          orderId: razorpayOrderId,
+          invoiceId: invoice.id,
+          noteInvoiceId:
+            orderNotes.invoiceId,
+        }
+      );
+
+      return ApiResponse.error(
+        "Payment order is not associated with this invoice.",
+        400
+      );
+    }
+
+    /*
+     * =========================================================
+     * 7. IDEMPOTENCY CHECK
+     * =========================================================
+     */
+
+    const {
+      data: existingPayment,
+      error: duplicateError,
+    } = await supabaseAdmin
+      .from("payments")
+      .select(
+        "id, amount, invoice_id, payment_status"
+      )
+      .eq(
+        "payment_reference",
+        razorpayPaymentId
+      )
+      .maybeSingle();
+
+    if (duplicateError) {
+      throw duplicateError;
+    }
+
+    if (existingPayment) {
+      /*
+       * Do NOT create another payment or modify
+       * the invoice again.
+       */
+
+      return ApiResponse.success({
+        verified: true,
+        alreadyProcessed: true,
+        paymentId:
+          existingPayment.id,
+        invoiceId:
+          existingPayment.invoice_id,
+        amount:
+          Number(
+            existingPayment.amount
+          ),
+        message:
+          "Payment already processed.",
+      });
+    }
+
+    /*
+     * =========================================================
+     * 8. VERIFY CURRENT INVOICE STATE
      * =========================================================
      */
 
@@ -257,27 +350,40 @@ export async function POST(request: NextRequest) {
         invoice.balance_due ?? 0
       );
 
-    if (currentBalance <= 0) {
+    if (
+      !Number.isFinite(
+        currentBalance
+      ) ||
+      currentBalance <= 0
+    ) {
       return ApiResponse.success({
         verified: true,
         alreadySettled: true,
-        invoiceId: invoice.id,
-        amount: paymentAmount,
+        invoiceId:
+          invoice.id,
+        amount:
+          paymentAmount,
         message:
           "Invoice is already settled.",
       });
     }
+
+    /*
+     * Razorpay order amount must never exceed
+     * the invoice balance.
+     */
 
     if (
       paymentAmount >
       currentBalance + 0.01
     ) {
       console.error(
-        "PAYMENT EXCEEDS INVOICE BALANCE",
+        "[PAYMENT VERIFY] Payment exceeds balance",
         {
+          invoiceId:
+            invoice.id,
           paymentAmount,
           currentBalance,
-          invoiceId: invoice.id,
         }
       );
 
@@ -289,7 +395,7 @@ export async function POST(request: NextRequest) {
 
     /*
      * =========================================================
-     * 9. CALCULATE NEW FINANCIAL STATE
+     * 9. CALCULATE FINANCIAL STATE
      * =========================================================
      */
 
@@ -298,14 +404,14 @@ export async function POST(request: NextRequest) {
         invoice.amount_paid ?? 0
       );
 
-    const newAmountPaid =
-      previousAmountPaid +
-      paymentAmount;
-
     const invoiceTotal =
       Number(
         invoice.total ?? 0
       );
+
+    const newAmountPaid =
+      previousAmountPaid +
+      paymentAmount;
 
     const newBalanceDue =
       Math.max(
@@ -326,6 +432,7 @@ export async function POST(request: NextRequest) {
      */
 
     const {
+      data: payment,
       error: paymentError,
     } = await supabaseAdmin
       .from("payments")
@@ -344,18 +451,63 @@ export async function POST(request: NextRequest) {
           "Razorpay",
 
         payment_reference:
-          razorpay_payment_id,
+          razorpayPaymentId,
 
         payment_status:
           "Completed",
 
-        razorpay_order_id,
+        razorpay_order_id:
+          razorpayOrderId,
 
         paid_at:
           new Date().toISOString(),
-      });
+      })
+      .select("id")
+      .single();
 
     if (paymentError) {
+      /*
+       * If another request already inserted the same
+       * Razorpay payment, return success instead of
+       * double-processing it.
+       */
+
+      if (
+        paymentError.code ===
+        "23505"
+      ) {
+        const {
+          data: duplicatePayment,
+        } = await supabaseAdmin
+          .from("payments")
+          .select(
+            "id, amount, invoice_id"
+          )
+          .eq(
+            "payment_reference",
+            razorpayPaymentId
+          )
+          .maybeSingle();
+
+        return ApiResponse.success({
+          verified: true,
+          alreadyProcessed: true,
+          paymentId:
+            duplicatePayment?.id ??
+            null,
+          invoiceId:
+            duplicatePayment?.invoice_id ??
+            invoice.id,
+          amount:
+            Number(
+              duplicatePayment?.amount ??
+                paymentAmount
+            ),
+          message:
+            "Payment already processed.",
+        });
+      }
+
       throw paymentError;
     }
 
@@ -369,17 +521,15 @@ export async function POST(request: NextRequest) {
       string,
       unknown
     > = {
-      status: newStatus,
+      status:
+        newStatus,
+
       amount_paid:
         newAmountPaid,
+
       balance_due:
         newBalanceDue,
     };
-
-    /*
-     * Remove payment token only when
-     * invoice is completely paid.
-     */
 
     if (
       newBalanceDue <= 0.01
@@ -401,24 +551,29 @@ export async function POST(request: NextRequest) {
       .eq(
         "id",
         invoice.id
+      )
+      .eq(
+        "razorpay_order_id",
+        razorpayOrderId
       );
 
     if (invoiceUpdateError) {
+      /*
+       * IMPORTANT:
+       * The payment already exists in the database.
+       * Do not create another payment if the client retries.
+       *
+       * This should ideally be replaced with a database
+       * transaction/RPC for completely atomic reconciliation.
+       */
+
       throw invoiceUpdateError;
     }
 
     /*
      * =========================================================
-     * 12. CREATE NOTIFICATION
+     * 12. NOTIFICATION
      * =========================================================
-     *
-     * IMPORTANT:
-     * createNotification is intentionally called
-     * with userId because the notification service
-     * accepts userId as its canonical field.
-     *
-     * invoice.owner_id is the authenticated workspace
-     * owner receiving the notification.
      */
 
     try {
@@ -449,20 +604,15 @@ export async function POST(request: NextRequest) {
           `/invoices/${invoice.id}`,
       });
     } catch (notificationError) {
-      /*
-       * Notification failure must NEVER
-       * cause a successful payment to fail.
-       */
-
       console.error(
-        "Failed to create payment notification:",
+        "[PAYMENT VERIFY] Notification failed:",
         notificationError
       );
     }
 
     /*
      * =========================================================
-     * 13. CREATE PAYMENT EVENT
+     * 13. EVENT
      * =========================================================
      */
 
@@ -482,13 +632,15 @@ export async function POST(request: NextRequest) {
         description:
           `₹${paymentAmount.toLocaleString(
             "en-IN"
-          )} received for Invoice ${invoice.invoice_number}.`,
+          )} received for Invoice ${
+            invoice.invoice_number
+          }.`,
 
         entityType:
           "payment",
 
         entityId:
-          razorpay_payment_id,
+          razorpayPaymentId,
 
         severity:
           "success",
@@ -501,7 +653,7 @@ export async function POST(request: NextRequest) {
             invoice.invoice_number,
 
           paymentReference:
-            razorpay_payment_id,
+            razorpayPaymentId,
 
           amount:
             paymentAmount,
@@ -517,21 +669,15 @@ export async function POST(request: NextRequest) {
         },
       });
     } catch (eventError) {
-      /*
-       * Event creation is supplementary.
-       * Never fail a successful payment because
-       * the event system has an issue.
-       */
-
       console.error(
-        "Failed to create payment event:",
+        "[PAYMENT VERIFY] Event failed:",
         eventError
       );
     }
 
     /*
      * =========================================================
-     * 14. REVALIDATE ARKENONE PAGES
+     * 14. REVALIDATE
      * =========================================================
      */
 
@@ -549,7 +695,7 @@ export async function POST(request: NextRequest) {
 
     /*
      * =========================================================
-     * 15. SUCCESS RESPONSE
+     * 15. SUCCESS
      * =========================================================
      */
 
@@ -560,7 +706,7 @@ export async function POST(request: NextRequest) {
         invoice.id,
 
       paymentId:
-        razorpay_payment_id,
+        payment.id,
 
       amount:
         paymentAmount,

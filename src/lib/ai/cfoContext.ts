@@ -2,7 +2,7 @@ import { ExecutiveReport } from "@/lib/cfo/types";
 
 /*
  * ============================================================
- * ARKENONE AI CFO — COMPACT CFO CONTEXT
+ * DhanarkOS AI CFO — COMPACT CFO CONTEXT
  * ============================================================
  *
  * Converts the complete ExecutiveReport into a smaller,

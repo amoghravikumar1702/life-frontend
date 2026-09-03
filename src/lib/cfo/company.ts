@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 
 /*
  * ============================================================
- * ARKENONE AI CFO — COMPANY PROFILE
+ * DhanarkOS AI CFO — COMPANY PROFILE
  * ============================================================
  *
  * IMPORTANT:

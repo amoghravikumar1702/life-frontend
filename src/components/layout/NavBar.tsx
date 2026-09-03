@@ -309,7 +309,7 @@ export default function Navbar({
             </div>
 
             <span className="text-sm text-white">
-              ArkenOne
+              DhanarkOS
             </span>
 
             <ChevronDown

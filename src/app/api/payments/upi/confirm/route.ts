@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/server/supabase";
-
+import crypto from "crypto";
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -196,28 +196,30 @@ export async function POST(request: NextRequest) {
           owner_id: invoice.owner_id,
           amount: paymentAmount,
           payment_method: "UPI",
-          payment_reference:
-            "Customer reported payment",
+                    payment_reference:
+  `UPI-${invoice.id}-${crypto.randomUUID()}`,
           payment_status: "pending",
           paid_at: null,
         })
         .select()
         .single();
 
-    if (paymentError) {
-      console.error(
-        "[UPI CONFIRM] Payment insert error:",
-        paymentError
-      );
+   if (paymentError) {
+  console.error(
+    "[UPI CONFIRM] Payment insert error:",
+    paymentError
+  );
 
-      return NextResponse.json(
-        {
-          error:
-            "Unable to submit payment confirmation.",
-        },
-        { status: 500 }
-      );
-    }
+  return NextResponse.json(
+    {
+      error: paymentError.message,
+      code: paymentError.code,
+      details: paymentError.details,
+      hint: paymentError.hint,
+    },
+    { status: 500 }
+  );
+}
 
     /*
      * IMPORTANT:

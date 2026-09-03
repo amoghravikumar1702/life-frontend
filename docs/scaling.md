@@ -1,4 +1,4 @@
-# ArkenOne Scaling Strategy
+# DhanarkOS Scaling Strategy
 
 Version 1.0
 

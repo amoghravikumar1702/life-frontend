@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from "react";
@@ -8,6 +9,7 @@ import {
   Loader2,
   CreditCard,
   IndianRupee,
+  AlertCircle,
 } from "lucide-react";
 
 import { useRecordPayment } from "@/components/Payment/mutations/paymentMutations";
@@ -54,9 +56,13 @@ export default function PaymentForm({
   const maxAmount =
     selectedInvoiceData?.balance_due ?? 0;
 
-  function handleInvoiceChange(
-    value: string
-  ) {
+  function clearError() {
+    if (error) {
+      setError("");
+    }
+  }
+
+  function handleInvoiceChange(value: string) {
     setSelectedInvoice(value);
     setError("");
 
@@ -80,18 +86,15 @@ export default function PaymentForm({
 
     setError("");
 
-    const invoiceId =
-      Number(selectedInvoice);
-
-    const paymentAmount =
-      Number(amount);
+    const invoiceId = Number(selectedInvoice);
+    const paymentAmount = Number(amount);
 
     if (
       !Number.isInteger(invoiceId) ||
       invoiceId <= 0
     ) {
       setError(
-        "Please select an invoice."
+        "Please select an invoice before recording the payment."
       );
       return;
     }
@@ -101,7 +104,7 @@ export default function PaymentForm({
       paymentAmount <= 0
     ) {
       setError(
-        "Please enter a valid payment amount."
+        "Please enter a valid payment amount greater than ₹0."
       );
       return;
     }
@@ -127,10 +130,7 @@ export default function PaymentForm({
         paymentStatus: "completed",
       });
 
-      router.push(
-        `/invoices/${invoiceId}`
-      );
-
+      router.push(`/invoices/${invoiceId}`);
       router.refresh();
     } catch (error) {
       console.error(
@@ -141,7 +141,7 @@ export default function PaymentForm({
       setError(
         error instanceof Error
           ? error.message
-          : "Failed to record payment."
+          : "Failed to record payment. Please try again."
       );
     }
   }
@@ -150,17 +150,18 @@ export default function PaymentForm({
     paymentMutation.isPending;
 
   return (
-    <div className="mx-auto w-full max-w-3xl">
+    <div className="mx-auto w-full max-w-3xl overflow-x-hidden">
       {/* BACK */}
 
       <button
         type="button"
         onClick={() => router.back()}
         className="
-          mb-6
+          mb-5
           inline-flex
-          h-10
+          min-h-11
           items-center
+          justify-center
           gap-2
           rounded-xl
           border
@@ -175,6 +176,8 @@ export default function PaymentForm({
           hover:border-white/[0.12]
           hover:bg-white/[0.04]
           hover:text-white
+          active:scale-[0.98]
+          sm:mb-6
         "
       >
         <ArrowLeft size={14} />
@@ -183,7 +186,7 @@ export default function PaymentForm({
 
       {/* HEADER */}
 
-      <div className="mb-6">
+      <div className="mb-5 min-w-0 sm:mb-6">
         <p
           className="
             text-[9px]
@@ -199,16 +202,18 @@ export default function PaymentForm({
         <h1
           className="
             mt-2
-            text-3xl
+            text-2xl
             font-semibold
+            leading-tight
             tracking-[-0.04em]
             text-white
+            sm:text-3xl
           "
         >
           Record Payment
         </h1>
 
-        <p className="mt-2 text-sm text-zinc-500">
+        <p className="mt-2 max-w-xl text-sm leading-6 text-zinc-500">
           Record a payment received against an
           outstanding invoice.
         </p>
@@ -219,11 +224,13 @@ export default function PaymentForm({
       <form
         onSubmit={handleSubmit}
         className="
+          w-full
           overflow-hidden
-          rounded-[28px]
+          rounded-[24px]
           border
           border-white/[0.06]
           bg-[#101318]
+          sm:rounded-[28px]
         "
       >
         {/* TOP GOLD LINE */}
@@ -239,10 +246,17 @@ export default function PaymentForm({
           "
         />
 
-        <div className="space-y-7 p-6 sm:p-8">
+        <div
+          className="
+            space-y-6
+            p-4
+            sm:space-y-7
+            sm:p-8
+          "
+        >
           {/* INVOICE */}
 
-          <div>
+          <div className="min-w-0">
             <label
               htmlFor="invoice"
               className="
@@ -268,6 +282,7 @@ export default function PaymentForm({
                   px-4
                   py-3
                   text-sm
+                  leading-6
                   text-amber-400/80
                 "
               >
@@ -287,11 +302,12 @@ export default function PaymentForm({
                 className="
                   h-12
                   w-full
+                  min-w-0
                   rounded-xl
                   border
                   border-white/[0.08]
                   bg-white/[0.025]
-                  px-4
+                  px-3
                   text-sm
                   text-white
                   outline-none
@@ -299,6 +315,7 @@ export default function PaymentForm({
                   focus:border-[#D4AF37]/30
                   disabled:cursor-not-allowed
                   disabled:opacity-50
+                  sm:px-4
                 "
               >
                 <option
@@ -308,24 +325,20 @@ export default function PaymentForm({
                   Select an invoice
                 </option>
 
-                {invoices.map(
-                  (invoice) => (
-                    <option
-                      key={invoice.id}
-                      value={invoice.id}
-                      className="bg-[#101318]"
-                    >
-                      {invoice.invoice_number} —{" "}
-                      {invoice.customer} — ₹
-                      {Number(
-                        invoice.balance_due
-                      ).toLocaleString(
-                        "en-IN"
-                      )}{" "}
-                      due
-                    </option>
-                  )
-                )}
+                {invoices.map((invoice) => (
+                  <option
+                    key={invoice.id}
+                    value={invoice.id}
+                    className="bg-[#101318]"
+                  >
+                    {invoice.invoice_number} —{" "}
+                    {invoice.customer} — ₹
+                    {Number(
+                      invoice.balance_due
+                    ).toLocaleString("en-IN")}{" "}
+                    due
+                  </option>
+                ))}
               </select>
             )}
           </div>
@@ -336,6 +349,7 @@ export default function PaymentForm({
             <div
               className="
                 grid
+                min-w-0
                 grid-cols-1
                 gap-3
                 sm:grid-cols-3
@@ -343,6 +357,7 @@ export default function PaymentForm({
             >
               <div
                 className="
+                  min-w-0
                   rounded-2xl
                   border
                   border-white/[0.06]
@@ -354,15 +369,14 @@ export default function PaymentForm({
                   Invoice
                 </p>
 
-                <p className="mt-2 text-sm font-medium text-white">
-                  {
-                    selectedInvoiceData.invoice_number
-                  }
+                <p className="mt-2 break-words text-sm font-medium text-white">
+                  {selectedInvoiceData.invoice_number}
                 </p>
               </div>
 
               <div
                 className="
+                  min-w-0
                   rounded-2xl
                   border
                   border-white/[0.06]
@@ -374,15 +388,14 @@ export default function PaymentForm({
                   Customer
                 </p>
 
-                <p className="mt-2 truncate text-sm font-medium text-white">
-                  {
-                    selectedInvoiceData.customer
-                  }
+                <p className="mt-2 break-words text-sm font-medium text-white">
+                  {selectedInvoiceData.customer}
                 </p>
               </div>
 
               <div
                 className="
+                  min-w-0
                   rounded-2xl
                   border
                   border-[#D4AF37]/10
@@ -394,17 +407,14 @@ export default function PaymentForm({
                   Balance Due
                 </p>
 
-                <p className="mt-2 text-sm font-semibold text-[#F3D37A]">
+                <p className="mt-2 break-words text-sm font-semibold text-[#F3D37A]">
                   ₹
                   {Number(
                     selectedInvoiceData.balance_due
-                  ).toLocaleString(
-                    "en-IN",
-                    {
-                      minimumFractionDigits: 2,
-                      maximumFractionDigits: 2,
-                    }
-                  )}
+                  ).toLocaleString("en-IN", {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })}
                 </p>
               </div>
             </div>
@@ -412,7 +422,7 @@ export default function PaymentForm({
 
           {/* AMOUNT */}
 
-          <div>
+          <div className="min-w-0">
             <label
               htmlFor="amount"
               className="
@@ -446,6 +456,7 @@ export default function PaymentForm({
               <input
                 id="amount"
                 type="number"
+                inputMode="decimal"
                 min="0.01"
                 step="0.01"
                 max={
@@ -454,11 +465,10 @@ export default function PaymentForm({
                     : undefined
                 }
                 value={amount}
-                onChange={(event) =>
-                  setAmount(
-                    event.target.value
-                  )
-                }
+                onChange={(event) => {
+                  setAmount(event.target.value);
+                  clearError();
+                }}
                 disabled={
                   isSubmitting ||
                   !selectedInvoice
@@ -467,6 +477,7 @@ export default function PaymentForm({
                 className="
                   h-12
                   w-full
+                  min-w-0
                   rounded-xl
                   border
                   border-white/[0.08]
@@ -486,24 +497,21 @@ export default function PaymentForm({
             </div>
 
             {selectedInvoiceData && (
-              <p className="mt-2 text-[11px] text-zinc-600">
+              <p className="mt-2 break-words text-[11px] leading-5 text-zinc-600">
                 Maximum recordable amount: ₹
                 {Number(
                   selectedInvoiceData.balance_due
-                ).toLocaleString(
-                  "en-IN",
-                  {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2,
-                  }
-                )}
+                ).toLocaleString("en-IN", {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}
               </p>
             )}
           </div>
 
           {/* PAYMENT METHOD */}
 
-          <div>
+          <div className="min-w-0">
             <label
               htmlFor="paymentMethod"
               className="
@@ -537,15 +545,17 @@ export default function PaymentForm({
               <select
                 id="paymentMethod"
                 value={paymentMethod}
-                onChange={(event) =>
+                onChange={(event) => {
                   setPaymentMethod(
                     event.target.value
-                  )
-                }
+                  );
+                  clearError();
+                }}
                 disabled={isSubmitting}
                 className="
                   h-12
                   w-full
+                  min-w-0
                   appearance-none
                   rounded-xl
                   border
@@ -603,7 +613,7 @@ export default function PaymentForm({
 
           {/* REFERENCE */}
 
-          <div>
+          <div className="min-w-0">
             <label
               htmlFor="paymentReference"
               className="
@@ -617,6 +627,7 @@ export default function PaymentForm({
               "
             >
               Payment Reference
+
               <span className="ml-2 normal-case tracking-normal text-zinc-700">
                 Optional
               </span>
@@ -626,16 +637,18 @@ export default function PaymentForm({
               id="paymentReference"
               type="text"
               value={paymentReference}
-              onChange={(event) =>
+              onChange={(event) => {
                 setPaymentReference(
                   event.target.value
-                )
-              }
+                );
+                clearError();
+              }}
               disabled={isSubmitting}
               placeholder="UPI reference, transaction ID, etc."
               className="
                 h-12
                 w-full
+                min-w-0
                 rounded-xl
                 border
                 border-white/[0.08]
@@ -657,18 +670,47 @@ export default function PaymentForm({
 
           {error && (
             <div
+              role="alert"
+              aria-live="assertive"
               className="
-                rounded-xl
+                rounded-2xl
                 border
                 border-red-400/15
                 bg-red-400/[0.04]
                 px-4
-                py-3
+                py-4
               "
             >
-              <p className="text-xs leading-5 text-red-400">
-                {error}
-              </p>
+              <div className="flex items-start gap-3">
+                <div
+                  className="
+                    mt-0.5
+                    flex
+                    h-7
+                    w-7
+                    shrink-0
+                    items-center
+                    justify-center
+                    rounded-lg
+                    bg-red-400/[0.08]
+                  "
+                >
+                  <AlertCircle
+                    size={15}
+                    className="text-red-400"
+                  />
+                </div>
+
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-red-300">
+                    Payment could not be recorded
+                  </p>
+
+                  <p className="mt-1 break-words text-xs leading-5 text-red-400/80">
+                    {error}
+                  </p>
+                </div>
+              </div>
             </div>
           )}
 
@@ -681,9 +723,10 @@ export default function PaymentForm({
               gap-3
               border-t
               border-white/[0.05]
-              pt-6
+              pt-5
               sm:flex-row
               sm:justify-end
+              sm:pt-6
             "
           >
             <button
@@ -692,7 +735,8 @@ export default function PaymentForm({
               disabled={isSubmitting}
               className="
                 inline-flex
-                h-11
+                min-h-11
+                w-full
                 items-center
                 justify-center
                 rounded-xl
@@ -707,8 +751,10 @@ export default function PaymentForm({
                 hover:border-white/[0.12]
                 hover:bg-white/[0.04]
                 hover:text-white
+                active:scale-[0.98]
                 disabled:cursor-not-allowed
                 disabled:opacity-50
+                sm:w-auto
               "
             >
               Cancel
@@ -722,7 +768,8 @@ export default function PaymentForm({
               }
               className="
                 inline-flex
-                h-11
+                min-h-11
+                w-full
                 items-center
                 justify-center
                 gap-2
@@ -738,8 +785,10 @@ export default function PaymentForm({
                 duration-200
                 hover:border-[#D4AF37]/30
                 hover:bg-[#D4AF37]/15
+                active:scale-[0.98]
                 disabled:cursor-not-allowed
                 disabled:opacity-40
+                sm:w-auto
               "
             >
               {isSubmitting ? (

@@ -1,4 +1,4 @@
-# ArkenOne Database Architecture
+# DhanarkOS Database Architecture
 
 Version 1.0
 

@@ -53,7 +53,7 @@ export async function POST(request: Request) {
     );
   } catch (error) {
     console.error(
-      "[ArkenOne CFO] Request failed:",
+      "[DhanarkOS CFO] Request failed:",
       error instanceof Error
         ? error.message
         : error

@@ -30,7 +30,7 @@ export default async function ForgotPasswordPage({
             </div>
 
             <span className="text-lg font-medium text-zinc-100">
-              ArkenOne
+              DhanarkOS
             </span>
           </div>
 
@@ -69,7 +69,7 @@ export default async function ForgotPasswordPage({
 
               <p className="mt-4 text-sm leading-7 text-zinc-500">
                 Enter the email associated with your
-                ArkenOne workspace and we'll send you
+                DhanarkOS workspace and we'll send you
                 a secure password reset link.
               </p>
 

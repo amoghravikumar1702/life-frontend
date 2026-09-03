@@ -235,7 +235,7 @@ export default async function AICFOPage() {
               text-[#D4AF37]
             "
           >
-            ArkenOne EXECUTIVE INTELLIGENCE
+            DhanarkOS EXECUTIVE INTELLIGENCE
           </p>
 
           <p

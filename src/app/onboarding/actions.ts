@@ -1,9 +1,8 @@
-// src/app/onboarding/actions.ts
-
 "use server";
 
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { supabaseAdmin } from "@/lib/server/supabase";
 
 export type PaymentMethod =
   | "razorpay"
@@ -34,9 +33,7 @@ export type OnboardingData = {
   paymentRazorpayAccountId: string;
 };
 
-function cleanString(
-  value: unknown
-): string {
+function cleanString(value: unknown): string {
   return typeof value === "string"
     ? value.trim()
     : "";
@@ -78,192 +75,240 @@ function cleanRevenue(
   return Math.max(0, number);
 }
 
-function normalizePhone(
-  value: string
+/*
+ * ============================================================
+ * PHONE NORMALIZATION
+ * ============================================================
+ */
+
+function normalizeIndianPhone(
+  value: unknown
 ): string {
-  const digits = value.replace(
+  const raw = cleanString(value);
+
+  if (!raw) {
+    throw new Error(
+      "Please enter your phone number."
+    );
+  }
+
+  const digits = raw.replace(
     /\D/g,
     ""
   );
 
-  if (
-    digits.startsWith("91") &&
-    digits.length === 12
-  ) {
-    return `+${digits}`;
-  }
+  let normalized = "";
 
   if (digits.length === 10) {
-    return `+91${digits}`;
+    normalized = `+91${digits}`;
+  } else if (
+    digits.length === 12 &&
+    digits.startsWith("91")
+  ) {
+    normalized = `+${digits}`;
+  } else if (
+    digits.length === 13 &&
+    digits.startsWith("091")
+  ) {
+    normalized = `+${digits.slice(1)}`;
+  } else {
+    throw new Error(
+      "Please enter a valid Indian mobile number."
+    );
   }
 
-  throw new Error(
-    "Please enter a valid Indian mobile number."
+  if (
+    !/^\+91[6-9]\d{9}$/.test(
+      normalized
+    )
+  ) {
+    throw new Error(
+      "Please enter a valid Indian mobile number."
+    );
+  }
+
+  return normalized;
+}
+
+/*
+ * ============================================================
+ * CREATE TRIAL
+ * ============================================================
+ */
+
+async function createTrialForUser({
+  userId,
+  companyId,
+  phoneE164,
+}: {
+  userId: string;
+  companyId: number;
+  phoneE164: string;
+}) {
+  /*
+   * Check whether this phone has already been used.
+   */
+
+  const {
+    data: existingPhoneTrial,
+    error: phoneLookupError,
+  } =
+    await supabaseAdmin
+      .from("dhanarkos_trials")
+      .select(
+        `
+          id,
+          user_id,
+          trial_status,
+          subscription_status
+        `
+      )
+      .eq(
+        "phone_e164",
+        phoneE164
+      )
+      .limit(1)
+      .maybeSingle();
+
+  if (phoneLookupError) {
+    console.error(
+      "[DhanarkOS Trial] Phone lookup failed:",
+      {
+        message:
+          phoneLookupError.message,
+        code:
+          phoneLookupError.code,
+        details:
+          phoneLookupError.details,
+        hint:
+          phoneLookupError.hint,
+      }
+    );
+
+    throw new Error(
+      `Unable to verify trial eligibility. [${phoneLookupError.code}] ${phoneLookupError.message}`
+    );
+  }
+
+  /*
+   * Same user's existing trial.
+   */
+
+  if (existingPhoneTrial) {
+    if (
+      existingPhoneTrial.user_id ===
+      userId
+    ) {
+      return;
+    }
+
+    throw new Error(
+      "A DhanarkOS trial has already been used with this phone number. Please sign in to the existing account or choose a subscription."
+    );
+  }
+
+  /*
+   * ==========================================================
+   * CREATE NEW 7-DAY TRIAL
+   * ==========================================================
+   */
+
+  const startedAt =
+    new Date();
+
+  const endsAt =
+    new Date(
+      startedAt.getTime() +
+        7 *
+          24 *
+          60 *
+          60 *
+          1000
+    );
+
+  const {
+    error: trialInsertError,
+  } =
+    await supabaseAdmin
+      .from("dhanarkos_trials")
+      .insert({
+        user_id:
+          userId,
+
+        company_id:
+          companyId,
+
+        phone_e164:
+          phoneE164,
+
+        trial_status:
+          "trialing",
+
+        trial_started_at:
+          startedAt.toISOString(),
+
+        trial_ends_at:
+          endsAt.toISOString(),
+
+        subscription_status:
+          "none",
+
+        trial_fingerprint:
+          phoneE164,
+      });
+
+  if (trialInsertError) {
+    console.error(
+      "[DhanarkOS Trial] Trial creation failed:",
+      {
+        message:
+          trialInsertError.message,
+        code:
+          trialInsertError.code,
+        details:
+          trialInsertError.details,
+        hint:
+          trialInsertError.hint,
+      }
+    );
+
+    if (
+      trialInsertError.code ===
+      "23505"
+    ) {
+      throw new Error(
+        "A DhanarkOS trial already exists for this account or phone number."
+      );
+    }
+
+    throw new Error(
+      `Unable to start your DhanarkOS trial. [${trialInsertError.code}] ${trialInsertError.message}`
+    );
+  }
+
+  console.log(
+    "[DhanarkOS Trial] Trial created successfully:",
+    userId
   );
 }
 
-export async function sendPhoneVerification(
-  phone: string
-) {
-  const supabase =
-    await createClient();
-
-  const {
-    data: { user },
-    error: authError,
-  } =
-    await supabase.auth.getUser();
-
-  if (authError || !user) {
-    redirect("/login");
-  }
-
-  const normalizedPhone =
-    normalizePhone(
-      cleanString(phone)
-    );
-
-  const {
-    data: existingTrial,
-    error: trialLookupError,
-  } =
-    await supabase
-      .from("arkenone_trials")
-      .select("id")
-      .eq(
-        "phone_e164",
-        normalizedPhone
-      )
-      .maybeSingle();
-
-  if (trialLookupError) {
-    console.error(
-      "[Trial] Phone eligibility lookup failed:",
-      trialLookupError
-    );
-
-    throw new Error(
-      "Unable to check trial eligibility. Please try again."
-    );
-  }
-
-  if (existingTrial) {
-    throw new Error(
-      "This phone number has already been used for an ArkenOne trial. Please continue with a paid plan."
-    );
-  }
-
-  const {
-    error: updateError,
-  } =
-    await supabase.auth.updateUser({
-      phone: normalizedPhone,
-    });
-
-  if (updateError) {
-    console.error(
-      "[Trial] Phone verification request failed:",
-      updateError
-    );
-
-    throw new Error(
-      updateError.message
-    );
-  }
-
-  return {
-    success: true,
-    phone: normalizedPhone,
-  };
-}
-
-export async function verifyPhone(
-  phone: string,
-  token: string
-) {
-  const supabase =
-    await createClient();
-
-  const {
-    data: { user },
-    error: authError,
-  } =
-    await supabase.auth.getUser();
-
-  if (authError || !user) {
-    redirect("/login");
-  }
-
-  const normalizedPhone =
-    normalizePhone(
-      cleanString(phone)
-    );
-
-  const cleanToken =
-    cleanString(token);
-
-  if (!/^\d{6}$/.test(cleanToken)) {
-    throw new Error(
-      "Please enter the 6-digit verification code."
-    );
-  }
-
-  const {
-    data: existingTrial,
-    error: trialLookupError,
-  } =
-    await supabase
-      .from("arkenone_trials")
-      .select("id")
-      .eq(
-        "phone_e164",
-        normalizedPhone
-      )
-      .maybeSingle();
-
-  if (trialLookupError) {
-    throw new Error(
-      "Unable to check trial eligibility."
-    );
-  }
-
-  if (existingTrial) {
-    throw new Error(
-      "This phone number has already been used for an ArkenOne trial."
-    );
-  }
-
-  const {
-    error: verifyError,
-  } =
-    await supabase.auth.verifyOtp({
-      phone: normalizedPhone,
-      token: cleanToken,
-      type: "phone_change",
-    });
-
-  if (verifyError) {
-    console.error(
-      "[Trial] Phone verification failed:",
-      verifyError
-    );
-
-    throw new Error(
-      verifyError.message
-    );
-  }
-
-  return {
-    success: true,
-    phone: normalizedPhone,
-  };
-}
+/*
+ * ============================================================
+ * SAVE ONBOARDING DATA
+ * ============================================================
+ */
 
 export async function saveOnboardingData(
   data: OnboardingData
 ) {
   const supabase =
     await createClient();
+
+  /*
+   * ==========================================================
+   * AUTHENTICATION
+   * ==========================================================
+   */
 
   const {
     data: { user },
@@ -274,7 +319,14 @@ export async function saveOnboardingData(
   if (authError) {
     console.error(
       "[Onboarding] Auth error:",
-      authError
+      {
+        message:
+          authError.message,
+        code:
+          authError.code,
+        status:
+          authError.status,
+      }
     );
 
     throw new Error(
@@ -286,22 +338,36 @@ export async function saveOnboardingData(
     redirect("/login");
   }
 
+  /*
+   * ==========================================================
+   * CLEAN INPUT
+   * ==========================================================
+   */
+
   const companyName =
-    cleanString(data.companyName);
+    cleanString(
+      data.companyName
+    );
 
   const ownerName =
-    cleanString(data.ownerName);
+    cleanString(
+      data.ownerName
+    );
 
   const phone =
-    normalizePhone(
-      cleanString(data.phone)
+    cleanString(
+      data.phone
     );
 
   const businessModel =
-    cleanString(data.businessModel);
+    cleanString(
+      data.businessModel
+    );
 
   const industry =
-    cleanString(data.industry);
+    cleanString(
+      data.industry
+    );
 
   const yearsInBusiness =
     cleanNumber(
@@ -309,7 +375,9 @@ export async function saveOnboardingData(
     );
 
   const employees =
-    cleanNumber(data.employees);
+    cleanNumber(
+      data.employees
+    );
 
   const startingRevenue =
     cleanRevenue(
@@ -361,6 +429,12 @@ export async function saveOnboardingData(
       data.paymentRazorpayAccountId
     );
 
+  /*
+   * ==========================================================
+   * VALIDATION
+   * ==========================================================
+   */
+
   if (!companyName) {
     throw new Error(
       "Please enter your business name."
@@ -375,7 +449,7 @@ export async function saveOnboardingData(
 
   if (!phone) {
     throw new Error(
-      "Please verify your phone number."
+      "Please enter your phone number."
     );
   }
 
@@ -447,7 +521,8 @@ export async function saveOnboardingData(
   }
 
   if (
-    paymentMethod === "bank_transfer" &&
+    paymentMethod ===
+      "bank_transfer" &&
     (!paymentBankName ||
       !paymentBankAccountName ||
       !paymentBankAccountNumber ||
@@ -459,7 +534,8 @@ export async function saveOnboardingData(
   }
 
   if (
-    paymentMethod === "razorpay" &&
+    paymentMethod ===
+      "razorpay" &&
     !paymentRazorpayAccountId
   ) {
     throw new Error(
@@ -468,102 +544,60 @@ export async function saveOnboardingData(
   }
 
   /*
-   * ============================================================
-   * PHONE VERIFICATION CHECK
-   * ============================================================
+   * ==========================================================
+   * NORMALIZE PHONE
+   * ==========================================================
    */
 
-  const {
-    data: verifiedUser,
-    error: verifiedUserError,
-  } =
-    await supabase.auth.getUser();
-
-  if (
-    verifiedUserError ||
-    !verifiedUser.user
-  ) {
-    redirect("/login");
-  }
-
-  const verifiedPhone =
-    verifiedUser.user.phone;
-
-  if (
-    !verifiedPhone ||
-    verifiedPhone !== phone
-  ) {
-    throw new Error(
-      "Please verify the phone number before completing onboarding."
+  const phoneE164 =
+    normalizeIndianPhone(
+      phone
     );
-  }
 
   /*
-   * ============================================================
-   * TRIAL ELIGIBILITY
-   * ============================================================
-   */
-
-  const {
-    data: existingTrial,
-    error: trialLookupError,
-  } =
-    await supabase
-      .from("arkenone_trials")
-      .select(
-        "id, user_id, company_id, trial_status"
-      )
-      .eq(
-        "phone_e164",
-        phone
-      )
-      .maybeSingle();
-
-  if (trialLookupError) {
-    console.error(
-      "[Trial] Eligibility lookup failed:",
-      trialLookupError
-    );
-
-    throw new Error(
-      "Unable to verify trial eligibility."
-    );
-  }
-
-  if (
-    existingTrial &&
-    existingTrial.user_id !== user.id
-  ) {
-    throw new Error(
-      "This phone number has already been used for an ArkenOne trial. Please choose a paid plan."
-    );
-  }
-
-  /*
-   * ============================================================
-   * COMPANY LOOKUP
-   * ============================================================
+   * ==========================================================
+   * FIND COMPANY
+   * ==========================================================
    */
 
   const {
     data: existingCompany,
     error: lookupError,
-  } = await supabase
-    .from("companies")
-    .select("id")
-    .eq("owner_id", user.id)
-    .maybeSingle();
+  } =
+    await supabase
+      .from("companies")
+      .select("id")
+      .eq(
+        "owner_id",
+        user.id
+      )
+      .maybeSingle();
 
   if (lookupError) {
     console.error(
       "[Onboarding] Company lookup failed:",
-      lookupError
+      {
+        message:
+          lookupError.message,
+        code:
+          lookupError.code,
+        details:
+          lookupError.details,
+        hint:
+          lookupError.hint,
+      }
     );
 
     throw new Error(
       `Unable to find your business profile. [${lookupError.code}] ${lookupError.message}`
     );
   }
+
+  /*
+   * ============================================================
+   * COMPANY DATA
+   * ============================================================
+   */
 
   const companyData = {
     company_name:
@@ -576,7 +610,7 @@ export async function saveOnboardingData(
       user.email ?? "",
 
     phone:
-      phone,
+      phoneE164,
 
     industry:
       industry,
@@ -603,32 +637,38 @@ export async function saveOnboardingData(
       paymentPhone,
 
     payment_upi_id:
-      paymentMethod === "upi"
+      paymentMethod ===
+      "upi"
         ? paymentUpiId
         : "",
 
     payment_bank_name:
-      paymentMethod === "bank_transfer"
+      paymentMethod ===
+      "bank_transfer"
         ? paymentBankName
         : "",
 
     payment_bank_account_name:
-      paymentMethod === "bank_transfer"
+      paymentMethod ===
+      "bank_transfer"
         ? paymentBankAccountName
         : "",
 
     payment_bank_account_number:
-      paymentMethod === "bank_transfer"
+      paymentMethod ===
+      "bank_transfer"
         ? paymentBankAccountNumber
         : "",
 
     payment_bank_ifsc:
-      paymentMethod === "bank_transfer"
+      paymentMethod ===
+      "bank_transfer"
         ? paymentBankIfsc
         : "",
 
     payment_razorpay_account_id:
-      paymentMethod === "razorpay"
+      paymentMethod ===
+      "razorpay"
         ? paymentRazorpayAccountId
         : "",
 
@@ -636,7 +676,11 @@ export async function saveOnboardingData(
       new Date().toISOString(),
   };
 
-  let companyId: string;
+  /*
+   * ============================================================
+   * UPDATE EXISTING COMPANY
+   * ============================================================
+   */
 
   if (existingCompany) {
     console.log(
@@ -646,22 +690,32 @@ export async function saveOnboardingData(
 
     const {
       error: updateError,
-    } = await supabase
-      .from("companies")
-      .update(companyData)
-      .eq(
-        "id",
-        existingCompany.id
-      )
-      .eq(
-        "owner_id",
-        user.id
-      );
+    } =
+      await supabase
+        .from("companies")
+        .update(companyData)
+        .eq(
+          "id",
+          existingCompany.id
+        )
+        .eq(
+          "owner_id",
+          user.id
+        );
 
     if (updateError) {
       console.error(
         "[Onboarding] Company update failed:",
-        updateError
+        {
+          message:
+            updateError.message,
+          code:
+            updateError.code,
+          details:
+            updateError.details,
+          hint:
+            updateError.hint,
+        }
       );
 
       throw new Error(
@@ -669,18 +723,246 @@ export async function saveOnboardingData(
       );
     }
 
-    companyId =
-      existingCompany.id;
-  } else {
-    console.log(
-      "[Onboarding] Creating company for:",
-      user.id
-    );
+    /*
+     * ==========================================================
+     * FIND EXISTING TRIAL
+     * ==========================================================
+     *
+     * Pricing may already have created the trial record before
+     * onboarding.
+     *
+     * Therefore we MUST NOT blindly create another trial.
+     */
 
     const {
-      data: createdCompany,
-      error: insertError,
-    } = await supabase
+      data: existingTrial,
+      error: existingTrialError,
+    } =
+      await supabaseAdmin
+        .from("dhanarkos_trials")
+        .select(
+          `
+            id,
+            user_id,
+            company_id,
+            phone_e164,
+            trial_status,
+            trial_ends_at,
+            subscription_status,
+            razorpay_subscription_id,
+            selected_plan,
+            subscription_plan_id,
+            subscription_plan,
+            subscription_billing_cycle
+          `
+        )
+        .eq(
+          "user_id",
+          user.id
+        )
+        .maybeSingle();
+
+    if (existingTrialError) {
+      console.error(
+        "[DhanarkOS Trial] Existing trial lookup failed:",
+        {
+          message:
+            existingTrialError.message,
+          code:
+            existingTrialError.code,
+          details:
+            existingTrialError.details,
+          hint:
+            existingTrialError.hint,
+        }
+      );
+
+      throw new Error(
+        `Unable to verify your DhanarkOS trial. [${existingTrialError.code}] ${existingTrialError.message}`
+      );
+    }
+
+    /*
+     * ==========================================================
+     * EXISTING TRIAL
+     * ==========================================================
+     *
+     * This is the important part.
+     *
+     * If Pricing already created the trial:
+     *
+     *   user_id          → already exists
+     *   razorpay_sub_id  → already exists if subscribed
+     *   selected_plan    → already exists
+     *
+     * We now attach:
+     *
+     *   company_id
+     *   phone_e164
+     *   trial_fingerprint
+     *
+     * We preserve the existing trial dates and subscription data.
+     */
+
+    if (existingTrial) {
+      console.log(
+        "[DhanarkOS Trial] Existing trial found. Attaching onboarding data:",
+        existingTrial.id
+      );
+
+      /*
+       * Safety check:
+       *
+       * If this phone belongs to a different trial,
+       * do not overwrite it.
+       */
+
+      const {
+        data: phoneTrial,
+        error: phoneTrialError,
+      } =
+        await supabaseAdmin
+          .from("dhanarkos_trials")
+          .select(
+            `
+              id,
+              user_id
+            `
+          )
+          .eq(
+            "phone_e164",
+            phoneE164
+          )
+          .neq(
+            "id",
+            existingTrial.id
+          )
+          .limit(1)
+          .maybeSingle();
+
+      if (phoneTrialError) {
+        console.error(
+          "[DhanarkOS Trial] Phone ownership check failed:",
+          phoneTrialError
+        );
+
+        throw new Error(
+          `Unable to verify phone ownership. [${phoneTrialError.code}] ${phoneTrialError.message}`
+        );
+      }
+
+      if (phoneTrial) {
+        throw new Error(
+          "A DhanarkOS trial has already been used with this phone number. Please sign in to the existing account or choose a subscription."
+        );
+      }
+
+      /*
+       * Attach onboarding data to the existing trial.
+       */
+
+      const {
+        error: trialUpdateError,
+      } =
+        await supabaseAdmin
+          .from("dhanarkos_trials")
+          .update({
+            company_id:
+              Number(
+                existingCompany.id
+              ),
+
+            phone_e164:
+              phoneE164,
+
+            trial_fingerprint:
+              phoneE164,
+
+            updated_at:
+              new Date().toISOString(),
+          })
+          .eq(
+            "id",
+            existingTrial.id
+          )
+          .eq(
+            "user_id",
+            user.id
+          );
+
+      if (trialUpdateError) {
+        console.error(
+          "[DhanarkOS Trial] Existing trial update failed:",
+          {
+            message:
+              trialUpdateError.message,
+            code:
+              trialUpdateError.code,
+            details:
+              trialUpdateError.details,
+            hint:
+              trialUpdateError.hint,
+          }
+        );
+
+        throw new Error(
+          `Unable to complete your DhanarkOS trial setup. [${trialUpdateError.code}] ${trialUpdateError.message}`
+        );
+      }
+
+      console.log(
+        "[DhanarkOS Trial] Existing trial successfully attached to company."
+      );
+    } else {
+      /*
+       * ==========================================================
+       * NO EXISTING TRIAL
+       * ==========================================================
+       *
+       * This supports users who reached onboarding without going
+       * through the pre-created trial flow.
+       */
+
+      console.log(
+        "[DhanarkOS Trial] No existing trial found. Creating one."
+      );
+
+      await createTrialForUser({
+        userId:
+          user.id,
+
+        companyId:
+          Number(
+            existingCompany.id
+          ),
+
+        phoneE164,
+      });
+    }
+
+    console.log(
+      "[Onboarding] Company and trial setup completed successfully."
+    );
+
+    redirect("/dashboard");
+  }
+
+  /*
+   * ============================================================
+   * CREATE COMPANY
+   * ============================================================
+   */
+
+  console.log(
+    "[Onboarding] Creating company for:",
+    user.id
+  );
+
+  const {
+    data: createdCompany,
+    error: insertError,
+  } =
+    await supabase
       .from("companies")
       .insert({
         owner_id:
@@ -696,7 +978,7 @@ export async function saveOnboardingData(
           user.email ?? "",
 
         phone:
-          phone,
+          phoneE164,
 
         website:
           "",
@@ -747,7 +1029,8 @@ export async function saveOnboardingData(
           paymentPhone,
 
         payment_upi_id:
-          paymentMethod === "upi"
+          paymentMethod ===
+          "upi"
             ? paymentUpiId
             : "",
 
@@ -787,110 +1070,215 @@ export async function saveOnboardingData(
       .select("id")
       .single();
 
-    if (insertError) {
-      console.error(
-        "[Onboarding] Company creation failed:",
-        insertError
-      );
+  if (insertError) {
+    console.error(
+      "[Onboarding] Company creation failed:",
+      {
+        message:
+          insertError.message,
+        code:
+          insertError.code,
+        details:
+          insertError.details,
+        hint:
+          insertError.hint,
+      }
+    );
 
-      throw new Error(
-        `Unable to create your business profile. [${insertError.code}] ${insertError.message}`
-      );
-    }
-
-    companyId =
-      createdCompany.id;
+    throw new Error(
+      `Unable to create your business profile. [${insertError.code}] ${insertError.message}`
+    );
   }
 
   /*
    * ============================================================
-   * CREATE ONE-TIME TRIAL
+   * CHECK FOR PRE-CREATED TRIAL
    * ============================================================
    *
-   * IMPORTANT:
-   * The unique phone index makes the protection database-level.
-   * A second email cannot create another trial using the same
-   * verified phone number.
-   *
-   * Trial length:
-   * 14 days.
-   *
-   * Change TRIAL_LENGTH_DAYS when the final commercial trial
-   * duration is locked.
+   * Pricing may have already created a trial before onboarding.
    */
 
-  const TRIAL_LENGTH_DAYS = 14;
+  const {
+    data: existingTrial,
+    error: existingTrialError,
+  } =
+    await supabaseAdmin
+      .from("dhanarkos_trials")
+      .select(
+        `
+          id,
+          user_id,
+          company_id,
+          phone_e164,
+          trial_status,
+          trial_ends_at,
+          subscription_status,
+          razorpay_subscription_id,
+          selected_plan,
+          subscription_plan_id,
+          subscription_plan,
+          subscription_billing_cycle
+        `
+      )
+      .eq(
+        "user_id",
+        user.id
+      )
+      .maybeSingle();
 
-  const trialStartedAt =
-    new Date();
-
-  const trialEndsAt =
-    new Date(
-      trialStartedAt.getTime() +
-        TRIAL_LENGTH_DAYS *
-          24 *
-          60 *
-          60 *
-          1000
+  if (existingTrialError) {
+    console.error(
+      "[DhanarkOS Trial] Trial lookup failed after company creation:",
+      existingTrialError
     );
 
-  if (!existingTrial) {
+    throw new Error(
+      `Unable to verify your DhanarkOS trial. [${existingTrialError.code}] ${existingTrialError.message}`
+    );
+  }
+
+  /*
+   * ============================================================
+   * ATTACH EXISTING TRIAL
+   * ============================================================
+   */
+
+  if (existingTrial) {
+    console.log(
+      "[DhanarkOS Trial] Existing trial found after company creation:",
+      existingTrial.id
+    );
+
+    /*
+     * Make sure this phone is not already attached to another
+     * DhanarkOS account.
+     */
+
     const {
-      error: trialInsertError,
+      data: phoneTrial,
+      error: phoneTrialError,
     } =
-      await supabase
-        .from("arkenone_trials")
-        .insert({
-          user_id:
-            user.id,
+      await supabaseAdmin
+        .from("dhanarkos_trials")
+        .select(
+          `
+            id,
+            user_id
+          `
+        )
+        .eq(
+          "phone_e164",
+          phoneE164
+        )
+        .neq(
+          "id",
+          existingTrial.id
+        )
+        .limit(1)
+        .maybeSingle();
 
-          company_id:
-            companyId,
-
-          phone_e164:
-            phone,
-
-          trial_status:
-            "trialing",
-
-          trial_started_at:
-            trialStartedAt.toISOString(),
-
-          trial_ends_at:
-            trialEndsAt.toISOString(),
-
-          subscription_status:
-            "none",
-        });
-
-    if (trialInsertError) {
+    if (phoneTrialError) {
       console.error(
-        "[Trial] Trial creation failed:",
-        trialInsertError
+        "[DhanarkOS Trial] Phone ownership check failed:",
+        phoneTrialError
       );
 
       throw new Error(
-        `Unable to activate your ArkenOne trial. [${trialInsertError.code}] ${trialInsertError.message}`
+        `Unable to verify phone ownership. [${phoneTrialError.code}] ${phoneTrialError.message}`
+      );
+    }
+
+    if (phoneTrial) {
+      throw new Error(
+        "A DhanarkOS trial has already been used with this phone number. Please sign in to the existing account or choose a subscription."
+      );
+    }
+
+    /*
+     * Attach the newly created company and phone.
+     */
+
+    const {
+      error: trialUpdateError,
+    } =
+      await supabaseAdmin
+        .from("dhanarkos_trials")
+        .update({
+          company_id:
+            Number(
+              createdCompany.id
+            ),
+
+          phone_e164:
+            phoneE164,
+
+          trial_fingerprint:
+            phoneE164,
+
+          updated_at:
+            new Date().toISOString(),
+        })
+        .eq(
+          "id",
+          existingTrial.id
+        )
+        .eq(
+          "user_id",
+          user.id
+        );
+
+    if (trialUpdateError) {
+      console.error(
+        "[DhanarkOS Trial] Trial attachment failed:",
+        trialUpdateError
+      );
+
+      throw new Error(
+        `Unable to complete your DhanarkOS trial setup. [${trialUpdateError.code}] ${trialUpdateError.message}`
       );
     }
 
     console.log(
-      "[Trial] Trial activated:",
-      {
-        userId: user.id,
-        companyId,
-        trialEndsAt:
-          trialEndsAt.toISOString(),
-      }
+      "[DhanarkOS Trial] Existing trial attached successfully."
     );
+  } else {
+    /*
+     * ==========================================================
+     * CREATE NEW TRIAL
+     * ==========================================================
+     */
+
+    await createTrialForUser({
+      userId:
+        user.id,
+
+      companyId:
+        Number(
+          createdCompany.id
+        ),
+
+      phoneE164,
+    });
   }
 
+  /*
+   * ============================================================
+   * COMPLETE
+   * ============================================================
+   */
+
   console.log(
-    "[Onboarding] Onboarding completed successfully."
+    "[Onboarding] Company and trial created successfully."
   );
 
   redirect("/dashboard");
 }
+
+/*
+ * ============================================================
+ * SAVE INDUSTRY
+ * ============================================================
+ */
 
 export async function saveIndustry(
   industry: string

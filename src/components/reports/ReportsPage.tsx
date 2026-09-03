@@ -168,7 +168,7 @@ export default function ReportsPage() {
 
               <div>
                 <p className="text-[10px] font-medium uppercase tracking-[0.4em] text-[#D4AF37]">
-                  ArkenOne Intelligence
+                  DhanarkOS Intelligence
                 </p>
 
                 <p className="mt-1 text-xs text-zinc-600">
@@ -283,7 +283,7 @@ export default function ReportsPage() {
 
           <p className="mt-2 text-xs leading-6 text-zinc-600">
             Professional reports built from your
-            authenticated ArkenOne financial data.
+            authenticated DhanarkOS financial data.
           </p>
         </div>
       </section>
@@ -530,7 +530,7 @@ export default function ReportsPage() {
 
       <div className="flex items-center justify-center gap-2 pt-2 text-center text-[10px] uppercase tracking-[0.2em] text-zinc-700">
         <ShieldCheck size={12} />
-        ArkenOne Executive Intelligence
+        DhanarkOS Executive Intelligence
       </div>
     </div>
   );

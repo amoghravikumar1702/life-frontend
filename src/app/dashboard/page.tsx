@@ -4,32 +4,66 @@ import DashboardV2 from "@/components/Dashboard/DashboardV2";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function DashboardPage() {
-  const supabase = await createClient();
+  const supabase =
+    await createClient();
 
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+    error: authError,
+  } =
+    await supabase.auth.getUser();
 
-  if (!user) {
+  if (authError || !user) {
     redirect("/login");
   }
 
-  const { data: company, error } = await supabase
-    .from("companies")
-    .select("industry")
-    .eq("owner_id", user.id)
-    .maybeSingle();
+  const {
+    data: company,
+    error: companyError,
+  } =
+    await supabase
+      .from("companies")
+      .select(
+        "id, owner_id, industry"
+      )
+      .eq(
+        "owner_id",
+        user.id
+      )
+      .maybeSingle();
 
-  if (error) {
-    console.error(
-      "[Dashboard] Failed to load company:",
-      error
-    );
+  /*
+   * A missing company means onboarding
+   * has not been completed.
+   */
+
+  if (!company) {
+    if (companyError) {
+      console.error(
+        "[Dashboard] Company lookup failed:",
+        {
+          message:
+            companyError.message,
+          code:
+            companyError.code,
+          details:
+            companyError.details,
+          hint:
+            companyError.hint,
+        }
+      );
+    }
 
     redirect("/onboarding");
   }
 
-  if (!company?.industry) {
+  /*
+   * The company exists but doesn't have
+   * the minimum business information needed
+   * by the dashboard.
+   */
+
+  if (!company.industry) {
     redirect("/onboarding");
   }
 

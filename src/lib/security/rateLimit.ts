@@ -1,6 +1,6 @@
 /*
  * ============================================================
- * ARKENONE AI CFO — RATE LIMITER
+ * DhanarkOS AI CFO — RATE LIMITER
  * ============================================================
  *
  * MVP protection against excessive AI CFO requests.

@@ -1,4 +1,4 @@
-# ArkenOne Security Framework
+# DhanarkOS Security Framework
 
 Version 1.0
 

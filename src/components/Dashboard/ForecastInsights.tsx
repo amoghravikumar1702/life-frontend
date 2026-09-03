@@ -41,7 +41,7 @@ export default function ForecastInsights({
           Intelligence
         </p>
 
-        <h2 className="ArkenOne-gold mt-2 text-4xl font-bold">
+        <h2 className="DhanarkOS-gold mt-2 text-4xl font-bold">
           Forecast Insights
         </h2>
 
@@ -69,7 +69,7 @@ export default function ForecastInsights({
 
           </div>
 
-          <h2 className="mt-6 ArkenOne-gold text-5xl font-bold">
+          <h2 className="mt-6 DhanarkOS-gold text-5xl font-bold">
             {cashRunway.toFixed(1)}
           </h2>
 

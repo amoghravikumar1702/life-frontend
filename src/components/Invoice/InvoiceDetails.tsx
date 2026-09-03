@@ -46,6 +46,7 @@ export default function InvoiceDetails({
         />
 
         <input
+          placeholder="Invoice Date"
           type="date"
           value={invoiceDate}
           onChange={(e) => setInvoiceDate(e.target.value)}

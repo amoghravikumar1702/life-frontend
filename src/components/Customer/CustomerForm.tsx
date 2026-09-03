@@ -3,20 +3,35 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { ArrowLeft, Building2, Save } from "lucide-react";
+import {
+  ArrowLeft,
+  Building2,
+  Save,
+} from "lucide-react";
 
 import Input from "@/components/ui/input";
 import Textarea from "@/components/ui/Textarea";
 import PhoneInput from "@/components/ui/PhoneInput";
 
+import {
+  getCustomerById,
+  updateCustomer,
+} from "@/services/customerService";
+
+import { createCustomerAction } from "@/actions/customer";
+
 function parsePhoneNumber(
   value: string | null | undefined
 ) {
   if (!value) {
-    return { countryCode: "+91", phone: "" };
+    return {
+      countryCode: "+91",
+      phone: "",
+    };
   }
 
   const normalized = value.trim();
+
   if (!normalized.startsWith("+")) {
     return {
       countryCode: "+91",
@@ -25,6 +40,7 @@ function parsePhoneNumber(
   }
 
   const digits = normalized.replace(/[^\d+]/g, "");
+
   const match =
     digits.match(/^\+(\d{1,3})(\d{4,})$/) ||
     digits.match(/^\+(\d{1,3})(\d{1,})$/);
@@ -47,7 +63,10 @@ function formatPhoneNumber(
   phone: string
 ) {
   const cleanedPhone = phone.replace(/\D/g, "");
-  const cleanedCode = countryCode.trim().startsWith("+")
+
+  const cleanedCode = countryCode
+    .trim()
+    .startsWith("+")
     ? countryCode.trim()
     : `+${countryCode.trim()}`;
 
@@ -57,13 +76,6 @@ function formatPhoneNumber(
 
   return `${cleanedCode}${cleanedPhone}`;
 }
-
-import {
-  getCustomerById,
-  updateCustomer,
-} from "@/services/customerService";
-
-import { createCustomerAction } from "@/actions/customer";
 
 type Props = {
   mode?: "create" | "edit";
@@ -99,16 +111,24 @@ export default function CustomerForm({
 
   const [saving, setSaving] =
     useState(false);
-      useEffect(() => {
+
+  const [error, setError] =
+    useState("");
+
+  const [success, setSuccess] =
+    useState("");
+
+  useEffect(() => {
     if (!isEdit || customerId == null) {
       return;
     }
 
     async function loadCustomer() {
-      try {
-        const id = customerId as number;
+  try {
+    const id = customerId as number;
 
-        const customer = await getCustomerById(id);
+    const customer =
+      await getCustomerById(id);
 
         setCustomerName(
           customer.customer_name ?? ""
@@ -148,8 +168,8 @@ export default function CustomerForm({
           error
         );
 
-        alert(
-          "Failed to load customer."
+        setError(
+          "Failed to load customer. Please try again."
         );
       }
     }
@@ -157,7 +177,77 @@ export default function CustomerForm({
     loadCustomer();
   }, [customerId, isEdit]);
 
+  function clearMessages() {
+    if (error) {
+      setError("");
+    }
+
+    if (success) {
+      setSuccess("");
+    }
+  }
+
+  function validateForm() {
+    const trimmedName =
+      customerName.trim();
+
+    const cleanedPhone =
+      phone.replace(/\D/g, "");
+
+    const trimmedEmail =
+      email.trim();
+
+    if (!trimmedName) {
+      setError(
+        "Please enter the customer's name."
+      );
+
+      return false;
+    }
+
+    if (cleanedPhone.length === 0) {
+      setError(
+        "Please enter a phone number."
+      );
+
+      return false;
+    }
+
+    if (
+      cleanedPhone.length < 7 ||
+      cleanedPhone.length > 15
+    ) {
+      setError(
+        "Please enter a valid phone number."
+      );
+
+      return false;
+    }
+
+    if (trimmedEmail) {
+      const emailPattern =
+        /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+      if (!emailPattern.test(trimmedEmail)) {
+        setError(
+          "Please enter a valid email address."
+        );
+
+        return false;
+      }
+    }
+
+    return true;
+  }
+
   async function handleSaveCustomer() {
+    setSuccess("");
+    setError("");
+
+    if (!validateForm()) {
+      return;
+    }
+
     try {
       setSaving(true);
 
@@ -168,7 +258,8 @@ export default function CustomerForm({
         business_name:
           businessName.trim(),
 
-        email: email.trim(),
+        email:
+          email.trim(),
 
         phone:
           formatPhoneNumber(
@@ -182,7 +273,8 @@ export default function CustomerForm({
         address:
           address.trim(),
       };
-            if (isEdit && customerId) {
+
+      if (isEdit && customerId) {
         await updateCustomer(
           customerId,
           payload
@@ -193,7 +285,7 @@ export default function CustomerForm({
         );
       }
 
-      alert(
+      setSuccess(
         isEdit
           ? "Customer updated successfully."
           : "Customer created successfully."
@@ -211,14 +303,17 @@ export default function CustomerForm({
         setAddress("");
       }
     } catch (error: unknown) {
-      console.error(error);
+      console.error(
+        "[CustomerForm] Save error:",
+        error
+      );
 
       const message =
         error instanceof Error
           ? error.message
-          : "Failed to save customer.";
+          : "Something went wrong while saving the customer.";
 
-      alert(message);
+      setError(message);
     } finally {
       setSaving(false);
     }
@@ -240,16 +335,12 @@ export default function CustomerForm({
       className="mx-auto mt-10 max-w-5xl"
     >
       <div className="mb-10 flex items-start justify-between gap-6">
-
         <div>
-
           <Link
             href="/customers"
             className="mb-5 inline-flex items-center gap-2 text-sm text-zinc-400 transition hover:text-white"
           >
-            <ArrowLeft
-              size={16}
-            />
+            <ArrowLeft size={16} />
 
             Back to Customers
           </Link>
@@ -265,31 +356,23 @@ export default function CustomerForm({
               ? "Update your client's information."
               : "Add a client to your executive portfolio."}
           </p>
-
         </div>
-
       </div>
 
       <div className="rounded-[28px] border border-white/[0.06] bg-[#101214] p-8 md:p-10">
-              {/* ----------------------------- */}
-        {/* Basic Information */}
-        {/* ----------------------------- */}
+
+        {/* BASIC INFORMATION */}
 
         <div>
-
           <div className="mb-8 flex items-center gap-3">
-
             <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/[0.06] bg-[#14171B]">
-
               <Building2
                 size={18}
                 className="text-[#D4AF37]"
               />
-
             </div>
 
             <div>
-
               <h2 className="text-lg font-semibold text-white">
                 Basic Information
               </h2>
@@ -297,23 +380,22 @@ export default function CustomerForm({
               <p className="mt-1 text-sm text-zinc-500">
                 Primary details used across invoices and customer records.
               </p>
-
             </div>
-
           </div>
 
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-
             <Input
               label="Customer Name"
               required
               placeholder="John Smith"
               value={customerName}
-              onChange={(e) =>
+              onChange={(e) => {
                 setCustomerName(
                   e.target.value
-                )
-              }
+                );
+
+                clearMessages();
+              }}
             />
 
             <Input
@@ -321,27 +403,23 @@ export default function CustomerForm({
               placeholder="Acme Technologies"
               helper="Optional"
               value={businessName}
-              onChange={(e) =>
+              onChange={(e) => {
                 setBusinessName(
                   e.target.value
-                )
-              }
+                );
+
+                clearMessages();
+              }}
             />
-
           </div>
-
         </div>
 
         <div className="my-10 h-px bg-white/[0.06]" />
 
-        {/* ----------------------------- */}
-        {/* Contact Information */}
-        {/* ----------------------------- */}
+        {/* CONTACT INFORMATION */}
 
         <div>
-
           <div className="mb-8">
-
             <h2 className="text-lg font-semibold text-white">
               Contact Information
             </h2>
@@ -349,53 +427,50 @@ export default function CustomerForm({
             <p className="mt-1 text-sm text-zinc-500">
               Used for invoices, payment reminders and WhatsApp communication.
             </p>
-
           </div>
 
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                        <Input
+            <Input
               label="Email Address"
               type="email"
               placeholder="john@company.com"
               helper="Optional. Used for invoices and payment reminders."
               value={email}
-              onChange={(e) =>
+              onChange={(e) => {
                 setEmail(
                   e.target.value
-                )
-              }
+                );
+
+                clearMessages();
+              }}
             />
 
             <PhoneInput
               label="Phone Number"
               required
-              countryCode={
-                countryCode
-              }
+              countryCode={countryCode}
               phone={phone}
-              onCountryCodeChange={
-                setCountryCode
-              }
-              onPhoneChange={
-                setPhone
-              }
+              onCountryCodeChange={(value) => {
+                setCountryCode(value);
+
+                clearMessages();
+              }}
+              onPhoneChange={(value) => {
+                setPhone(value);
+
+                clearMessages();
+              }}
               helper="Stored in international format for WhatsApp and future SMS support."
             />
-
           </div>
-
         </div>
 
         <div className="my-10 h-px bg-white/[0.06]" />
 
-        {/* ----------------------------- */}
-        {/* Business Information */}
-        {/* ----------------------------- */}
+        {/* BUSINESS INFORMATION */}
 
         <div>
-
           <div className="mb-8">
-
             <h2 className="text-lg font-semibold text-white">
               Business Information
             </h2>
@@ -403,20 +478,21 @@ export default function CustomerForm({
             <p className="mt-1 text-sm text-zinc-500">
               Optional details for taxation and billing.
             </p>
-
           </div>
 
           <div className="grid grid-cols-1 gap-6">
-                        <Input
+            <Input
               label="GST Number"
               placeholder="29ABCDE1234F1Z5"
               helper="Optional. Used on invoices where applicable."
               value={gstNumber}
-              onChange={(e) =>
+              onChange={(e) => {
                 setGstNumber(
                   e.target.value.toUpperCase()
-                )
-              }
+                );
+
+                clearMessages();
+              }}
             />
 
             <Textarea
@@ -425,21 +501,19 @@ export default function CustomerForm({
               rows={5}
               helper="Optional. Appears on invoices when provided."
               value={address}
-              onChange={(e) =>
+              onChange={(e) => {
                 setAddress(
                   e.target.value
-                )
-              }
+                );
+
+                clearMessages();
+              }}
             />
-
           </div>
-
         </div>
 
         <div className="mt-10 rounded-2xl border border-white/[0.06] bg-[#14171B]/60 p-5">
-
           <div className="flex flex-col gap-2">
-
             <h3 className="text-sm font-semibold text-white">
               Before you continue
             </h3>
@@ -449,19 +523,77 @@ export default function CustomerForm({
               payment reminders and future communication. You can
               update these details at any time.
             </p>
-
           </div>
-
         </div>
+
+        {/* ERROR */}
+
+        {error && (
+          <motion.div
+            initial={{
+              opacity: 0,
+              y: 4,
+            }}
+            animate={{
+              opacity: 1,
+              y: 0,
+            }}
+            role="alert"
+            className="mt-6 rounded-2xl border border-red-400/10 bg-red-400/[0.04] px-5 py-4"
+          >
+            <div className="flex items-start gap-3">
+              <div className="mt-0.5 h-2 w-2 shrink-0 rounded-full bg-red-400" />
+
+              <div>
+                <p className="text-sm font-medium text-red-300">
+                  Please check your information
+                </p>
+
+                <p className="mt-1 text-sm leading-6 text-zinc-400">
+                  {error}
+                </p>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {/* SUCCESS */}
+
+        {success && (
+          <motion.div
+            initial={{
+              opacity: 0,
+              y: 4,
+            }}
+            animate={{
+              opacity: 1,
+              y: 0,
+            }}
+            role="status"
+            className="mt-6 rounded-2xl border border-[#D4AF37]/10 bg-[#D4AF37]/[0.04] px-5 py-4"
+          >
+            <div className="flex items-start gap-3">
+              <div className="mt-0.5 h-2 w-2 shrink-0 rounded-full bg-[#D4AF37]" />
+
+              <div>
+                <p className="text-sm font-medium text-[#D4AF37]">
+                  Success
+                </p>
+
+                <p className="mt-1 text-sm leading-6 text-zinc-400">
+                  {success}
+                </p>
+              </div>
+            </div>
+          </motion.div>
+        )}
 
         <div className="my-10 h-px bg-white/[0.06]" />
 
-        {/* ----------------------------- */}
-        {/* Actions */}
-        {/* ----------------------------- */}
+        {/* ACTIONS */}
 
         <div className="flex flex-col-reverse gap-4 sm:flex-row sm:items-center sm:justify-between">
-                    <Link
+          <Link
             href="/customers"
             className="inline-flex h-12 items-center justify-center rounded-2xl border border-white/[0.06] bg-[#101214] px-6 text-sm font-medium text-zinc-300 transition-all duration-200 hover:border-white/10 hover:bg-[#14171B] hover:text-white"
           >
@@ -487,9 +619,8 @@ export default function CustomerForm({
               ? "Update Customer"
               : "Create Customer"}
           </button>
-
         </div>
-              </div>
+      </div>
     </motion.section>
   );
 }

@@ -185,7 +185,7 @@ export default function ReportViewer({
 
     await shareReport({
       title: report.title,
-      text: `${report.title} generated using ArkenOne.`,
+      text: `${report.title} generated using DhanarkOS.`,
     });
   }
     if (loading) {

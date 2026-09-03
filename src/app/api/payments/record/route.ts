@@ -165,7 +165,7 @@ export async function POST(
        The database requires payment_reference to be NOT NULL.
        
        Use the real UTR/reference when supplied.
-       Otherwise create an internal ArkenOne reference.
+       Otherwise create an internal DhanarkOS reference.
     ========================================================= */
 
     const suppliedReference =

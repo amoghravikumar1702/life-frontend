@@ -11,7 +11,7 @@ export function buildNarrative(
 
   // Brand new business
   if (s.revenue === 0) {
-    return "Welcome to ArkenOne. Your business hasn't generated revenue yet, so your immediate focus should be creating your first invoices and converting them into cash. Every successful collection builds the financial foundation of your business.";
+    return "Welcome to DhanarkOS. Your business hasn't generated revenue yet, so your immediate focus should be creating your first invoices and converting them into cash. Every successful collection builds the financial foundation of your business.";
   }
 
   // Critical state

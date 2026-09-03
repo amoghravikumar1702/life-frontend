@@ -16,7 +16,7 @@ export default function FinalRecommendation({
   return (
     <PageSection
       title="Executive Recommendation"
-      subtitle="ArkenOne Executive Decision"
+      subtitle="DhanarkOS Executive Decision"
     >
       <div className="rounded-[32px] border border-[#D4AF37]/20 bg-gradient-to-br from-[#D4AF37]/5 via-transparent to-transparent p-8">
 
@@ -47,7 +47,7 @@ export default function FinalRecommendation({
 
             <p className="mt-2 text-zinc-500">
               Consolidated recommendation generated from
-              ArkenOne's Intelligence Engine.
+              DhanarkOS's Intelligence Engine.
             </p>
 
             <div className="mt-8 space-y-5">

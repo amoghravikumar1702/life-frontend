@@ -28,7 +28,7 @@ export default function KPIGrid({
       <KPICard
         title="Revenue"
         value={formatCurrency(revenue)}
-        href="/payments"
+        href="/record-payment"
         subtitle="Payments received"
       />
 

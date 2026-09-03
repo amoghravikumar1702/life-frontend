@@ -443,7 +443,7 @@ export default function DirectUPIPayment({
 
         <p className="text-[11px] leading-5 text-slate-400">
           Payment is made directly to the
-          business's UPI account. ArkenOne
+          business's UPI account. DhanarkOS
           does not hold your funds.
         </p>
 

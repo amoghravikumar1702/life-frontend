@@ -1,4 +1,4 @@
-# ArkenOne Decision Matrix
+# DhanarkOS Decision Matrix
 
 Version 1.0
 
@@ -6,7 +6,7 @@ Version 1.0
 
 # Purpose
 
-The Decision Matrix defines which financial decisions ArkenOne may:
+The Decision Matrix defines which financial decisions DhanarkOS may:
 
 - Inform
 - Recommend
@@ -190,13 +190,13 @@ The following always require approval.
 
 If fraud is suspected
 
-ArkenOne may:
+DhanarkOS may:
 
 - Freeze workflows
 - Alert the owner
 - Recommend investigation
 
-ArkenOne may never:
+DhanarkOS may never:
 
 - Delete financial records
 - Close bank accounts
@@ -241,6 +241,6 @@ Every recommendation must include:
 
 # Golden Rule
 
-If a decision could materially affect the business financially, legally, or strategically, ArkenOne advises.
+If a decision could materially affect the business financially, legally, or strategically, DhanarkOS advises.
 
 The business owner decides.

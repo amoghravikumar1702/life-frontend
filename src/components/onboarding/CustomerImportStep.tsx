@@ -61,11 +61,8 @@ export default function CustomerImportStep({
       skipped: number;
     } | null>(null);
 
-  function validateFile(
-    file: File
-  ): SelectedFile | null {
-    const name =
-      file.name.toLowerCase();
+  function validateFile(file: File): SelectedFile | null {
+    const name = file.name.toLowerCase();
 
     const isSpreadsheet =
       name.endsWith(".csv") ||
@@ -74,9 +71,7 @@ export default function CustomerImportStep({
 
     const isImage =
       file.type.startsWith("image/") ||
-      /\.(jpg|jpeg|png|webp|heic)$/i.test(
-        name
-      );
+      /\.(jpg|jpeg|png|webp|heic)$/i.test(name);
 
     if (!isSpreadsheet && !isImage) {
       setError(
@@ -86,8 +81,7 @@ export default function CustomerImportStep({
       return null;
     }
 
-    const maxSize =
-      10 * 1024 * 1024;
+    const maxSize = 10 * 1024 * 1024;
 
     if (file.size > maxSize) {
       setError(
@@ -109,8 +103,7 @@ export default function CustomerImportStep({
   }
 
   function handleFile(file: File) {
-    const result =
-      validateFile(file);
+    const result = validateFile(file);
 
     if (result) {
       setSelectedFile(result);
@@ -120,8 +113,7 @@ export default function CustomerImportStep({
   function handleSpreadsheetChange(
     event: ChangeEvent<HTMLInputElement>
   ) {
-    const file =
-      event.target.files?.[0];
+    const file = event.target.files?.[0];
 
     if (file) {
       handleFile(file);
@@ -133,8 +125,7 @@ export default function CustomerImportStep({
   function handleImageChange(
     event: ChangeEvent<HTMLInputElement>
   ) {
-    const file =
-      event.target.files?.[0];
+    const file = event.target.files?.[0];
 
     if (file) {
       handleFile(file);
@@ -177,19 +168,11 @@ export default function CustomerImportStep({
       return;
     }
 
-    /*
-     * No file selected:
-     * simply continue onboarding.
-     */
     if (!selectedFile) {
       onComplete();
       return;
     }
 
-    /*
-     * Photo OCR is not connected yet.
-     * Do not send it to the spreadsheet API.
-     */
     if (selectedFile.type === "image") {
       setError(
         "Photo import is coming next. For now, please use a CSV or Excel file."
@@ -203,22 +186,20 @@ export default function CustomerImportStep({
       setError("");
       setImportResult(null);
 
-      const formData =
-        new FormData();
+      const formData = new FormData();
 
       formData.append(
         "file",
         selectedFile.file
       );
 
-      const response =
-        await fetch(
-          "/api/customers/import",
-          {
-            method: "POST",
-            body: formData,
-          }
-        );
+      const response = await fetch(
+        "/api/customers/import",
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
 
       const contentType =
         response.headers.get(
@@ -232,8 +213,7 @@ export default function CustomerImportStep({
           "application/json"
         )
       ) {
-        result =
-          await response.json();
+        result = await response.json();
       } else {
         throw new Error(
           `Import service returned an unexpected response (${response.status}).`
@@ -262,10 +242,6 @@ export default function CustomerImportStep({
         skipped,
       });
 
-      /*
-       * Give the user a short confirmation
-       * before completing onboarding.
-       */
       setTimeout(() => {
         onComplete();
       }, 700);
@@ -286,8 +262,10 @@ export default function CustomerImportStep({
   }
 
   return (
-    <section className="w-full max-w-3xl">
-      {/* HEADER */}
+    <section className="mx-auto w-full max-w-3xl">
+      {/* ==========================================================
+          HEADER
+      ========================================================== */}
 
       <div className="mb-8 text-center">
         <div
@@ -295,8 +273,8 @@ export default function CustomerImportStep({
             mx-auto
             mb-5
             flex
-            h-14
-            w-14
+            h-12
+            w-12
             items-center
             justify-center
             rounded-2xl
@@ -331,7 +309,7 @@ export default function CustomerImportStep({
           "
         >
           Bring your customers
-          into ArkenOne
+          into DhanarkOS
         </h1>
 
         <p
@@ -345,12 +323,14 @@ export default function CustomerImportStep({
           "
         >
           Import your existing customer
-          list and ArkenOne will organize
+          list and DhanarkOS will organize
           it for you.
         </p>
       </div>
 
-      {/* MAIN CARD */}
+      {/* ==========================================================
+          MAIN CARD
+      ========================================================== */}
 
       <div
         className="
@@ -362,7 +342,9 @@ export default function CustomerImportStep({
           shadow-[0_30px_100px_rgba(0,0,0,0.35)]
         "
       >
-        {/* DROP ZONE */}
+        {/* ========================================================
+            DROP ZONE
+        ======================================================== */}
 
         {!selectedFile && (
           <div
@@ -388,7 +370,7 @@ export default function CustomerImportStep({
               transition-all
               duration-200
               sm:m-5
-              sm:py-16
+              sm:py-14
               ${
                 isDragging
                   ? "border-[#D4AF37]/50 bg-[#D4AF37]/[0.06]"
@@ -400,8 +382,8 @@ export default function CustomerImportStep({
               className="
                 mx-auto
                 flex
-                h-14
-                w-14
+                h-12
+                w-12
                 items-center
                 justify-center
                 rounded-2xl
@@ -411,7 +393,7 @@ export default function CustomerImportStep({
               "
             >
               <Upload
-                size={21}
+                size={20}
                 strokeWidth={1.7}
                 className="text-[#D4AF37]"
               />
@@ -499,7 +481,9 @@ export default function CustomerImportStep({
           </div>
         )}
 
-        {/* SELECTED FILE */}
+        {/* ========================================================
+            SELECTED FILE
+        ======================================================== */}
 
         {selectedFile && (
           <div
@@ -631,7 +615,7 @@ export default function CustomerImportStep({
 
                 <p className="text-xs text-zinc-500">
                   {isImporting
-                    ? "ArkenOne is importing your customer list..."
+                    ? "DhanarkOS is importing your customer list..."
                     : selectedFile.type ===
                       "image"
                     ? "Photo selected. Photo-based customer import is coming next."
@@ -642,7 +626,9 @@ export default function CustomerImportStep({
           </div>
         )}
 
-        {/* PHOTO FALLBACK */}
+        {/* ========================================================
+            PHOTO FALLBACK
+        ======================================================== */}
 
         {!selectedFile && (
           <div
@@ -681,7 +667,9 @@ export default function CustomerImportStep({
           </div>
         )}
 
-        {/* ERROR */}
+        {/* ========================================================
+            ERROR
+        ======================================================== */}
 
         {error && (
           <div className="mx-4 mb-4 rounded-xl border border-red-500/10 bg-red-500/[0.05] px-4 py-3 sm:mx-5">
@@ -691,7 +679,9 @@ export default function CustomerImportStep({
           </div>
         )}
 
-        {/* FOOTER */}
+        {/* ========================================================
+            FOOTER
+        ======================================================== */}
 
         <div
           className="
@@ -784,7 +774,9 @@ export default function CustomerImportStep({
         </div>
       </div>
 
-      {/* FOOTER NOTE */}
+      {/* ==========================================================
+          FOOTER NOTE
+      ========================================================== */}
 
       <p className="mt-5 text-center text-[10px] leading-5 text-zinc-700">
         Your customer data will only be
@@ -792,16 +784,16 @@ export default function CustomerImportStep({
         confirm it.
       </p>
 
-      {/* FILE INPUTS */}
+      {/* ==========================================================
+          FILE INPUTS
+      ========================================================== */}
 
       <input
         ref={fileInputRef}
         type="file"
         accept=".csv,.xlsx,.xls"
         className="hidden"
-        onChange={
-          handleSpreadsheetChange
-        }
+        onChange={handleSpreadsheetChange}
       />
 
       <input
@@ -815,17 +807,13 @@ export default function CustomerImportStep({
   );
 }
 
-function formatFileSize(
-  bytes: number
-) {
+function formatFileSize(bytes: number) {
   if (bytes < 1024) {
     return `${bytes} B`;
   }
 
   if (bytes < 1024 * 1024) {
-    return `${(
-      bytes / 1024
-    ).toFixed(1)} KB`;
+    return `${(bytes / 1024).toFixed(1)} KB`;
   }
 
   return `${(
@@ -837,8 +825,8 @@ function formatFileSize(
 function UsersIcon() {
   return (
     <svg
-      width="22"
-      height="22"
+      width="21"
+      height="21"
       viewBox="0 0 24 24"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"

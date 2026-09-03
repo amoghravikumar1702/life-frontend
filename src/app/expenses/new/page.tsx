@@ -139,7 +139,7 @@ export default function NewExpensePage() {
             </h1>
 
             <p className="mt-3 max-w-2xl text-sm leading-7 text-zinc-500">
-              Record a business expense so ArkenOne can
+              Record a business expense so DhanarkOS can
               accurately understand profitability, cash flow,
               and financial health.
             </p>
@@ -721,11 +721,11 @@ export default function NewExpensePage() {
             <div>
 
               <p className="text-[10px] uppercase tracking-[0.32em] text-[#D4AF37]">
-                ARKENONE CFO
+                DhanarkOS CFO
               </p>
 
               <p className="mt-2 text-sm leading-7 text-zinc-400">
-                Every expense you record improves ArkenOne&apos;s
+                Every expense you record improves DhanarkOS&apos;s
                 understanding of your actual costs, profitability,
                 cash position, and financial health.
               </p>

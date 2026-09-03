@@ -13,7 +13,7 @@ export default function CompanyPage() {
 
           <CompanyHeader
             title="Company Profile"
-            description="Configure your business once. ArkenOne will automatically use these details everywhere."
+            description="Configure your business once. DhanarkOS will automatically use these details everywhere."
           />
 
           <Link

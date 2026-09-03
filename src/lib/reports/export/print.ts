@@ -5,7 +5,7 @@ interface PrintReportOptions {
 
 export async function printReport({
   elementId = "executive-report",
-  title = "ArkenOne Executive Report",
+  title = "DhanarkOS Executive Report",
 }: PrintReportOptions = {}) {
   const element = document.getElementById(elementId);
 
@@ -18,7 +18,7 @@ export async function printReport({
   const style = document.createElement("style");
 
   style.setAttribute(
-    "data-ArkenOne-print",
+    "data-DhanarkOS-print",
     "true"
   );
 

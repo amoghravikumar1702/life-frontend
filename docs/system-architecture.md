@@ -1,4 +1,4 @@
-# ArkenOne System Architecture
+# DhanarkOS System Architecture
 
 **Version:** 1.0
 
@@ -27,7 +27,7 @@ Build the world's first **Autonomous Financial Operating System** that can opera
                               USER
                                 │
                                 ▼
-                     ArkenOne EXECUTIVE UI
+                     DhanarkOS EXECUTIVE UI
                                 │
           ┌─────────────────────┼─────────────────────┐
           │                     │                     │

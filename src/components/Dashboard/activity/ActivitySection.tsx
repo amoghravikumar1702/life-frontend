@@ -25,7 +25,7 @@ export default function ActivitySection({
           <p className="mt-3 text-[#8A8A8F]">
             Activity will appear here once customers,
             invoices and payments start flowing into
-            ArkenOne.
+            DhanarkOS.
           </p>
         </div>
       </section>

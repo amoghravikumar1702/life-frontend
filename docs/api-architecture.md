@@ -1,4 +1,4 @@
-# ArkenOne API Architecture
+# DhanarkOS API Architecture
 
 Version 1.0
 
@@ -332,6 +332,6 @@ Every API must be:
 
 # Golden Rule
 
-The API is the nervous system of ArkenOne.
+The API is the nervous system of DhanarkOS.
 
 Every service communicates through clean, secure, observable interfaces.

@@ -1,4 +1,4 @@
-# ArkenOne Knowledge Graph
+# DhanarkOS Knowledge Graph
 
 Version 1.0
 
@@ -6,7 +6,7 @@ Version 1.0
 
 # Purpose
 
-The Knowledge Graph is the digital representation of every business using ArkenOne.
+The Knowledge Graph is the digital representation of every business using DhanarkOS.
 
 It connects every financial entity, relationship, event, document, workflow, and AI decision into one unified financial brain.
 

@@ -84,7 +84,7 @@ export function buildFallbackExecutiveAnalysis(
   return {
     data: {
       executiveSummary:
-        "AI analysis is temporarily unavailable. This report has been generated using ArkenOne's built-in financial intelligence engine.",
+        "AI analysis is temporarily unavailable. This report has been generated using DhanarkOS's built-in financial intelligence engine.",
 
       financialAnalysis: `Current revenue is ₹${finance.revenue.toLocaleString(
         "en-IN"

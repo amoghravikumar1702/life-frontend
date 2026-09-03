@@ -302,7 +302,7 @@ export default function WorkforceManagement({
           "
         >
           This is your actual current workforce.
-          ArkenOne does not automatically change this
+          DhanarkOS does not automatically change this
           number based on AI recommendations.
         </p>
       </div>

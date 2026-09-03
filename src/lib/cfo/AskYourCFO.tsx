@@ -21,7 +21,7 @@ import {
 
 /*
  * ============================================================
- * ARKENONE — ASK YOUR CFO
+ * DhanarkOS — ASK YOUR CFO
  * ============================================================
  *
  * Primary conversational entry point for the AI CFO.
@@ -283,7 +283,7 @@ export default function AskYourCFO({
 
           <div>
             <p className="text-[10px] font-medium uppercase tracking-[0.28em] text-[#D4AF37]">
-              ArkenOne Intelligence
+              DhanarkOS Intelligence
             </p>
 
             <h2 className="mt-1 text-xl font-medium tracking-tight text-white">
@@ -293,7 +293,7 @@ export default function AskYourCFO({
         </div>
 
         <p className="mt-4 max-w-2xl text-sm leading-6 text-zinc-500">
-          Ask a financial question and ArkenOne
+          Ask a financial question and DhanarkOS
           will evaluate it against your current
           business data.
         </p>

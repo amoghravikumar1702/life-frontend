@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+
 import {
   ArrowRight,
   IndianRupee,
@@ -87,7 +88,7 @@ export default function FinancialSetupStep({
   }
 
   return (
-    <section className="relative w-full max-w-3xl overflow-hidden rounded-[32px] border border-[#D4AF37]/15 bg-[#101318]">
+    <section className="mx-auto w-full max-w-3xl overflow-hidden rounded-[28px] border border-[#D4AF37]/15 bg-[#101318]">
       <div className="pointer-events-none absolute left-1/2 top-[-180px] h-[360px] w-[600px] -translate-x-1/2 rounded-full bg-[#D4AF37]/[0.045] blur-[120px]" />
 
       <div className="relative px-6 py-8 sm:px-10 sm:py-10">
@@ -106,28 +107,28 @@ export default function FinancialSetupStep({
             </p>
 
             <p className="mt-1 text-sm text-zinc-500">
-              Give ArkenOne a starting point
+              Give DhanarkOS a starting point
             </p>
           </div>
         </div>
 
-        <div className="max-w-2xl">
+        <div className="mx-auto max-w-2xl text-center">
           <h2 className="text-2xl font-medium tracking-tight text-white sm:text-3xl">
             How much has your business earned so far?
           </h2>
 
-          <p className="mt-3 max-w-xl text-sm leading-7 text-zinc-500">
-            An estimate is completely fine. ArkenOne
+          <p className="mx-auto mt-3 max-w-xl text-sm leading-7 text-zinc-500">
+            An estimate is completely fine. DhanarkOS
             will combine this starting point with the
             actual financial activity you record.
           </p>
         </div>
 
         {!unknownRevenue && (
-          <div className="mt-8 max-w-xl">
+          <div className="mx-auto mt-8 max-w-xl">
             <label
               htmlFor="current-business-income"
-              className="mb-2 block text-[10px] font-semibold uppercase tracking-[0.25em] text-zinc-600"
+              className="mb-2 block text-left text-[10px] font-semibold uppercase tracking-[0.25em] text-zinc-600"
             >
               Current Total Income
             </label>
@@ -147,12 +148,9 @@ export default function FinancialSetupStep({
                 onChange={(event) => {
                   const value =
                     event.target.value
+                      .replace(/[^\d.]/g, "")
                       .replace(
-                        /[^\d.]/g,
-                        ""
-                      )
-                      .replace(
-                        /(\..*)\./g,
+                        /^(\d*\.\d{0,2}).*$/,
                         "$1"
                       );
 
@@ -175,8 +173,7 @@ export default function FinancialSetupStep({
 
             {revenue && valid && (
               <p className="mt-3 text-xs text-zinc-600">
-                Starting revenue:
-                {" "}
+                Starting revenue:{" "}
                 <span className="text-zinc-400">
                   {formatPreview(
                     revenue
@@ -192,7 +189,7 @@ export default function FinancialSetupStep({
         )}
 
         {unknownRevenue && (
-          <div className="mt-8 max-w-xl rounded-2xl border border-white/[0.06] bg-white/[0.015] p-5">
+          <div className="mx-auto mt-8 max-w-xl rounded-2xl border border-white/[0.06] bg-white/[0.015] p-5">
             <div className="flex items-start gap-3">
               <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[#D4AF37]/15 bg-[#D4AF37]/[0.05]">
                 <HelpCircle
@@ -208,7 +205,7 @@ export default function FinancialSetupStep({
                 </p>
 
                 <p className="mt-1 text-xs leading-6 text-zinc-600">
-                  ArkenOne will build your financial
+                  DhanarkOS will build your financial
                   picture from the transactions you
                   record.
                 </p>
@@ -227,7 +224,7 @@ export default function FinancialSetupStep({
           </div>
         )}
 
-        <div className="mt-8 rounded-2xl border border-white/[0.05] bg-white/[0.015] p-5">
+        <div className="mx-auto mt-8 max-w-2xl rounded-2xl border border-white/[0.05] bg-white/[0.015] p-5">
           <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-[#D4AF37]">
             Your AI CFO will use
           </p>
@@ -259,13 +256,13 @@ export default function FinancialSetupStep({
               </p>
 
               <p className="mt-1 text-xs leading-5 text-zinc-600">
-                Actual activity recorded in ArkenOne
+                Actual activity recorded in DhanarkOS
               </p>
             </div>
           </div>
         </div>
 
-        <div className="mt-8 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+        <div className="mx-auto mt-8 flex max-w-2xl flex-col-reverse gap-3 sm:flex-row sm:justify-end">
           {!unknownRevenue && (
             <button
               type="button"

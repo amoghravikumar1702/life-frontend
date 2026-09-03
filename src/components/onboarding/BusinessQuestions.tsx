@@ -302,39 +302,114 @@ export default function BusinessQuestions({
   }
 
   return (
-    <section className="relative w-full max-w-2xl overflow-hidden rounded-[32px] border border-[#D4AF37]/15 bg-[#101318]">
-      <div className="pointer-events-none absolute left-1/2 top-[-180px] h-[360px] w-[600px] -translate-x-1/2 rounded-full bg-[#D4AF37]/[0.045] blur-[120px]" />
+    <section
+      className="
+        relative
+        mx-auto
+        flex
+        w-full
+        max-w-3xl
+        justify-center
+        overflow-hidden
+        rounded-[28px]
+        border
+        border-white/[0.07]
+        bg-[#101318]
+        shadow-[0_30px_100px_rgba(0,0,0,0.28)]
+        sm:rounded-[32px]
+      "
+    >
+      {/* Ambient glow */}
 
-      <div className="relative px-6 py-8 sm:px-10 sm:py-10">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-[#D4AF37]/20 bg-[#D4AF37]/[0.07]">
+      <div
+        className="
+          pointer-events-none
+          absolute
+          left-1/2
+          top-[-180px]
+          h-[360px]
+          w-[600px]
+          -translate-x-1/2
+          rounded-full
+          bg-[#D4AF37]/[0.04]
+          blur-[120px]
+        "
+      />
+
+      <div
+        className="
+          relative
+          w-full
+          px-5
+          py-7
+          sm:px-10
+          sm:py-9
+          lg:px-12
+          lg:py-10
+        "
+      >
+        {/* HEADER */}
+
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex min-w-0 items-center gap-3">
+            <div
+              className="
+                flex
+                h-10
+                w-10
+                shrink-0
+                items-center
+                justify-center
+                rounded-xl
+                border
+                border-[#D4AF37]/20
+                bg-[#D4AF37]/[0.07]
+                sm:h-11
+                sm:w-11
+                sm:rounded-2xl
+              "
+            >
               <Sparkles
-                size={18}
+                size={17}
                 className="text-[#D4AF37]"
                 strokeWidth={1.7}
               />
             </div>
 
-            <div>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-[#D4AF37]">
+            <div className="min-w-0">
+              <p
+                className="
+                  text-[9px]
+                  font-semibold
+                  uppercase
+                  tracking-[0.28em]
+                  text-[#D4AF37]
+                  sm:text-[10px]
+                  sm:tracking-[0.3em]
+                "
+              >
                 Business Profile
               </p>
 
-              <p className="mt-1 text-sm text-zinc-500">
+              <p className="mt-1 truncate text-xs text-zinc-500 sm:text-sm">
                 {industry}
               </p>
             </div>
           </div>
 
-          <span className="text-xs text-zinc-600">
-            {Math.min(completedCount + 1, questions.length)} /{" "}
-            {questions.length}
+          <span className="shrink-0 text-[11px] text-zinc-600 sm:text-xs">
+            {Math.min(
+              completedCount + 1,
+              questions.length
+            )}{" "}
+            / {questions.length}
           </span>
         </div>
 
-        <div className="mt-10">
-          <div className="mb-3 h-1 overflow-hidden rounded-full bg-white/[0.05]">
+        {/* PROGRESS */}
+
+        <div className="mt-7">
+          <div className="h-1 overflow-hidden rounded-full bg-white/[0.05]">
             <div
               className="h-full rounded-full bg-[#D4AF37] transition-all duration-300"
               style={{
@@ -342,25 +417,52 @@ export default function BusinessQuestions({
               }}
             />
           </div>
+        </div>
 
-          <p className="mt-8 text-[10px] font-semibold uppercase tracking-[0.28em] text-zinc-600">
+        {/* QUESTION */}
+
+        <div className="mt-8">
+          <p
+            className="
+              text-[9px]
+              font-semibold
+              uppercase
+              tracking-[0.26em]
+              text-zinc-600
+              sm:text-[10px]
+              sm:tracking-[0.28em]
+            "
+          >
             Quick question
           </p>
 
-          <h1 className="mt-3 text-2xl font-medium tracking-tight text-white sm:text-3xl">
+          <h1
+            className="
+              mt-3
+              max-w-2xl
+              text-[25px]
+              font-medium
+              leading-tight
+              tracking-[-0.025em]
+              text-white
+              sm:text-3xl
+            "
+          >
             {currentQuestion.label}
           </h1>
 
           {currentQuestion.description && (
-            <p className="mt-3 text-sm leading-7 text-zinc-500">
+            <p className="mt-3 max-w-xl text-sm leading-6 text-zinc-500">
               {currentQuestion.description}
             </p>
           )}
         </div>
 
-        <div className="mt-8">
+        {/* ANSWERS */}
+
+        <div className="mt-7">
           {currentQuestion.options ? (
-            <div className="grid gap-3">
+            <div className="grid gap-2.5">
               {currentQuestion.options.map((option) => {
                 const selected =
                   answers[currentQuestion.id] === option;
@@ -370,11 +472,26 @@ export default function BusinessQuestions({
                     key={option}
                     type="button"
                     onClick={() => updateAnswer(option)}
-                    className={`min-h-14 rounded-2xl border px-5 text-left text-sm transition ${
-                      selected
-                        ? "border-[#D4AF37]/45 bg-[#D4AF37]/[0.08] text-[#D4AF37]"
-                        : "border-white/[0.06] bg-white/[0.015] text-zinc-400 hover:border-[#D4AF37]/20 hover:bg-[#D4AF37]/[0.03] hover:text-zinc-200"
-                    }`}
+                    className={`
+                      flex
+                      min-h-13
+                      w-full
+                      items-center
+                      rounded-xl
+                      border
+                      px-4
+                      text-left
+                      text-sm
+                      transition-all
+                      duration-200
+                      sm:min-h-14
+                      sm:px-5
+                      ${
+                        selected
+                          ? "border-[#D4AF37]/40 bg-[#D4AF37]/[0.07] text-[#D4AF37]"
+                          : "border-white/[0.06] bg-white/[0.015] text-zinc-400 hover:border-[#D4AF37]/20 hover:bg-[#D4AF37]/[0.025] hover:text-zinc-200"
+                      }
+                    `}
                   >
                     {option}
                   </button>
@@ -401,16 +518,57 @@ export default function BusinessQuestions({
                 }
               }}
               placeholder={currentQuestion.placeholder}
-              className="min-h-16 w-full rounded-2xl border border-white/[0.07] bg-black/25 px-5 text-xl text-white outline-none transition placeholder:text-zinc-700 focus:border-[#D4AF37]/35"
+              className="
+                min-h-14
+                w-full
+                rounded-xl
+                border
+                border-white/[0.07]
+                bg-black/20
+                px-4
+                text-base
+                text-white
+                outline-none
+                transition
+                placeholder:text-zinc-700
+                focus:border-[#D4AF37]/35
+                sm:min-h-16
+                sm:px-5
+                sm:text-lg
+              "
             />
           )}
         </div>
 
-        <div className="mt-8 flex items-center justify-between gap-3">
+        {/* ACTIONS */}
+
+        <div
+          className="
+            mt-8
+            flex
+            items-center
+            justify-between
+            gap-3
+            border-t
+            border-white/[0.05]
+            pt-6
+          "
+        >
           <button
             type="button"
             onClick={onBack}
-            className="flex min-h-12 items-center gap-2 rounded-xl px-4 text-sm text-zinc-500 transition hover:text-white"
+            className="
+              flex
+              min-h-11
+              items-center
+              gap-2
+              rounded-xl
+              px-2
+              text-sm
+              text-zinc-500
+              transition
+              hover:text-white
+            "
           >
             <ArrowLeft size={16} />
             Back
@@ -419,15 +577,34 @@ export default function BusinessQuestions({
           <button
             type="button"
             onClick={handleContinue}
-            disabled={!answers[currentQuestion.id]?.trim()}
-            className="flex min-h-12 items-center justify-center gap-2 rounded-xl bg-[#D4AF37] px-6 text-sm font-semibold text-black transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-35"
+            disabled={
+              !answers[currentQuestion.id]?.trim()
+            }
+            className="
+              flex
+              min-h-11
+              items-center
+              justify-center
+              gap-2
+              rounded-xl
+              bg-[#D4AF37]
+              px-5
+              text-sm
+              font-semibold
+              text-black
+              transition
+              hover:bg-[#E2C04A]
+              disabled:cursor-not-allowed
+              disabled:opacity-35
+              sm:px-6
+            "
           >
             {activeIndex === questions.length - 1
               ? "Continue"
               : "Next"}
 
             <ArrowRight
-              size={17}
+              size={16}
               strokeWidth={1.8}
             />
           </button>

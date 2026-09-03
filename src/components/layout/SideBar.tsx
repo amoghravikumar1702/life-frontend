@@ -1,14 +1,19 @@
-// src/components/layout/SideBar.tsx
-
 "use client";
 
+import Link from "next/link";
+import Image from "next/image";
+import { useEffect, useState } from "react";
 import {
   ChevronLeft,
   ChevronRight,
   X,
+  Sparkles,
+  ArrowUpRight,
 } from "lucide-react";
 
 import Navigation from "./Navigation";
+import DhanarkLogo from "@/components/brand/DhanarkLogo";
+import { getCompany } from "@/services/companyService";
 
 interface SidebarProps {
   collapsed: boolean;
@@ -23,6 +28,83 @@ export default function Sidebar({
   mobileOpen = false,
   onMobileClose,
 }: SidebarProps) {
+  const [companyName, setCompanyName] =
+    useState("Your Business");
+
+  const [companyLogoUrl, setCompanyLogoUrl] =
+    useState("");
+
+  useEffect(() => {
+    let mounted = true;
+
+    async function loadCompanyIdentity() {
+      try {
+        const company = await getCompany();
+
+        if (!mounted || !company) {
+          return;
+        }
+
+        setCompanyName(
+          company.company_name?.trim() || "Your Business"
+        );
+
+        setCompanyLogoUrl(
+          company.logo_url?.trim() || ""
+        );
+      } catch (error) {
+        console.error(
+          "[Sidebar] Failed to load company identity:",
+          error
+        );
+      }
+    }
+
+    loadCompanyIdentity();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  function CompanyLogo({
+    className,
+  }: {
+    className: string;
+  }) {
+    return (
+      <div
+        className={`
+          ${className}
+          relative
+          flex
+          shrink-0
+          items-center
+          justify-center
+          overflow-hidden
+          rounded-full
+          border
+          border-white/[0.08]
+          bg-white/[0.03]
+        `}
+      >
+        {companyLogoUrl ? (
+          <Image
+            src={companyLogoUrl}
+            alt={`${companyName} logo`}
+            fill
+            sizes="36px"
+            className="object-cover"
+          />
+        ) : (
+          <span className="text-sm font-semibold text-[#D4AF37]">
+            {(companyName[0] || "C").toUpperCase()}
+          </span>
+        )}
+      </div>
+    );
+  }
+
   return (
     <>
       {/* ============================================================
@@ -34,138 +116,207 @@ export default function Sidebar({
           hidden
           shrink-0
           lg:block
-          transition-all
+          transition-[width]
           duration-300
           ease-out
-          ${collapsed ? "w-[92px]" : "w-[248px]"}
+          ${
+            collapsed
+              ? "w-[76px]"
+              : "w-[228px]"
+          }
         `}
       >
         <div
           className="
             fixed
+            bottom-5
             left-5
             top-5
-            bottom-5
             flex
+            min-w-0
             flex-col
             overflow-hidden
-            rounded-[32px]
+            rounded-[30px]
             border
             border-white/[0.06]
-            bg-[#0B0F15]/88
-            backdrop-blur-[28px]
+            bg-[#0B0F15]/95
             shadow-[0_18px_60px_rgba(0,0,0,0.45)]
-            transition-all
+            backdrop-blur-[28px]
+            transition-[width]
             duration-300
             ease-out
+            xl:bottom-6
+            xl:left-6
+            xl:top-6
           "
           style={{
             width: collapsed ? 76 : 228,
           }}
         >
-          <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/15 to-transparent" />
+          <div
+            className="
+              pointer-events-none
+              absolute
+              inset-x-0
+              top-0
+              h-px
+              bg-gradient-to-r
+              from-transparent
+              via-white/15
+              to-transparent
+            "
+          />
 
-          {/* Logo */}
-
-          <div className="px-5 pb-6 pt-7">
+          <div
+            className={`
+              flex
+              h-[76px]
+              min-w-0
+              shrink-0
+              items-center
+              ${
+                collapsed
+                  ? "justify-center px-3"
+                  : "justify-start px-5"
+              }
+            `}
+          >
             {collapsed ? (
-              <div className="flex justify-center">
-                <div
-                  className="
-                    flex
-                    h-11
-                    w-11
-                    items-center
-                    justify-center
-                    rounded-2xl
-                    border
-                    border-[#D4AF37]/20
-                    bg-[#D4AF37]/10
-                    text-[17px]
-                    font-semibold
-                    tracking-tight
-                    text-[#D4AF37]
-                  "
-                >
-                  A
-                </div>
-              </div>
+              <DhanarkLogo
+                variant="mark"
+                href=""
+                className="h-9 w-9 shrink-0 object-contain"
+              />
             ) : (
-              <div className="flex items-center gap-3">
-                <div
-                  className="
-                    flex
-                    h-11
-                    w-11
-                    shrink-0
-                    items-center
-                    justify-center
-                    rounded-2xl
-                    border
-                    border-[#D4AF37]/20
-                    bg-[#D4AF37]/10
-                    text-[17px]
-                    font-semibold
-                    tracking-tight
-                    text-[#D4AF37]
-                  "
-                >
-                  A
-                </div>
-
-                <div className="min-w-0">
-                  <h1 className="text-[22px] font-semibold tracking-[-0.03em] text-white">
-                    ArkenOne
-                  </h1>
-
-                  <p className="mt-0.5 text-[10px] uppercase tracking-[0.34em] text-zinc-500">
-                    Executive OS
-                  </p>
-                </div>
-              </div>
+              <DhanarkLogo
+                variant="wordmark"
+                href="/"
+                className="
+                  h-[28px]
+                  w-auto
+                  max-w-[138px]
+                  shrink-0
+                  object-contain
+                "
+              />
             )}
           </div>
 
-          <div className="mx-5 h-px bg-white/[0.06]" />
+          <div className="mx-5 h-px shrink-0 bg-white/[0.06]" />
 
-          {/* Navigation */}
-
-          <div className="flex-1 overflow-y-auto px-3 py-5">
+          <div
+            className="
+              min-h-0
+              min-w-0
+              flex-1
+              overflow-x-hidden
+              overflow-y-auto
+              px-3
+              py-5
+              [scrollbar-width:none]
+              [&::-webkit-scrollbar]:hidden
+            "
+          >
             <Navigation collapsed={collapsed} />
           </div>
 
-          {/* Footer */}
+          <div className="min-w-0 shrink-0 px-3 pb-3">
+            <Link
+              href="/pricing"
+              className={`
+                group
+                flex
+                min-h-11
+                min-w-0
+                items-center
+                overflow-hidden
+                rounded-2xl
+                border
+                border-[#D4AF37]/15
+                bg-[#D4AF37]/[0.055]
+                text-[#D4AF37]
+                transition-all
+                duration-300
+                hover:border-[#D4AF37]/30
+                hover:bg-[#D4AF37]/[0.09]
+                hover:shadow-[0_8px_30px_rgba(212,175,55,0.07)]
+                ${
+                  collapsed
+                    ? "justify-center px-2"
+                    : "gap-3 px-3.5"
+                }
+              `}
+              title={
+                collapsed
+                  ? "Upgrade"
+                  : undefined
+              }
+            >
+              <div
+                className="
+                  flex
+                  h-8
+                  w-8
+                  shrink-0
+                  items-center
+                  justify-center
+                  rounded-xl
+                  border
+                  border-[#D4AF37]/20
+                  bg-[#D4AF37]/[0.08]
+                "
+              >
+                <Sparkles
+                  size={14}
+                  strokeWidth={1.8}
+                  aria-hidden="true"
+                />
+              </div>
 
-          <div className="border-t border-white/[0.06] p-4">
+              {!collapsed && (
+                <>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-[12px] font-semibold text-[#D4AF37]">
+                      Upgrade
+                    </p>
+
+                    <p className="mt-0.5 truncate text-[9px] uppercase tracking-[0.14em] text-zinc-600">
+                      Unlock more intelligence
+                    </p>
+                  </div>
+
+                  <ArrowUpRight
+                    size={14}
+                    aria-hidden="true"
+                    className="
+                      shrink-0
+                      text-[#D4AF37]/50
+                      transition-transform
+                      duration-300
+                      group-hover:-translate-y-0.5
+                      group-hover:translate-x-0.5
+                      group-hover:text-[#D4AF37]
+                    "
+                  />
+                </>
+              )}
+            </Link>
+          </div>
+
+          <div className="min-w-0 shrink-0 border-t border-white/[0.06] p-4">
             {collapsed ? (
               <div className="flex justify-center">
-                <div
-                  className="
-                    flex
-                    h-10
-                    w-10
-                    items-center
-                    justify-center
-                    rounded-2xl
-                    border
-                    border-[#D4AF37]/20
-                    bg-[#D4AF37]/10
-                    text-sm
-                    font-semibold
-                    text-[#D4AF37]
-                  "
-                >
-                  A
-                </div>
+                <CompanyLogo className="h-9 w-9" />
               </div>
             ) : (
               <div
                 className="
+                  min-w-0
                   rounded-2xl
                   border
                   border-white/[0.05]
                   bg-white/[0.03]
-                  px-3.5
+                  px-3
                   py-3
                   transition-all
                   duration-300
@@ -173,30 +324,12 @@ export default function Sidebar({
                   hover:bg-white/[0.045]
                 "
               >
-                <div className="flex items-center gap-3">
-                  <div
-                    className="
-                      flex
-                      h-10
-                      w-10
-                      shrink-0
-                      items-center
-                      justify-center
-                      rounded-2xl
-                      border
-                      border-[#D4AF37]/20
-                      bg-[#D4AF37]/10
-                      text-sm
-                      font-semibold
-                      text-[#D4AF37]
-                    "
-                  >
-                    A
-                  </div>
+                <div className="flex min-w-0 items-center gap-3">
+                  <CompanyLogo className="h-9 w-9" />
 
-                  <div className="min-w-0">
+                  <div className="min-w-0 flex-1">
                     <p className="truncate text-[13px] font-medium text-white">
-                      Administrator
+                      {companyName}
                     </p>
 
                     <p className="truncate text-[11px] text-zinc-500">
@@ -208,8 +341,6 @@ export default function Sidebar({
             )}
           </div>
 
-          {/* Collapse */}
-
           <button
             type="button"
             onClick={onToggle}
@@ -220,11 +351,13 @@ export default function Sidebar({
             }
             className="
               absolute
-              -right-3
-              top-9
+              right-[-1px]
+              top-7
+              z-20
               flex
-              h-8
-              w-8
+              h-10
+              w-10
+              translate-x-1/2
               items-center
               justify-center
               rounded-full
@@ -239,12 +372,19 @@ export default function Sidebar({
               hover:border-white/20
               hover:bg-[#1A202A]
               hover:text-white
+              active:scale-95
             "
           >
             {collapsed ? (
-              <ChevronRight size={15} />
+              <ChevronRight
+                size={16}
+                aria-hidden="true"
+              />
             ) : (
-              <ChevronLeft size={15} />
+              <ChevronLeft
+                size={16}
+                aria-hidden="true"
+              />
             )}
           </button>
         </div>
@@ -263,6 +403,7 @@ export default function Sidebar({
             fixed
             inset-0
             z-[90]
+            min-h-[44px]
             bg-black/60
             backdrop-blur-[2px]
             lg:hidden
@@ -275,6 +416,7 @@ export default function Sidebar({
       ============================================================ */}
 
       <aside
+        aria-label="Mobile navigation"
         aria-hidden={!mobileOpen}
         className={`
           fixed
@@ -284,6 +426,8 @@ export default function Sidebar({
           z-[100]
           flex
           w-[min(86vw,320px)]
+          max-w-full
+          min-w-0
           flex-col
           overflow-hidden
           border-r
@@ -301,41 +445,44 @@ export default function Sidebar({
           }
         `}
       >
-        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/15 to-transparent" />
+        <div
+          className="
+            pointer-events-none
+            absolute
+            inset-x-0
+            top-0
+            h-px
+            bg-gradient-to-r
+            from-transparent
+            via-white/15
+            to-transparent
+          "
+        />
 
-        {/* Mobile Header */}
-
-        <div className="flex items-center justify-between px-5 pb-5 pt-6">
-          <div className="flex min-w-0 items-center gap-3">
-            <div
+        <div
+          className="
+            flex
+            h-[72px]
+            min-w-0
+            shrink-0
+            items-center
+            justify-between
+            gap-3
+            px-5
+          "
+        >
+          <div className="min-w-0 flex-1 overflow-hidden">
+            <DhanarkLogo
+              variant="wordmark"
+              href="/"
               className="
-                flex
-                h-11
-                w-11
+                h-[28px]
+                w-auto
+                max-w-[138px]
                 shrink-0
-                items-center
-                justify-center
-                rounded-2xl
-                border
-                border-[#D4AF37]/20
-                bg-[#D4AF37]/10
-                text-[17px]
-                font-semibold
-                text-[#D4AF37]
+                object-contain
               "
-            >
-              A
-            </div>
-
-            <div className="min-w-0">
-              <h1 className="truncate text-[21px] font-semibold tracking-[-0.03em] text-white">
-                ArkenOne
-              </h1>
-
-              <p className="truncate text-[10px] uppercase tracking-[0.28em] text-zinc-500">
-                Executive OS
-              </p>
-            </div>
+            />
           </div>
 
           <button
@@ -343,7 +490,6 @@ export default function Sidebar({
             onClick={onMobileClose}
             aria-label="Close menu"
             className="
-              ml-3
               flex
               h-10
               w-10
@@ -355,64 +501,133 @@ export default function Sidebar({
               border-white/[0.08]
               bg-white/[0.03]
               text-zinc-400
-              transition
+              transition-all
+              duration-200
+              hover:border-white/[0.12]
               hover:bg-white/[0.06]
               hover:text-white
               active:scale-95
             "
           >
-            <X size={19} />
+            <X
+              size={19}
+              aria-hidden="true"
+            />
           </button>
         </div>
 
-        <div className="mx-5 h-px bg-white/[0.06]" />
+        <div className="mx-5 h-px shrink-0 bg-white/[0.06]" />
 
-        {/* Mobile Navigation */}
-
-        <div className="flex-1 overflow-y-auto px-3 py-5">
+        <div
+          className="
+            min-h-0
+            min-w-0
+            flex-1
+            overflow-x-hidden
+            overflow-y-auto
+            px-3
+            py-5
+            [scrollbar-width:none]
+            [&::-webkit-scrollbar]:hidden
+          "
+        >
           <Navigation
             collapsed={false}
+            mobile
             onNavigate={onMobileClose}
           />
         </div>
 
-        {/* Mobile Footer */}
+        <div className="min-w-0 shrink-0 px-3 pb-3">
+          <Link
+            href="/pricing"
+            onClick={onMobileClose}
+            className="
+              group
+              flex
+              min-h-12
+              min-w-0
+              items-center
+              gap-3
+              overflow-hidden
+              rounded-2xl
+              border
+              border-[#D4AF37]/15
+              bg-[#D4AF37]/[0.055]
+              px-3.5
+              text-[#D4AF37]
+              transition-all
+              duration-300
+              hover:border-[#D4AF37]/30
+              hover:bg-[#D4AF37]/[0.09]
+              active:scale-[0.99]
+            "
+          >
+            <div
+              className="
+                flex
+                h-8
+                w-8
+                shrink-0
+                items-center
+                justify-center
+                rounded-xl
+                border
+                border-[#D4AF37]/20
+                bg-[#D4AF37]/[0.08]
+              "
+            >
+              <Sparkles
+                size={14}
+                strokeWidth={1.8}
+                aria-hidden="true"
+              />
+            </div>
 
-        <div className="border-t border-white/[0.06] p-4">
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-[12px] font-semibold text-[#D4AF37]">
+                Upgrade
+              </p>
+
+              <p className="mt-0.5 truncate text-[9px] uppercase tracking-[0.14em] text-zinc-600">
+                Unlock more intelligence
+              </p>
+            </div>
+
+            <ArrowUpRight
+              size={15}
+              aria-hidden="true"
+              className="
+                shrink-0
+                text-[#D4AF37]/50
+                transition-transform
+                duration-300
+                group-hover:-translate-y-0.5
+                group-hover:translate-x-0.5
+                group-hover:text-[#D4AF37]
+              "
+            />
+          </Link>
+        </div>
+
+        <div className="min-w-0 shrink-0 border-t border-white/[0.06] p-4">
           <div
             className="
+              min-w-0
               rounded-2xl
               border
               border-white/[0.05]
               bg-white/[0.03]
-              px-3.5
+              px-3
               py-3
             "
           >
-            <div className="flex items-center gap-3">
-              <div
-                className="
-                  flex
-                  h-10
-                  w-10
-                  shrink-0
-                  items-center
-                  justify-center
-                  rounded-2xl
-                  border
-                  border-[#D4AF37]/20
-                  bg-[#D4AF37]/10
-                  text-sm
-                  font-semibold
-                  text-[#D4AF37]
-                "
-              >
-                A
-              </div>
+            <div className="flex min-w-0 items-center gap-3">
+              <CompanyLogo className="h-9 w-9" />
 
-              <div className="min-w-0">
+              <div className="min-w-0 flex-1">
                 <p className="truncate text-[13px] font-medium text-white">
-                  Administrator
+                  {companyName}
                 </p>
 
                 <p className="truncate text-[11px] text-zinc-500">

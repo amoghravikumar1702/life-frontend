@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from "next/link";
@@ -35,7 +36,6 @@ const sections = [
       },
     ],
   },
-
   {
     title: "Operations",
     items: [
@@ -61,7 +61,6 @@ const sections = [
       },
     ],
   },
-
   {
     title: "Intelligence",
     items: [
@@ -82,7 +81,6 @@ const sections = [
       },
     ],
   },
-
   {
     title: "Company",
     items: [
@@ -98,12 +96,11 @@ const sections = [
       },
     ],
   },
-
   {
     title: "Learn",
     items: [
       {
-        label: "How ArkenOne Works",
+        label: "How DhanarkOS Works",
         href: "/walkthrough",
         icon: HelpCircle,
       },
@@ -120,87 +117,105 @@ export default function Navigation({
 
   return (
     <nav
-      className={
-        mobile
-          ? "space-y-7"
-          : collapsed
-            ? "space-y-6"
-            : "space-y-6 sm:space-y-7"
-      }
+      aria-label="Primary navigation"
+      className={`
+        w-full
+        max-w-full
+        min-w-0
+        overflow-x-hidden
+        ${mobile ? "space-y-7" : collapsed ? "space-y-6" : "space-y-6 sm:space-y-7"}
+      `}
     >
       {sections.map((section) => (
-        <section key={section.title}>
+        <section
+          key={section.title}
+          className="w-full max-w-full min-w-0"
+        >
           {!collapsed && (
             <p
-              className={`mb-3 px-4 font-medium uppercase tracking-[0.32em] text-zinc-600 ${
-                mobile ? "text-[9px]" : "text-[10px]"
-              }`}
+              className={`
+                mb-3
+                min-w-0
+                truncate
+                px-4
+                font-medium
+                uppercase
+                tracking-[0.32em]
+                text-zinc-600
+                ${mobile ? "text-[9px]" : "text-[10px]"}
+              `}
             >
               {section.title}
             </p>
           )}
 
           <div
-            className={
-              mobile
-                ? "space-y-1.5"
-                : "space-y-1"
-            }
+            className={`
+              w-full
+              min-w-0
+              ${mobile ? "space-y-1.5" : "space-y-1"}
+            `}
           >
             {section.items.map((item) => {
               const Icon = item.icon;
 
               const active =
                 pathname === item.href ||
-                pathname.startsWith(
-                  `${item.href}/`
-                );
+                pathname.startsWith(`${item.href}/`);
 
               return (
                 <Link
                   key={item.href}
                   href={item.href}
                   onClick={onNavigate}
-                  title={
-                    collapsed
-                      ? item.label
-                      : undefined
-                  }
-                  className="block"
+                  title={collapsed ? item.label : undefined}
+                  aria-current={active ? "page" : undefined}
+                  className="
+                    block
+                    w-full
+                    max-w-full
+                    min-w-0
+                    touch-manipulation
+                    outline-none
+                    focus-visible:ring-2
+                    focus-visible:ring-[#D4AF37]/40
+                    focus-visible:ring-offset-2
+                    focus-visible:ring-offset-[#0E1013]
+                  "
                 >
                   <motion.div
-                    whileHover={{
-                      x:
-                        collapsed ||
-                        mobile
-                          ? 0
-                          : 3,
-                      scale: mobile
-                        ? 1
-                        : 1.01,
-                    }}
+                    whileHover={
+                      mobile
+                        ? undefined
+                        : {
+                            x: collapsed ? 0 : 3,
+                          }
+                    }
                     whileTap={{
                       scale: 0.985,
                     }}
                     transition={{
-                      duration: 0.22,
+                      duration: 0.2,
                       ease: "easeOut",
                     }}
                     className={`
                       group
                       relative
                       flex
+                      w-full
+                      max-w-full
+                      min-w-0
                       overflow-hidden
                       rounded-xl
-                      transition-all
-                      duration-300
+                      transition-colors
+                      duration-200
 
                       ${
                         mobile
-                          ? "min-h-[48px] gap-3 px-4 py-3"
+                          ? "min-h-[48px] items-center gap-3 px-4 py-3"
                           : collapsed
                             ? "mx-auto h-11 w-11 items-center justify-center"
-                            : "min-h-11 items-center gap-3 px-4 py-2.5"
+                            : "min-h-[44px] items-center gap-3 px-4 py-2.5"
                       }
 
                       ${
@@ -215,14 +230,15 @@ export default function Navigation({
                         <motion.span
                           layoutId={
                             mobile
-                              ? "ArkenOne-mobile-nav-indicator"
-                              : "ArkenOne-nav-indicator"
+                              ? "DhanarkOS-mobile-nav-indicator"
+                              : "DhanarkOS-nav-indicator"
                           }
                           className="
                             absolute
                             bottom-2
                             left-0
                             top-2
+                            z-20
                             w-[2px]
                             rounded-r-full
                             bg-[#D4AF37]
@@ -230,7 +246,9 @@ export default function Navigation({
                         />
 
                         <div
+                          aria-hidden="true"
                           className="
+                            pointer-events-none
                             absolute
                             inset-0
                             bg-[linear-gradient(90deg,rgba(212,175,55,0.08),transparent_72%)]
@@ -239,35 +257,47 @@ export default function Navigation({
                       </>
                     )}
 
-                    <Icon
-                      size={
-                        mobile ? 18 : 17
-                      }
-                      strokeWidth={1.9}
-                      className={`
+                    <span
+                      className="
                         relative
                         z-10
+                        flex
+                        h-5
+                        w-5
                         shrink-0
-                        transition-colors
-                        duration-300
-                        ${
-                          active
-                            ? "text-[#D4AF37]"
-                            : "text-zinc-500 group-hover:text-zinc-100"
-                        }
-                      `}
-                    />
+                        items-center
+                        justify-center
+                      "
+                    >
+                      <Icon
+                        size={mobile ? 18 : 17}
+                        strokeWidth={1.9}
+                        aria-hidden="true"
+                        className={`
+                          shrink-0
+                          transition-colors
+                          duration-200
+                          ${
+                            active
+                              ? "text-[#D4AF37]"
+                              : "text-zinc-500 group-hover:text-zinc-100"
+                          }
+                        `}
+                      />
+                    </span>
 
                     {!collapsed && (
                       <span
                         className={`
                           relative
                           z-10
+                          min-w-0
+                          flex-1
                           truncate
                           font-medium
                           tracking-[0.01em]
                           transition-colors
-                          duration-300
+                          duration-200
                           ${
                             mobile
                               ? "text-[14px]"
@@ -293,3 +323,4 @@ export default function Navigation({
     </nav>
   );
 }
+

@@ -3,40 +3,165 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
-export async function signIn(formData: FormData): Promise<void> {
+export async function signIn(
+  formData: FormData
+): Promise<void> {
   const supabase = await createClient();
 
-  const email = String(formData.get("email"));
-  const password = String(formData.get("password"));
+  const email = String(
+    formData.get("email") ?? ""
+  ).trim();
 
-  console.log("========== LOGIN ATTEMPT ==========");
-  console.log("Email:", email);
+  const password = String(
+    formData.get("password") ?? ""
+  );
 
-  const result = await supabase.auth.signInWithPassword({
-    email,
-    password,
-  });
+  const redirectTo = String(
+    formData.get("redirect") ?? ""
+  ).trim();
 
-  console.log("========== LOGIN RESULT ==========");
-  console.log("Error:", result.error);
-  console.log("Has User:", !!result.data.user);
-  console.log("Has Session:", !!result.data.session);
-
-  if (result.data.session) {
-    console.log(
-      "Access Token Length:",
-      result.data.session.access_token.length
+  if (!email || !password) {
+    throw new Error(
+      "Email and password are required."
     );
   }
 
-  console.log("==================================");
+  /*
+   * ============================================================
+   * SIGN IN
+   * ============================================================
+   */
 
-  if (result.error) {
-    throw new Error(result.error.message);
+  const {
+    data,
+    error,
+  } =
+    await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+  if (error) {
+    console.error(
+      "[Login] Sign-in failed:",
+      error.message
+    );
+
+    throw new Error(error.message);
   }
 
-  console.log("LOGIN SUCCESS");
-  console.log("REDIRECTING TO DASHBOARD...");
+  if (!data.session || !data.user) {
+    throw new Error(
+      "Login succeeded but no session was created. Please try again."
+    );
+  }
 
-  redirect("/dashboard");
+  const userId = data.user.id;
+
+  console.log(
+    "[Login] Successful:",
+    userId
+  );
+
+  /*
+   * ============================================================
+   * CHECK EXISTING TRIAL / SUBSCRIPTION
+   * ============================================================
+   */
+
+  const {
+    data: trial,
+    error: trialError,
+  } =
+    await supabase
+      .from("dhanarkos_trials")
+      .select(
+        "id, trial_status, subscription_status, razorpay_subscription_id"
+      )
+      .eq(
+        "user_id",
+        userId
+      )
+      .maybeSingle();
+
+  /*
+   * If trial lookup fails, don't destroy a valid login.
+   */
+
+  if (trialError) {
+    console.error(
+      "[Login] Trial lookup failed:",
+      trialError
+    );
+
+    redirect(
+      isSafeRedirect(redirectTo)
+        ? redirectTo
+        : "/dashboard"
+    );
+  }
+
+  /*
+   * ============================================================
+   * EXISTING ACCOUNT
+   * ============================================================
+   */
+
+  if (trial) {
+    console.log(
+      "[Login] Existing DhanarkOS trial found."
+    );
+
+    redirect(
+      isSafeRedirect(redirectTo)
+        ? redirectTo
+        : "/dashboard"
+    );
+  }
+
+  /*
+   * ============================================================
+   * NEW ACCOUNT
+   * ============================================================
+   */
+
+  console.log(
+    "[Login] No DhanarkOS trial found. Sending to pricing."
+  );
+
+  redirect("/pricing");
+}
+
+/*
+ * ============================================================
+ * SAFE REDIRECT
+ * ============================================================
+ *
+ * Only allow internal paths.
+ * Prevents open-redirect vulnerabilities.
+ */
+
+function isSafeRedirect(
+  value: string
+): boolean {
+  if (!value) {
+    return false;
+  }
+
+  if (!value.startsWith("/")) {
+    return false;
+  }
+
+  if (value.startsWith("//")) {
+    return false;
+  }
+
+  if (
+    value.startsWith("/login") ||
+    value.startsWith("/signup")
+  ) {
+    return false;
+  }
+
+  return true;
 }

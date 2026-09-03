@@ -16,7 +16,7 @@ export default function ExecutiveSummary({
   return (
     <PageSection
       title="Executive Brief"
-      subtitle="ArkenOne Intelligence Engine"
+      subtitle="DhanarkOS Intelligence Engine"
     >
       <div className="space-y-6">
 
@@ -119,7 +119,7 @@ export default function ExecutiveSummary({
 
             <p className="mt-4 leading-7 text-zinc-400">
               Recommendations are generated using
-              ArkenOne's financial intelligence engine
+              DhanarkOS's financial intelligence engine
               and current business metrics.
             </p>
 

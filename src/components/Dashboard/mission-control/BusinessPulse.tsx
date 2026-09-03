@@ -158,32 +158,18 @@ export default function BusinessPulse({
 }: Props) {
   const score = Math.max(
     0,
-    Math.min(
-      100,
-      Number(snapshot.healthScore ?? 0)
-    )
+    Math.min(100, Number(snapshot.healthScore ?? 0))
   );
 
-  const revenue = Number(
-    snapshot.revenue ?? 0
-  );
-
-  const expenses = Number(
-    snapshot.expenses ?? 0
-  );
-
-  const profit = Number(
-    snapshot.profit ?? 0
-  );
-
+  const revenue = Number(snapshot.revenue ?? 0);
+  const expenses = Number(snapshot.expenses ?? 0);
+  const profit = Number(snapshot.profit ?? 0);
   const cashAvailable = Number(
     snapshot.cashAvailable ?? 0
   );
-
   const receivables = Number(
     snapshot.outstandingReceivables ?? 0
   );
-
   const customerCount = Number(
     snapshot.customerCount ?? 0
   );
@@ -492,9 +478,7 @@ export default function BusinessPulse({
 
         <MetricCard
           title="Customers"
-          value={customerCount.toLocaleString(
-            "en-IN"
-          )}
+          value={customerCount.toLocaleString("en-IN")}
           icon={Users}
         />
       </div>
@@ -537,13 +521,9 @@ export default function BusinessPulse({
               `}
             >
               {profit > 0
-                ? `Operating profit of ${money(
-                    profit
-                  )}`
+                ? `Operating profit of ${money(profit)}`
                 : profit < 0
-                  ? `Operating loss of ${money(
-                      Math.abs(profit)
-                    )}`
+                  ? `Operating loss of ${money(Math.abs(profit))}`
                   : "No operating profit recorded yet"}
             </p>
           </div>

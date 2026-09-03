@@ -1,4 +1,4 @@
-# ArkenOne Financial Engines
+# DhanarkOS Financial Engines
 
 Version 1.0
 
@@ -6,7 +6,7 @@ Version 1.0
 
 # Purpose
 
-The Financial Intelligence Layer is the heart of ArkenOne.
+The Financial Intelligence Layer is the heart of DhanarkOS.
 
 Every financial calculation, validation, prediction, recommendation, and automation originates from these engines.
 

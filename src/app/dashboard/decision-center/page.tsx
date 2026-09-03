@@ -33,7 +33,7 @@ export default async function DecisionCenterPage() {
                 Intelligence
               </p>
 
-              <h1 className="ArkenOne-gold mt-2 text-5xl font-bold">
+              <h1 className="DhanarkOS-gold mt-2 text-5xl font-bold">
                 Decision Center
               </h1>
 

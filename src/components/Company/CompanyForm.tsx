@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import Image from "next/image";
+import { useEffect, useRef, useState } from "react";
 import CompanyCard from "./CompanyCard";
 import CompanyInput from "./CompanyInput";
 
@@ -9,6 +10,8 @@ import {
   getCompany,
   updateCompany,
 } from "@/services/companyService";
+
+import { createClient } from "@/lib/supabase/client";
 
 type PaymentMethod =
   | "razorpay"
@@ -78,6 +81,12 @@ export default function CompanyForm() {
   const [saving, setSaving] =
     useState(false);
 
+  const [logoUploading, setLogoUploading] =
+    useState(false);
+
+  const logoInputRef =
+    useRef<HTMLInputElement>(null);
+
   function handleChange(
     e: React.ChangeEvent<HTMLInputElement>
   ) {
@@ -87,6 +96,137 @@ export default function CompanyForm() {
       ...current,
       [name]: value,
     }));
+  }
+
+  async function handleLogoUpload(
+    event: React.ChangeEvent<HTMLInputElement>
+  ) {
+    const file = event.target.files?.[0];
+
+    event.target.value = "";
+
+    if (!file) {
+      return;
+    }
+
+    if (!file.type.startsWith("image/")) {
+      alert("Please choose a PNG, JPG, or WEBP image.");
+      return;
+    }
+
+    if (file.size > 2 * 1024 * 1024) {
+      alert("Please choose a logo smaller than 2 MB.");
+      return;
+    }
+
+    if (!companyId) {
+      alert(
+        "Please save the company profile once before uploading the logo."
+      );
+      return;
+    }
+
+    try {
+      setLogoUploading(true);
+
+      const supabase = createClient();
+      const path = `${companyId}/logo`;
+
+      const { error: uploadError } =
+        await supabase.storage
+          .from("company-logos")
+          .upload(path, file, {
+            cacheControl: "3600",
+            contentType: file.type,
+            upsert: true,
+          });
+
+      if (uploadError) {
+        throw uploadError;
+      }
+
+      const { data: publicUrlData } =
+        supabase.storage
+          .from("company-logos")
+          .getPublicUrl(path);
+
+      const logoUrl = publicUrlData.publicUrl;
+
+      await updateCompany(companyId, {
+        ...form,
+        logo_url: logoUrl,
+      });
+
+      setForm((current) => ({
+        ...current,
+        logo_url: logoUrl,
+      }));
+
+      alert("Company logo updated successfully.");
+    } catch (error) {
+      console.error(
+        "[CompanyForm] Logo upload error:",
+        error
+      );
+
+      alert(
+        error instanceof Error
+          ? error.message
+          : "Failed to upload company logo."
+      );
+    } finally {
+      setLogoUploading(false);
+    }
+  }
+
+  async function handleRemoveLogo() {
+    if (!companyId || !form.logo_url) {
+      return;
+    }
+
+    try {
+      setLogoUploading(true);
+
+      const supabase = createClient();
+      const marker = "/company-logos/";
+      const markerIndex =
+        form.logo_url.indexOf(marker);
+
+      if (markerIndex >= 0) {
+        const path = decodeURIComponent(
+          form.logo_url.slice(
+            markerIndex + marker.length
+          )
+        );
+
+        await supabase.storage
+          .from("company-logos")
+          .remove([path]);
+      }
+
+      await updateCompany(companyId, {
+        ...form,
+        logo_url: "",
+      });
+
+      setForm((current) => ({
+        ...current,
+        logo_url: "",
+      }));
+    } catch (error) {
+      console.error(
+        "[CompanyForm] Logo removal error:",
+        error
+      );
+
+      alert(
+        error instanceof Error
+          ? error.message
+          : "Failed to remove company logo."
+      );
+    } finally {
+      setLogoUploading(false);
+    }
   }
 
   function handlePaymentMethodChange(
@@ -111,9 +251,17 @@ export default function CompanyForm() {
       setSaving(true);
 
       /*
-       * Only save payment fields that belong
-       * to the selected payment method.
+       * =====================================================
+       * CLEAN PAYMENT DATA
+       * =====================================================
+       *
+       * Only keep the fields relevant to the
+       * currently selected payment method.
+       *
+       * This prevents stale payment information
+       * from being accidentally used later.
        */
+
       const dataToSave: CompanyFormData = {
         ...form,
 
@@ -123,22 +271,26 @@ export default function CompanyForm() {
             : "",
 
         payment_bank_name:
-          form.payment_method === "bank_transfer"
+          form.payment_method ===
+          "bank_transfer"
             ? form.payment_bank_name
             : "",
 
         payment_bank_account_name:
-          form.payment_method === "bank_transfer"
+          form.payment_method ===
+          "bank_transfer"
             ? form.payment_bank_account_name
             : "",
 
         payment_bank_account_number:
-          form.payment_method === "bank_transfer"
+          form.payment_method ===
+          "bank_transfer"
             ? form.payment_bank_account_number
             : "",
 
         payment_bank_ifsc:
-          form.payment_method === "bank_transfer"
+          form.payment_method ===
+          "bank_transfer"
             ? form.payment_bank_ifsc
             : "",
 
@@ -163,9 +315,11 @@ export default function CompanyForm() {
         const company =
           await createCompany(dataToSave);
 
-        if (company?.id) {
-          setCompanyId(company.id);
-        }
+        const createdCompanyId = company?.id;
+
+if (typeof createdCompanyId === "number") {
+  setCompanyId(createdCompanyId);
+}
 
         setForm(dataToSave);
 
@@ -190,8 +344,11 @@ export default function CompanyForm() {
   }
 
   /*
+   * =========================================================
    * LOAD COMPANY
+   * =========================================================
    */
+
   useEffect(() => {
     async function loadCompany() {
       try {
@@ -248,8 +405,10 @@ export default function CompanyForm() {
            */
 
           payment_method:
-            company.payment_method === "razorpay" ||
-            company.payment_method === "bank_transfer"
+            company.payment_method ===
+              "razorpay" ||
+            company.payment_method ===
+              "bank_transfer"
               ? company.payment_method
               : "upi",
 
@@ -303,7 +462,9 @@ export default function CompanyForm() {
   }, []);
 
   /*
+   * =========================================================
    * LOADING
+   * =========================================================
    */
 
   if (loading) {
@@ -330,6 +491,147 @@ export default function CompanyForm() {
       ====================================================== */}
 
       <CompanyCard title="Business Information">
+        <div
+          className="
+            mb-6
+            flex
+            flex-col
+            gap-5
+            rounded-2xl
+            border
+            border-white/[0.06]
+            bg-white/[0.02]
+            p-5
+            sm:flex-row
+            sm:items-center
+            sm:justify-between
+          "
+        >
+          <div className="flex min-w-0 items-center gap-4">
+            <div
+              className="
+                relative
+                flex
+                h-20
+                w-20
+                shrink-0
+                items-center
+                justify-center
+                overflow-hidden
+                rounded-full
+                border
+                border-[#D4AF37]/20
+                bg-[#D4AF37]/[0.06]
+              "
+            >
+              {form.logo_url ? (
+                <Image
+                  src={form.logo_url}
+                  alt={`${form.company_name || "Company"} logo`}
+                  fill
+                  sizes="80px"
+                  className="object-cover"
+                />
+              ) : (
+                <span className="text-xl font-semibold text-[#D4AF37]">
+                  {(
+                    form.company_name
+                      ?.trim()
+                      ?.[0] || "C"
+                  ).toUpperCase()}
+                </span>
+              )}
+            </div>
+
+            <div className="min-w-0">
+              <p className="text-sm font-medium text-white">
+                Company Logo
+              </p>
+
+              <p className="mt-1 max-w-md text-xs leading-5 text-zinc-600">
+                This logo is used only in the administrator identity area of DhanarkOS.
+                DhanarkOS branding remains unchanged.
+              </p>
+
+              <p className="mt-2 text-[10px] uppercase tracking-[0.16em] text-zinc-700">
+                PNG · JPG · WEBP · Max 2 MB
+              </p>
+            </div>
+          </div>
+
+          <div className="flex shrink-0 items-center gap-2">
+            <input
+              ref={logoInputRef}
+              type="file"
+              accept="image/png,image/jpeg,image/webp"
+              className="hidden"
+              onChange={handleLogoUpload}
+            />
+
+            <button
+              type="button"
+              onClick={() =>
+                logoInputRef.current?.click()
+              }
+              disabled={
+                logoUploading || !companyId
+              }
+              className="
+                inline-flex
+                min-h-10
+                items-center
+                justify-center
+                rounded-xl
+                border
+                border-white/[0.08]
+                bg-white/[0.035]
+                px-4
+                text-xs
+                font-medium
+                text-zinc-300
+                transition
+                hover:border-[#D4AF37]/30
+                hover:bg-white/[0.055]
+                hover:text-white
+                disabled:cursor-not-allowed
+                disabled:opacity-40
+              "
+            >
+              {logoUploading
+                ? "Uploading..."
+                : form.logo_url
+                  ? "Replace Logo"
+                  : "Add Logo"}
+            </button>
+
+            {form.logo_url && (
+              <button
+                type="button"
+                onClick={handleRemoveLogo}
+                disabled={logoUploading}
+                className="
+                  inline-flex
+                  min-h-10
+                  items-center
+                  justify-center
+                  rounded-xl
+                  px-3
+                  text-xs
+                  font-medium
+                  text-zinc-600
+                  transition
+                  hover:bg-white/[0.04]
+                  hover:text-red-300
+                  disabled:cursor-not-allowed
+                  disabled:opacity-40
+                "
+              >
+                Remove
+              </button>
+            )}
+          </div>
+        </div>
+
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
           <CompanyInput
             label="Company Name"
@@ -403,18 +705,12 @@ export default function CompanyForm() {
 
       <CompanyCard title="Payment Settings">
         <div className="space-y-7">
-
-          {/* PAYMENT METHOD */}
-
           <div>
             <label className="block text-[13px] font-medium tracking-wide text-zinc-400">
               How customers pay
             </label>
 
             <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
-
-              {/* UPI */}
-
               <button
                 type="button"
                 onClick={() =>
@@ -422,7 +718,7 @@ export default function CompanyForm() {
                 }
                 className={`rounded-2xl border p-4 text-left transition ${
                   form.payment_method === "upi"
-                    ? "border-[#D4AF37]/70 bg-[#D4AF37]/[0.07] ring-1 ring-[#D4AF37]/30"
+                    ? "border-[#D4AF37]/50 bg-[#D4AF37]/[0.07] ring-1 ring-[#D4AF37]/20"
                     : "border-white/[0.08] bg-white/[0.02] hover:border-white/[0.15]"
                 }`}
               >
@@ -441,8 +737,6 @@ export default function CompanyForm() {
                 </p>
               </button>
 
-              {/* BANK TRANSFER */}
-
               <button
                 type="button"
                 onClick={() =>
@@ -453,7 +747,7 @@ export default function CompanyForm() {
                 className={`rounded-2xl border p-4 text-left transition ${
                   form.payment_method ===
                   "bank_transfer"
-                    ? "border-[#D4AF37]/70 bg-[#D4AF37]/[0.07] ring-1 ring-[#D4AF37]/30"
+                    ? "border-[#D4AF37]/50 bg-[#D4AF37]/[0.07] ring-1 ring-[#D4AF37]/20"
                     : "border-white/[0.08] bg-white/[0.02] hover:border-white/[0.15]"
                 }`}
               >
@@ -473,8 +767,6 @@ export default function CompanyForm() {
                 </p>
               </button>
 
-              {/* RAZORPAY */}
-
               <button
                 type="button"
                 onClick={() =>
@@ -483,14 +775,16 @@ export default function CompanyForm() {
                   )
                 }
                 className={`rounded-2xl border p-4 text-left transition ${
-                  form.payment_method === "razorpay"
-                    ? "border-[#D4AF37]/70 bg-[#D4AF37]/[0.07] ring-1 ring-[#D4AF37]/30"
+                  form.payment_method ===
+                  "razorpay"
+                    ? "border-[#D4AF37]/50 bg-[#D4AF37]/[0.07] ring-1 ring-[#D4AF37]/20"
                     : "border-white/[0.08] bg-white/[0.02] hover:border-white/[0.15]"
                 }`}
               >
                 <p
                   className={`text-sm font-semibold ${
-                    form.payment_method === "razorpay"
+                    form.payment_method ===
+                    "razorpay"
                       ? "text-[#D4AF37]"
                       : "text-white"
                   }`}
@@ -502,11 +796,8 @@ export default function CompanyForm() {
                   Accept online payments
                 </p>
               </button>
-
             </div>
           </div>
-
-          {/* DISPLAY NAME + PHONE */}
 
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             <CompanyInput
@@ -529,12 +820,8 @@ export default function CompanyForm() {
             />
           </div>
 
-          {/* =================================================
-              UPI
-          ================================================== */}
-
           {form.payment_method === "upi" && (
-            <div className="rounded-2xl border border-white/[0.07] bg-[#0d0d0d] p-5">
+            <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-5">
               <div className="mb-5">
                 <p className="text-sm font-semibold text-white">
                   UPI Details
@@ -556,12 +843,9 @@ export default function CompanyForm() {
             </div>
           )}
 
-          {/* =================================================
-              BANK TRANSFER
-          ================================================== */}
-
-          {form.payment_method === "bank_transfer" && (
-            <div className="rounded-2xl border border-white/[0.07] bg-[#0d0d0d] p-5">
+          {form.payment_method ===
+            "bank_transfer" && (
+            <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-5">
               <div className="mb-5">
                 <p className="text-sm font-semibold text-white">
                   Bank Details
@@ -585,7 +869,9 @@ export default function CompanyForm() {
                 <CompanyInput
                   label="Account Holder Name"
                   name="payment_bank_account_name"
-                  value={form.payment_bank_account_name}
+                  value={
+                    form.payment_bank_account_name
+                  }
                   placeholder="Account holder"
                   onChange={handleChange}
                   required
@@ -594,7 +880,9 @@ export default function CompanyForm() {
                 <CompanyInput
                   label="Account Number"
                   name="payment_bank_account_number"
-                  value={form.payment_bank_account_number}
+                  value={
+                    form.payment_bank_account_number
+                  }
                   placeholder="Bank account number"
                   onChange={handleChange}
                   required
@@ -612,12 +900,9 @@ export default function CompanyForm() {
             </div>
           )}
 
-          {/* =================================================
-              RAZORPAY
-          ================================================== */}
-
-          {form.payment_method === "razorpay" && (
-            <div className="rounded-2xl border border-white/[0.07] bg-[#0d0d0d] p-5">
+          {form.payment_method ===
+            "razorpay" && (
+            <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-5">
               <div className="mb-5">
                 <p className="text-sm font-semibold text-white">
                   Razorpay Configuration
@@ -640,21 +925,161 @@ export default function CompanyForm() {
               />
             </div>
           )}
-
         </div>
       </CompanyCard>
 
       {/* =====================================================
-          BUSINESS BANKING INFORMATION
+          LEGACY BANK INFORMATION
       ====================================================== */}
 
       <CompanyCard title="Business Banking Information">
-        <div className="mb-5 rounded-xl border border-white/[0.07] bg-[#0d0d0d] p-4">
+        <div className="mb-5 rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
           <p className="text-xs leading-5 text-zinc-500">
             These details are kept as part of your general
             business profile. Your customer payment settings
             above control what appears on payment links.
           </p>
+        </div>
+
+        <div
+          className="
+            mb-6
+            flex
+            flex-col
+            gap-5
+            rounded-2xl
+            border
+            border-white/[0.06]
+            bg-white/[0.02]
+            p-5
+            sm:flex-row
+            sm:items-center
+            sm:justify-between
+          "
+        >
+          <div className="flex min-w-0 items-center gap-4">
+            <div
+              className="
+                relative
+                flex
+                h-20
+                w-20
+                shrink-0
+                items-center
+                justify-center
+                overflow-hidden
+                rounded-full
+                border
+                border-[#D4AF37]/20
+                bg-[#D4AF37]/[0.06]
+              "
+            >
+              {form.logo_url ? (
+                <Image
+                  src={form.logo_url}
+                  alt={`${form.company_name || "Company"} logo`}
+                  fill
+                  sizes="80px"
+                  className="object-cover"
+                />
+              ) : (
+                <span className="text-xl font-semibold text-[#D4AF37]">
+                  {(
+                    form.company_name
+                      ?.trim()
+                      ?.[0] || "C"
+                  ).toUpperCase()}
+                </span>
+              )}
+            </div>
+
+            <div className="min-w-0">
+              <p className="text-sm font-medium text-white">
+                Company Logo
+              </p>
+
+              <p className="mt-1 max-w-md text-xs leading-5 text-zinc-600">
+                This logo is used only in the administrator identity area of DhanarkOS.
+                DhanarkOS branding remains unchanged.
+              </p>
+
+              <p className="mt-2 text-[10px] uppercase tracking-[0.16em] text-zinc-700">
+                PNG · JPG · WEBP · Max 2 MB
+              </p>
+            </div>
+          </div>
+
+          <div className="flex shrink-0 items-center gap-2">
+            <input
+              ref={logoInputRef}
+              type="file"
+              accept="image/png,image/jpeg,image/webp"
+              className="hidden"
+              onChange={handleLogoUpload}
+            />
+
+            <button
+              type="button"
+              onClick={() =>
+                logoInputRef.current?.click()
+              }
+              disabled={
+                logoUploading || !companyId
+              }
+              className="
+                inline-flex
+                min-h-10
+                items-center
+                justify-center
+                rounded-xl
+                border
+                border-white/[0.08]
+                bg-white/[0.035]
+                px-4
+                text-xs
+                font-medium
+                text-zinc-300
+                transition
+                hover:border-[#D4AF37]/30
+                hover:bg-white/[0.055]
+                hover:text-white
+                disabled:cursor-not-allowed
+                disabled:opacity-40
+              "
+            >
+              {logoUploading
+                ? "Uploading..."
+                : form.logo_url
+                  ? "Replace Logo"
+                  : "Add Logo"}
+            </button>
+
+            {form.logo_url && (
+              <button
+                type="button"
+                onClick={handleRemoveLogo}
+                disabled={logoUploading}
+                className="
+                  inline-flex
+                  min-h-10
+                  items-center
+                  justify-center
+                  rounded-xl
+                  px-3
+                  text-xs
+                  font-medium
+                  text-zinc-600
+                  transition
+                  hover:bg-white/[0.04]
+                  hover:text-red-300
+                  disabled:cursor-not-allowed
+                  disabled:opacity-40
+                "
+              >
+                Remove
+              </button>
+            )}
+          </div>
         </div>
 
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">

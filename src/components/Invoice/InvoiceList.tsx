@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useMemo, useState } from "react";
@@ -11,14 +12,9 @@ import {
   getInvoiceItems,
 } from "@/services/invoiceService";
 
+import { useInvoices } from "./queries/invoiceQueries";
 
-import {
-  useInvoices,
-} from "./queries/invoiceQueries";
-
-import {
-  useDeleteInvoice,
-} from "./mutations/invoiceMutations";
+import { useDeleteInvoice } from "./mutations/invoiceMutations";
 
 import InvoiceSearch from "./InvoiceSearch";
 import InvoiceTable from "./InvoiceTable";
@@ -43,7 +39,6 @@ type InvoiceItemRow = {
 };
 
 export default function InvoiceList() {
-
   const router = useRouter();
 
   const {
@@ -51,11 +46,9 @@ export default function InvoiceList() {
     isLoading,
   } = useInvoices();
 
-  const deleteMutation =
-    useDeleteInvoice();
+  const deleteMutation = useDeleteInvoice();
 
-  const [search, setSearch] =
-    useState("");
+  const [search, setSearch] = useState("");
 
   const [selectedInvoice, setSelectedInvoice] =
     useState<Invoice | null>(null);
@@ -64,12 +57,14 @@ export default function InvoiceList() {
     useState<InvoiceItemRow[]>([]);
 
   async function handleDelete(id: number) {
-    if (!window.confirm("Delete this invoice?")) return;
+    if (!window.confirm("Delete this invoice?")) {
+      return;
+    }
 
     try {
       await deleteMutation.mutateAsync(id);
 
-      alert("✅ Invoice deleted successfully!");
+      alert("Invoice deleted successfully!");
     } catch (error) {
       console.error(error);
       alert("Failed to delete invoice.");
@@ -80,6 +75,7 @@ export default function InvoiceList() {
     try {
       const invoice = await getInvoiceById(id);
       const items = await getInvoiceItems(id);
+
       setSelectedInvoice(invoice);
       setSelectedItems(items ?? []);
     } catch (error) {
@@ -95,23 +91,20 @@ export default function InvoiceList() {
   async function handlePDF(id: number) {
     try {
       const invoice = await getInvoiceById(id);
-
       const items = await getInvoiceItems(id);
+
       generateInvoicePDF({
-        // company removed: InvoicePDFData does not accept a company property
         invoiceNumber: invoice.invoice_number,
         customer: invoice.customer,
         invoiceDate: invoice.invoice_date,
         dueDate: invoice.due_date,
         status: invoice.status,
-
         items: (items ?? []).map((item: any) => ({
           name: item.item_name,
           quantity: item.quantity,
           price: item.price,
         })),
       });
-
     } catch (error) {
       console.error(error);
       alert("Failed to generate PDF.");
@@ -135,134 +128,283 @@ export default function InvoiceList() {
 
   return (
     <>
-      <section className="overflow-hidden rounded-[30px] border border-white/[0.06] bg-[#101214] shadow-[0_20px_60px_rgba(0,0,0,0.45)]">
-       <div className="flex flex-col gap-8 border-b border-white/[0.06] p-10 lg:flex-row lg:items-center lg:justify-between">
+      <section
+        className="
+          w-full
+          overflow-hidden
+          rounded-[24px]
+          border
+          border-white/[0.06]
+          bg-[#101214]
+          shadow-[0_20px_60px_rgba(0,0,0,0.45)]
+          sm:rounded-[30px]
+        "
+      >
+        {/* HEADER */}
 
-  <div>
+        <div
+          className="
+            flex
+            flex-col
+            gap-6
+            border-b
+            border-white/[0.06]
+            p-4
+            sm:gap-8
+            sm:p-6
+            lg:flex-row
+            lg:items-center
+            lg:justify-between
+            lg:p-10
+          "
+        >
+          <div className="min-w-0">
+            <p
+              className="
+                text-[10px]
+                font-semibold
+                uppercase
+                tracking-[0.22em]
+                text-[#D4AF37]
+                sm:text-xs
+              "
+            >
+              DhanarkOS
+            </p>
 
-    <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#D4AF37]">
-      ArkenOne
-    </p>
+            <h1
+              className="
+                mt-2
+                bg-gradient-to-r
+                from-[#FFF4C8]
+                via-[#D4AF37]
+                to-[#B8860B]
+                bg-clip-text
+                text-3xl
+                font-semibold
+                tracking-tight
+                text-transparent
+                sm:mt-3
+                sm:text-4xl
+              "
+            >
+              Invoices
+            </h1>
 
-    <h1 className="mt-3 bg-gradient-to-r from-[#FFF4C8] via-[#D4AF37] to-[#B8860B] bg-clip-text text-4xl font-semibold tracking-tight text-transparent">
-      Invoices
-    </h1>
+            <p
+              className="
+                mt-3
+                max-w-xl
+                text-sm
+                leading-6
+                text-zinc-500
+                sm:mt-4
+                sm:text-[15px]
+                sm:leading-7
+              "
+            >
+              Create, track and collect invoice payments
+              with your executive finance workspace.
+            </p>
+          </div>
 
-    <p className="mt-4 max-w-xl text-[15px] leading-7 text-zinc-500">
-      Create, track and collect invoice payments with your executive finance workspace.
-    </p>
+          <Link
+            href="/invoices/new"
+            className="
+              inline-flex
+              h-12
+              w-full
+              shrink-0
+              items-center
+              justify-center
+              rounded-2xl
+              bg-[#D4AF37]
+              px-6
+              text-sm
+              font-semibold
+              text-[#090909]
+              transition-all
+              duration-200
+              hover:scale-[1.02]
+              hover:brightness-105
+              sm:w-auto
+              sm:px-7
+            "
+          >
+            + New Invoice
+          </Link>
+        </div>
 
-  </div>
+        {/* SEARCH */}
 
-  <Link
-    href="/invoices/new"
-    className="inline-flex h-12 items-center justify-center rounded-2xl bg-[#D4AF37] px-7 text-sm font-semibold text-[#090909] transition-all duration-200 hover:scale-[1.02] hover:brightness-105"
-  >
-    + New Invoice
-  </Link>
+        <div
+          className="
+            border-b
+            border-white/[0.06]
+            px-4
+            py-5
+            sm:px-6
+            sm:py-6
+            lg:px-10
+            lg:py-8
+          "
+        >
+          <InvoiceSearch
+            value={search}
+            onChange={setSearch}
+          />
+        </div>
 
-</div>
+        {/* SUMMARY */}
 
-        <div className="border-b border-white/[0.06] px-10 py-8">
+        <div
+          className="
+            grid
+            grid-cols-1
+            gap-4
+            border-b
+            border-white/[0.06]
+            p-4
+            sm:grid-cols-2
+            sm:gap-5
+            sm:p-6
+            xl:grid-cols-4
+            lg:p-10
+          "
+        >
+          <div
+            className="
+              min-w-0
+              rounded-2xl
+              border
+              border-white/[0.06]
+              bg-[#14171B]
+              p-5
+              sm:rounded-3xl
+              sm:p-6
+            "
+          >
+            <p className="text-xs uppercase tracking-[0.18em] text-zinc-500">
+              Total Invoices
+            </p>
 
-  <InvoiceSearch
-    value={search}
-    onChange={setSearch}
-  />
+            <h2 className="mt-3 text-3xl font-bold text-white sm:text-4xl">
+              {filteredInvoices.length}
+            </h2>
+          </div>
 
-</div>
+          <div
+            className="
+              min-w-0
+              rounded-2xl
+              border
+              border-white/[0.06]
+              bg-[#14171B]
+              p-5
+              sm:rounded-3xl
+              sm:p-6
+            "
+          >
+            <p className="text-xs uppercase tracking-[0.18em] text-zinc-500">
+              Outstanding
+            </p>
 
-<div className="grid grid-cols-1 gap-5 border-b border-white/[0.06] p-10 md:grid-cols-2 xl:grid-cols-4">
+            <h2
+              className="
+                mt-3
+                break-words
+                text-2xl
+                font-bold
+                text-[#D4AF37]
+                sm:text-4xl
+              "
+            >
+              {formatCurrency(
+                filteredInvoices
+                  .filter((i) => i.status !== "Paid")
+                  .reduce(
+                    (sum, i) => sum + i.balance_due,
+                    0
+                  )
+              )}
+            </h2>
+          </div>
 
-  <div className="rounded-3xl border border-white/[0.06] bg-[#14171B] p-6">
+          <div
+            className="
+              min-w-0
+              rounded-2xl
+              border
+              border-white/[0.06]
+              bg-[#14171B]
+              p-5
+              sm:rounded-3xl
+              sm:p-6
+            "
+          >
+            <p className="text-xs uppercase tracking-[0.18em] text-zinc-500">
+              Paid
+            </p>
 
-    <p className="text-xs uppercase tracking-[0.18em] text-zinc-500">
-      Total Invoices
-    </p>
+            <h2 className="mt-3 text-3xl font-bold text-emerald-400 sm:text-4xl">
+              {
+                filteredInvoices.filter(
+                  (i) => i.status === "Paid"
+                ).length
+              }
+            </h2>
+          </div>
 
-    <h2 className="mt-3 text-4xl font-bold text-white">
-      {filteredInvoices.length}
-    </h2>
+          <div
+            className="
+              min-w-0
+              rounded-2xl
+              border
+              border-white/[0.06]
+              bg-[#14171B]
+              p-5
+              sm:rounded-3xl
+              sm:p-6
+            "
+          >
+            <p className="text-xs uppercase tracking-[0.18em] text-zinc-500">
+              Pending
+            </p>
 
-  </div>
+            <h2 className="mt-3 text-3xl font-bold text-amber-400 sm:text-4xl">
+              {
+                filteredInvoices.filter(
+                  (i) => i.status === "Pending"
+                ).length
+              }
+            </h2>
+          </div>
+        </div>
 
-  <div className="rounded-3xl border border-white/[0.06] bg-[#14171B] p-6">
+        {/* INVOICE LIST */}
 
-    <p className="text-xs uppercase tracking-[0.18em] text-zinc-500">
-      Outstanding
-    </p>
-
-    <h2 className="mt-3 text-4xl font-bold text-[#D4AF37]">
-
-      {formatCurrency(
-
-        filteredInvoices
-          .filter(i => i.status !== "Paid")
-          .reduce(
-            (sum, i) =>
-              sum + i.balance_due,
-            0
-          )
-
-      )}
-
-    </h2>
-
-  </div>
-
-  <div className="rounded-3xl border border-white/[0.06] bg-[#14171B] p-6">
-
-    <p className="text-xs uppercase tracking-[0.18em] text-zinc-500">
-      Paid
-    </p>
-
-    <h2 className="mt-3 text-4xl font-bold text-emerald-400">
-
-      {
-        filteredInvoices.filter(
-          i => i.status === "Paid"
-        ).length
-      }
-
-    </h2>
-
-  </div>
-
-  <div className="rounded-3xl border border-white/[0.06] bg-[#14171B] p-6">
-
-    <p className="text-xs uppercase tracking-[0.18em] text-zinc-500">
-      Pending
-    </p>
-
-    <h2 className="mt-3 text-4xl font-bold text-amber-400">
-
-      {
-        filteredInvoices.filter(
-          i => i.status === "Pending"
-        ).length
-      }
-
-    </h2>
-
-  </div>
-
-</div>
         {isLoading ? (
-          <div className="py-20 text-center text-gray-400">
+          <div className="py-16 text-center text-gray-400 sm:py-20">
             Loading invoices...
           </div>
         ) : (
-          <div className="p-10">
-
-  <InvoiceTable
-            invoices={filteredInvoices}
-            formatCurrency={formatCurrency}
-            onView={handleView}
-            onPDF={handlePDF}
-            onPrint={handlePrint}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-          />
+          <div
+            className="
+              min-w-0
+              p-4
+              sm:p-6
+              lg:p-10
+            "
+          >
+            <InvoiceTable
+              invoices={filteredInvoices}
+              formatCurrency={formatCurrency}
+              onView={handleView}
+              onPDF={handlePDF}
+              onPrint={handlePrint}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+            />
           </div>
         )}
       </section>
@@ -281,3 +423,4 @@ export default function InvoiceList() {
     </>
   );
 }
+

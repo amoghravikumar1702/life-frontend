@@ -142,7 +142,7 @@ export default function ExpensesPage() {
             </h1>
 
             <p className="mt-2 max-w-2xl text-xs leading-6 text-zinc-500 sm:mt-3 sm:text-sm sm:leading-7">
-              Track business spending and give ArkenOne the
+              Track business spending and give DhanarkOS the
               financial data required for accurate CFO analysis.
             </p>
           </div>
@@ -286,7 +286,7 @@ export default function ExpensesPage() {
               </h3>
 
               <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-zinc-600 sm:leading-7">
-                Start recording business expenses so ArkenOne
+                Start recording business expenses so DhanarkOS
                 can calculate real profitability and financial
                 health.
               </p>
@@ -446,12 +446,12 @@ export default function ExpensesPage() {
 
             <div className="min-w-0">
               <p className="text-[9px] uppercase tracking-[0.26em] text-[#D4AF37] sm:text-[10px] sm:tracking-[0.32em]">
-                ARKENONE CFO
+                DhanarkOS CFO
               </p>
 
               <p className="mt-2 text-xs leading-6 text-zinc-400 sm:text-sm sm:leading-7">
                 Recorded expenses will be incorporated into
-                ArkenOne&apos;s profitability, cash-flow,
+                DhanarkOS&apos;s profitability, cash-flow,
                 margin, and financial-health analysis.
               </p>
             </div>

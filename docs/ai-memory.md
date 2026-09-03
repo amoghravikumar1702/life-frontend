@@ -1,4 +1,4 @@
-# ArkenOne AI Memory
+# DhanarkOS AI Memory
 
 Version 1.0
 

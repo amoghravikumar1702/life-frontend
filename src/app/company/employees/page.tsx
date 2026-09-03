@@ -91,7 +91,7 @@ export default function WorkforceManagement({
             </h1>
 
             <p className="mt-3 max-w-2xl text-zinc-500">
-              Keep your workforce count updated so ArkenOne can
+              Keep your workforce count updated so DhanarkOS can
               make better hiring and capacity recommendations.
             </p>
           </div>
@@ -204,7 +204,7 @@ export default function WorkforceManagement({
 
         <section className="mt-8 rounded-[28px] border border-[#D4AF37]/10 bg-[#D4AF37]/[0.03] p-7">
           <p className="text-[11px] uppercase tracking-[0.32em] text-[#D4AF37]">
-            ARKENONE AI CFO
+            DhanarkOS AI CFO
           </p>
 
           <p className="mt-4 max-w-3xl text-sm leading-7 text-zinc-400">

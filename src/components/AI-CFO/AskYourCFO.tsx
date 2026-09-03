@@ -217,7 +217,7 @@ export default function AskYourCFO({
       <div className="relative">
 
         {/* ===================================================
-            ARKENONE ENGINE HEADER
+            DhanarkOS ENGINE HEADER
         =================================================== */}
 
         <div
@@ -277,7 +277,7 @@ export default function AskYourCFO({
                     text-[#D4AF37]
                   "
                 >
-                  ArkenOne Intelligence Engine
+                  DhanarkOS Intelligence Engine
                 </p>
 
                 <p
@@ -377,7 +377,7 @@ export default function AskYourCFO({
                 text-zinc-500
               "
             >
-              Ask ArkenOne to evaluate your
+              Ask DhanarkOS to evaluate your
               financial position and determine
               your next move.
             </p>

@@ -1,6 +1,6 @@
 /*
  * ============================================================
- * ARKENONE AI CFO — CLIENT SERVICE
+ * DhanarkOS AI CFO — CLIENT SERVICE
  * ============================================================
  *
  * Browser-side service for communicating with the AI CFO API.

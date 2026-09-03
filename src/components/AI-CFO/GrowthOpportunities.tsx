@@ -23,7 +23,7 @@ export default function GrowthOpportunities({
   return (
     <PageSection
       title="Growth Strategy"
-      subtitle="High-impact opportunities identified by ArkenOne"
+      subtitle="High-impact opportunities identified by DhanarkOS"
     >
       <div className="grid gap-6 lg:grid-cols-2">
 

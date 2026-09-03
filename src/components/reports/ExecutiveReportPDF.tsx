@@ -23,7 +23,7 @@ interface ExecutiveReportPDFProps {
 }
 
 /* =========================================================
-   ARKENONE DESIGN SYSTEM
+   DhanarkOS DESIGN SYSTEM
 ========================================================= */
 
 const gold = "#D4AF37";
@@ -783,9 +783,9 @@ export default function ExecutiveReportPDF({
   return (
     <Document
       title={report.title}
-      author="ArkenOne"
+      author="DhanarkOS"
       subject="Executive Financial Report"
-      creator="ArkenOne"
+      creator="DhanarkOS"
     >
       <Page size="A4" style={styles.page}>
 
@@ -795,7 +795,7 @@ export default function ExecutiveReportPDF({
           <View style={styles.brandRow}>
             <View>
               <Text style={styles.brand}>
-                ARKENONE
+                DhanarkOS
               </Text>
 
               <Text style={styles.brandSubtext}>
@@ -1046,11 +1046,11 @@ export default function ExecutiveReportPDF({
           </View>
         </View>
 
-        {/* ARKENONE INTELLIGENCE */}
+        {/* DhanarkOS INTELLIGENCE */}
 
         <View style={styles.section}>
           <Text style={styles.sectionLabel}>
-            ArkenOne Intelligence
+            DhanarkOS Intelligence
           </Text>
 
           <Text style={styles.sectionTitle}>
@@ -1159,7 +1159,7 @@ export default function ExecutiveReportPDF({
           fixed
         >
           <Text style={styles.footerText}>
-            ARKENONE · EXECUTIVE FINANCIAL INTELLIGENCE
+            DhanarkOSOS · EXECUTIVE FINANCIAL INTELLIGENCE
           </Text>
 
           <Text

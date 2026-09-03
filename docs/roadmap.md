@@ -1,4 +1,4 @@
-# ArkenOne Product Roadmap
+# DhanarkOS Product Roadmap
 
 ---
 
@@ -91,4 +91,4 @@ Autonomous Finance
 
 # Long-Term Vision
 
-Every business in the world should be able to run a world-class finance department using ArkenOne.
+Every business in the world should be able to run a world-class finance department using DhanarkOS.

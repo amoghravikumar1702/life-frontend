@@ -1,13 +1,20 @@
-"use client";
-
-import { ReactNode } from "react";
+import type { ReactNode } from "react";
 
 import DashboardShell from "@/components/layout/DashboardShell";
+import {
+  requireDhanarkOSAccess,
+} from "@/lib/dhanark/access";
 
-export default function DashboardLayout({
+export default async function DashboardLayout({
   children,
 }: {
   children: ReactNode;
 }) {
-  return <DashboardShell>{children}</DashboardShell>;
+  await requireDhanarkOSAccess();
+
+  return (
+    <DashboardShell>
+      {children}
+    </DashboardShell>
+  );
 }

@@ -153,7 +153,7 @@ export async function GET() {
     // ============================================================
 
     console.error(
-      "[ArkenOne AI CFO API]",
+      "[DhanarkOS AI CFO API]",
       error instanceof Error
         ? error.message
         : "Unknown server error"

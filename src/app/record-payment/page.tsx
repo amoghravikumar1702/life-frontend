@@ -187,7 +187,7 @@ export default function RecordPaymentPage() {
       /*
        * Load invoices without relying on a Supabase
        * relationship. This keeps the page compatible
-       * with the existing ArkenOne schema.
+       * with the existing DhanarkOS schema.
        */
 
       const {

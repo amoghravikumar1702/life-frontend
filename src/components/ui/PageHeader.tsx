@@ -17,7 +17,7 @@ export default function PageHeader({
     <header className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
       <div className="min-w-0">
         <p className="text-[10px] font-medium uppercase tracking-[0.34em] text-[#D4AF37]">
-          ARKENONE
+          DhanarkOS
         </p>
 
         <h1 className="mt-3 text-3xl font-semibold tracking-[-0.04em] text-white sm:text-4xl">

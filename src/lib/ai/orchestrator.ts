@@ -30,7 +30,7 @@ export async function runExecutiveAnalysis(
     };
   } catch (error) {
     console.error(
-      "[ArkenOne AI] OpenAI CFO analysis failed:",
+      "[DhanarkOS AI] OpenAI CFO analysis failed:",
       error
     );
 

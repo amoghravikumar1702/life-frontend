@@ -22,7 +22,7 @@ export default function AppShell({
 
   useEffect(() => {
     const saved = localStorage.getItem(
-      "ArkenOne-sidebar-collapsed"
+      "DhanarkOS-sidebar-collapsed"
     );
 
     if (saved === "true") {
@@ -36,7 +36,7 @@ export default function AppShell({
     setCollapsed(next);
 
     localStorage.setItem(
-      "ArkenOne-sidebar-collapsed",
+      "DhanarkOS-sidebar-collapsed",
       String(next)
     );
   }

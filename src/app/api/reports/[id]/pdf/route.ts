@@ -93,7 +93,7 @@ export async function GET(
     }
 
     /*
-     * Generate the ArkenOne PDF.
+     * Generate the DhanarkOS PDF.
      *
      * The component is explicitly cast to the
      * React-PDF Document element type so that
@@ -114,7 +114,7 @@ export async function GET(
         .trim()
         .replace(/\s+/g, "-")
         .toLowerCase() ||
-      "arkenone-executive-report";
+      "DhanarkOS-executive-report";
 
     const filename = `${safeTitle}.pdf`;
 

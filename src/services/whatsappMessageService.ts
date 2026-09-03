@@ -28,7 +28,7 @@ This invoice has already been paid.
 
 Thank you for your business.
 
-— ArkenOne`;
+— DhanarkOS`;
 
     case "partial":
       return `${greeting}
@@ -47,7 +47,7 @@ If you've already completed the remaining payment, please ignore this message.
 
 Thank you.
 
-— ArkenOne`;
+— DhanarkOS`;
 
     case "overdue":
       return `${greeting}
@@ -66,7 +66,7 @@ If payment has already been made, please disregard this reminder.
 
 Thank you.
 
-— ArkenOne`;
+— DhanarkOS`;
 
     default:
       return `${greeting}
@@ -81,8 +81,8 @@ Secure Payment Link:
 
 ${paymentUrl}
 
-Thank you for choosing ArkenOne.
+Thank you for choosing DhanarkOS.
 
-— ArkenOne`;
+— DhanarkOS`;
   }
 }

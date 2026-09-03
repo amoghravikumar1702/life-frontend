@@ -2,7 +2,7 @@
  * Current maximum single payment we allow through Razorpay.
  *
  * IMPORTANT:
- * This is an ArkenOne-side safety limit based on the
+ * This is an DhanarkOS-side safety limit based on the
  * current Razorpay limit on the account.
  *
  * If Razorpay increases the account limit later,

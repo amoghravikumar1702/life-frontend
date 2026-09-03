@@ -5,7 +5,7 @@ import {
 
 /*
  * ============================================================
- * ARKENONE AI CFO — 30-DAY FORECAST ENGINE
+ * DhanarkOS AI CFO — 30-DAY FORECAST ENGINE
  * ============================================================
  *
  * Conservative MVP financial projection.
@@ -16,7 +16,7 @@ import {
  * 2. It does NOT call OpenAI.
  * 3. It does NOT invent external financial assumptions.
  * 4. It uses financial metrics already calculated by
- *    ArkenOne.
+ *    DhanarkOS.
  * 5. expectedCashPosition is a MODEL ESTIMATE, not a
  *    verified bank balance.
  *

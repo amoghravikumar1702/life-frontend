@@ -103,7 +103,7 @@ export async function getSecureAICFOBrief(
 
   if (rateLimitError) {
     console.error(
-      "[ArkenOne AI CFO] Rate limit error:",
+      "[DhanarkOS AI CFO] Rate limit error:",
       rateLimitError
     );
 
@@ -176,7 +176,7 @@ export async function getSecureAICFOBrief(
      */
 
     console.error(
-      "[ArkenOne AI CFO] Cache write failed:",
+      "[DhanarkOS AI CFO] Cache write failed:",
       cacheError
     );
   }

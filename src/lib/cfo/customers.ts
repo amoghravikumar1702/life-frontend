@@ -296,7 +296,7 @@ export async function getCustomerMetrics(): Promise<CustomerMetrics> {
    */
 
   console.log(
-    "[ArkenOne CFO] Customer Metrics:",
+    "[DhanarkOS CFO] Customer Metrics:",
     {
       totalCustomers,
       activeCustomers,

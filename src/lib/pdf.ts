@@ -28,7 +28,7 @@ export function generateInvoicePDF(data: InvoicePDFData) {
   // Company Name
   doc.setFontSize(22);
   doc.setFont("helvetica", "bold");
-  doc.text("ArkenOne", 14, 20);
+  doc.text("DhanarkOS", 14, 20);
 
   // Invoice Details
   doc.setFontSize(11);

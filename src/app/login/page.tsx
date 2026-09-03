@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { signIn } from "./actions";
+import DhanarkLogo from "@/components/brand/DhanarkLogo";
 
 export default function LoginPage() {
   return (
@@ -11,7 +12,6 @@ export default function LoginPage() {
 
       <div className="relative z-10 mx-auto flex w-full max-w-7xl items-center justify-center px-6 py-12 sm:px-10 lg:px-16">
         <div className="grid w-full max-w-5xl overflow-hidden rounded-[32px] border border-white/[0.08] bg-white/[0.025] shadow-[0_30px_100px_rgba(0,0,0,0.45)] backdrop-blur-2xl lg:grid-cols-[1.05fr_0.95fr]">
-          
           {/* ========================================================
               BRAND PANEL
           ======================================================== */}
@@ -19,17 +19,12 @@ export default function LoginPage() {
             <div className="pointer-events-none absolute bottom-[-180px] left-[-140px] h-[420px] w-[420px] rounded-full bg-[#D4AF37]/[0.035] blur-[120px]" />
 
             <div className="relative">
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#D4AF37]/20 bg-[#D4AF37]/[0.07]">
-                  <span className="text-sm font-semibold tracking-tight text-[#D4AF37]">
-                    A
-                  </span>
-                </div>
-
-                <span className="text-lg font-medium tracking-[-0.02em] text-zinc-100">
-                  ArkenOne
-                </span>
-              </div>
+              <DhanarkLogo
+                variant="full"
+                href="/"
+                className="h-11 w-auto"
+                priority
+              />
 
               <div className="mt-20 max-w-md">
                 <p className="text-[10px] font-medium uppercase tracking-[0.4em] text-[#D4AF37]">
@@ -45,7 +40,7 @@ export default function LoginPage() {
                 </h2>
 
                 <p className="mt-7 max-w-sm text-sm leading-7 text-zinc-500">
-                  ArkenOne brings your financial operations,
+                  DhanarkOS brings your financial operations,
                   business intelligence, and AI CFO into one
                   executive workspace.
                 </p>
@@ -66,18 +61,13 @@ export default function LoginPage() {
           ======================================================== */}
           <div className="flex items-center p-7 sm:p-10 lg:p-12 xl:p-16">
             <form action={signIn} className="w-full">
-
               {/* Mobile brand */}
-              <div className="mb-12 flex items-center gap-3 lg:hidden">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#D4AF37]/20 bg-[#D4AF37]/[0.07]">
-                  <span className="text-sm font-semibold text-[#D4AF37]">
-                    A
-                  </span>
-                </div>
-
-                <span className="text-lg font-medium text-zinc-100">
-                  ArkenOne
-                </span>
+              <div className="mb-12 flex items-center lg:hidden">
+                <DhanarkLogo
+                  variant="full"
+                  href="/"
+                  className="h-10 w-auto"
+                />
               </div>
 
               {/* Heading */}
@@ -99,7 +89,6 @@ export default function LoginPage() {
                   FORM FIELDS
               ==================================================== */}
               <div className="mt-9 space-y-5">
-
                 {/* Email */}
                 <div>
                   <label
@@ -130,7 +119,6 @@ export default function LoginPage() {
                       Password
                     </label>
 
-                    {/* Forgot Password */}
                     <Link
                       href="/forgot-password"
                       className="text-xs font-medium text-zinc-500 transition-colors hover:text-[#D4AF37]"
@@ -162,7 +150,7 @@ export default function LoginPage() {
               {/* Sign Up */}
               <div className="mt-7 border-t border-white/[0.06] pt-7 text-center">
                 <p className="text-sm text-zinc-600">
-                  Don't have an account?{" "}
+                  Don&apos;t have an account?{" "}
                   <Link
                     href="/signup"
                     className="font-medium text-[#D4AF37] transition hover:text-[#E5C65A]"

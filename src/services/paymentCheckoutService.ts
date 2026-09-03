@@ -82,7 +82,7 @@ export async function openRazorpayCheckout({
         order.currency,
 
       name:
-        "ArkenOne",
+        "DhanarkOS",
 
       description:
         `Payment for Invoice ${order.invoiceNumber}`,

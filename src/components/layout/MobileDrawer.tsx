@@ -94,7 +94,7 @@ export default function MobileDrawer({
                     text-white
                   "
                 >
-                  ArkenOne
+                  DhanarkOS
                 </h1>
 
                 <p
@@ -192,7 +192,7 @@ export default function MobileDrawer({
                     text-[#D4AF37]
                   "
                 >
-                  ARKENONE
+                  DhanarkOS
                 </p>
 
                 <p className="mt-1 text-[11px] text-zinc-600">

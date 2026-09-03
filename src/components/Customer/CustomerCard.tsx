@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from "next/link";
@@ -96,6 +97,7 @@ export default function CustomerCard({
       "
     >
       {/* Top accent */}
+
       <div
         className="
           absolute
@@ -114,10 +116,12 @@ export default function CustomerCard({
       />
 
       {/* Header */}
+
       <div className="p-4 sm:p-6">
         <div className="flex items-start justify-between gap-3 sm:gap-4">
           <div className="flex min-w-0 items-center gap-3 sm:gap-4">
             {/* Avatar */}
+
             <div
               className="
                 flex
@@ -142,6 +146,7 @@ export default function CustomerCard({
             </div>
 
             {/* Customer identity */}
+
             <div className="min-w-0">
               <h3 className="truncate text-[14px] font-semibold text-white sm:text-[15px]">
                 {displayName}
@@ -154,7 +159,7 @@ export default function CustomerCard({
                     className="shrink-0"
                   />
 
-                  <span className="truncate">
+                  <span className="min-w-0 truncate">
                     {customer.business_name}
                   </span>
                 </div>
@@ -163,6 +168,7 @@ export default function CustomerCard({
           </div>
 
           {/* Status */}
+
           <span
             className={`
               shrink-0
@@ -191,6 +197,7 @@ export default function CustomerCard({
         </div>
 
         {/* Contact */}
+
         {(customer.email || customer.phone) && (
           <div className="mt-4 space-y-2 sm:mt-5">
             {customer.email && (
@@ -200,7 +207,7 @@ export default function CustomerCard({
                   className="shrink-0 text-zinc-600"
                 />
 
-                <span className="truncate">
+                <span className="min-w-0 truncate">
                   {customer.email}
                 </span>
               </div>
@@ -213,7 +220,7 @@ export default function CustomerCard({
                   className="shrink-0 text-zinc-600"
                 />
 
-                <span className="truncate">
+                <span className="min-w-0 truncate">
                   {customer.phone}
                 </span>
               </div>
@@ -223,6 +230,7 @@ export default function CustomerCard({
       </div>
 
       {/* Financial metrics */}
+
       <div
         className="
           grid
@@ -238,7 +246,7 @@ export default function CustomerCard({
             Revenue
           </p>
 
-          <p className="mt-2 truncate text-[16px] font-semibold tracking-tight text-white sm:text-lg">
+          <p className="mt-2 break-words text-[16px] font-semibold tracking-tight text-white sm:text-lg">
             {formatCurrency(metrics.revenue)}
           </p>
         </div>
@@ -251,7 +259,7 @@ export default function CustomerCard({
           <p
             className={`
               mt-2
-              truncate
+              break-words
               text-[16px]
               font-semibold
               tracking-tight
@@ -269,20 +277,21 @@ export default function CustomerCard({
       </div>
 
       {/* Collection */}
+
       <div className="px-4 py-4 sm:px-6 sm:py-5">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-2">
             <Wallet
               size={14}
-              className="text-zinc-600"
+              className="shrink-0 text-zinc-600"
             />
 
-            <span className="text-[9px] uppercase tracking-[0.18em] text-zinc-600 sm:text-[10px] sm:tracking-[0.2em]">
+            <span className="truncate text-[9px] uppercase tracking-[0.18em] text-zinc-600 sm:text-[10px] sm:tracking-[0.2em]">
               Collection
             </span>
           </div>
 
-          <span className="text-xs font-medium text-zinc-400">
+          <span className="shrink-0 text-xs font-medium text-zinc-400">
             {collectionRate}%
           </span>
         </div>
@@ -316,12 +325,26 @@ export default function CustomerCard({
       </div>
 
       {/* Actions */}
-      <div className="flex items-center gap-2 border-t border-white/[0.05] px-4 py-3.5 sm:px-6 sm:py-4">
+
+      <div
+        className="
+          flex
+          items-center
+          gap-2
+          border-t
+          border-white/[0.05]
+          px-4
+          py-3.5
+          sm:px-6
+          sm:py-4
+        "
+      >
         <Link
           href={`/customers/${customer.id}`}
           className="
             flex
             min-h-10
+            min-w-0
             flex-1
             items-center
             justify-center
@@ -331,8 +354,10 @@ export default function CustomerCard({
             border-white/[0.06]
             bg-white/[0.02]
             px-3
+            text-center
             text-[11px]
             font-medium
+            leading-4
             text-zinc-400
             transition
             hover:border-[#D4AF37]/20
@@ -342,8 +367,14 @@ export default function CustomerCard({
             sm:text-xs
           "
         >
-          <span>View Customer</span>
-          <ArrowUpRight size={14} />
+          <span className="min-w-0 truncate">
+            View Customer
+          </span>
+
+          <ArrowUpRight
+            size={14}
+            className="shrink-0"
+          />
         </Link>
 
         <button
@@ -378,3 +409,4 @@ export default function CustomerCard({
     </motion.article>
   );
 }
+

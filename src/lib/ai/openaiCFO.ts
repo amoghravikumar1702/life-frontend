@@ -6,7 +6,7 @@ import { getCFOContext } from "@/lib/cfo/getCFOContext";
 
 /*
  * ============================================================
- * ARKENONE AI CFO — OPENAI ENGINE
+ * DhanarkOS AI CFO — OPENAI ENGINE
  * ============================================================
  */
 
@@ -259,30 +259,30 @@ function createOpenAIError(
     possibleError?.code === "invalid_api_key"
   ) {
     return new Error(
-      "ArkenOne AI CFO: OpenAI API key is invalid or missing."
+      "DhanarkOS AI CFO: OpenAI API key is invalid or missing."
     );
   }
 
   if (status === 403) {
     return new Error(
-      `ArkenOne AI CFO: OpenAI project does not have access to model "${model}".`
+      `DhanarkOS AI CFO: OpenAI project does not have access to model "${model}".`
     );
   }
 
   if (status === 404) {
     return new Error(
-      `ArkenOne AI CFO: model "${model}" was not found or is unavailable to this API project.`
+      `DhanarkOS AI CFO: model "${model}" was not found or is unavailable to this API project.`
     );
   }
 
   if (status === 429) {
     return new Error(
-      "ArkenOne AI CFO: OpenAI rate limit or quota limit reached."
+      "DhanarkOS AI CFO: OpenAI rate limit or quota limit reached."
     );
   }
 
   return new Error(
-    `ArkenOne AI CFO OpenAI error (${status ?? "unknown"}): ${message}`
+    `DhanarkOS AI CFO OpenAI error (${status ?? "unknown"}): ${message}`
   );
 }
 
@@ -313,7 +313,7 @@ export async function generateAICFOBrief(
         model,
 
         instructions: `
-You are ArkenOne's AI CFO.
+You are DhanarkOS's AI CFO.
 
 You are an executive financial decision engine.
 
@@ -504,7 +504,7 @@ Return ONLY valid JSON matching the supplied schema.
             type: "json_schema",
 
             name:
-              "arkenone_cfo_brief",
+              "DhanarkOSOS_cfo_brief",
 
             strict: true,
 
@@ -663,7 +663,7 @@ Return ONLY valid JSON matching the supplied schema.
       });
   } catch (error) {
     console.error(
-      "[ArkenOne CFO] OpenAI request failed:",
+      "[DhanarkOS CFO] OpenAI request failed:",
       {
         model,
 
@@ -695,7 +695,7 @@ Return ONLY valid JSON matching the supplied schema.
 
   if (!text) {
     throw new Error(
-      `ArkenOne AI CFO: model "${model}" returned no usable output.`
+      `DhanarkOS AI CFO: model "${model}" returned no usable output.`
     );
   }
 
@@ -714,7 +714,7 @@ Return ONLY valid JSON matching the supplied schema.
         Partial<AICFOBrief>;
   } catch {
     throw new Error(
-      "ArkenOne AI CFO: OpenAI returned invalid JSON."
+      "DhanarkOS AI CFO: OpenAI returned invalid JSON."
     );
   }
 
@@ -808,7 +808,7 @@ Return ONLY valid JSON matching the supplied schema.
     executiveBrief:
       safeString(
         parsed.executiveBrief,
-        "ArkenOne has reviewed the available business data."
+        "DhanarkOS has reviewed the available business data."
       ),
 
     health: {
@@ -990,7 +990,7 @@ export async function askAICFO(
         model,
 
         instructions: `
-You are ArkenOne's AI CFO.
+You are DhanarkOS's AI CFO.
 
 The business owner is directly asking you a financial or
 business decision question.
@@ -1231,7 +1231,7 @@ Return ONLY valid JSON matching the supplied schema.
             type: "json_schema",
 
             name:
-              "arkenone_cfo_answer",
+              "DhanarkOSOS_cfo_answer",
 
             strict: true,
 
@@ -1296,7 +1296,7 @@ Return ONLY valid JSON matching the supplied schema.
       });
   } catch (error) {
     console.error(
-      "[ArkenOne CFO] Ask request failed:",
+      "[DhanarkOS CFO] Ask request failed:",
       {
         model,
 
@@ -1328,7 +1328,7 @@ Return ONLY valid JSON matching the supplied schema.
 
   if (!text) {
     console.error(
-      "[ArkenOne CFO] Ask returned no output.",
+      "[DhanarkOS CFO] Ask returned no output.",
       {
         model,
 
@@ -1341,7 +1341,7 @@ Return ONLY valid JSON matching the supplied schema.
     );
 
     throw new Error(
-      `ArkenOne AI CFO: model "${model}" returned no usable answer.`
+      `DhanarkOS AI CFO: model "${model}" returned no usable answer.`
     );
   }
 
@@ -1360,7 +1360,7 @@ Return ONLY valid JSON matching the supplied schema.
         Partial<AICFOAnswer>;
   } catch {
     console.error(
-      "[ArkenOne CFO] Ask returned invalid JSON.",
+      "[DhanarkOS CFO] Ask returned invalid JSON.",
       {
         model,
 
@@ -1370,7 +1370,7 @@ Return ONLY valid JSON matching the supplied schema.
     );
 
     throw new Error(
-      "ArkenOne AI CFO: OpenAI returned invalid answer JSON."
+      "DhanarkOS AI CFO: OpenAI returned invalid answer JSON."
     );
   }
 

@@ -163,7 +163,7 @@ export default function ResetPasswordPage() {
             </div>
 
             <span className="text-lg font-medium text-zinc-100">
-              ArkenOne
+              DhanarkOS
             </span>
           </div>
 
@@ -178,7 +178,7 @@ export default function ResetPasswordPage() {
               </h1>
 
               <p className="mt-4 text-sm leading-7 text-zinc-500">
-                Your ArkenOne password has been
+                Your DhanarkOS password has been
                 successfully updated. Sign in using
                 your new password.
               </p>
@@ -202,7 +202,7 @@ export default function ResetPasswordPage() {
 
               <p className="mt-4 text-sm leading-7 text-zinc-500">
                 Choose a new password for your
-                ArkenOne account.
+                DhanarkOS account.
               </p>
 
               {!ready && !error && (

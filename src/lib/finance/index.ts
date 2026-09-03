@@ -314,7 +314,7 @@ export async function getFinancialSnapshot(): Promise<FinancialSnapshot> {
    * CASH AVAILABLE
    * ----------------------------------------------------------
    *
-   * This remains an operational estimate until ArkenOne has
+   * This remains an operational estimate until DhanarkOS has
    * a dedicated bank-account / wallet ledger.
    */
 

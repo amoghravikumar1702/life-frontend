@@ -582,7 +582,7 @@ export async function POST(
         skipped++;
 
         errors.push(
-          `${customer.customer_name}: Already exists in ArkenOne.`
+          `${customer.customer_name}: Already exists in DhanarkOS.`
         );
 
         continue;
@@ -625,7 +625,7 @@ export async function POST(
         errors,
         customers: [],
         message:
-          "All customers in this file already exist in ArkenOne.",
+          "All customers in this file already exist in DhanarkOS.",
       });
     }
 

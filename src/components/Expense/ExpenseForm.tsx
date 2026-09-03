@@ -216,7 +216,7 @@ export default function ExpenseForm() {
               text-zinc-500
             "
           >
-            Record a business expense so ArkenOne can incorporate
+            Record a business expense so DhanarkOS can incorporate
             it into financial health, profitability, cash flow,
             and CFO analysis.
           </p>

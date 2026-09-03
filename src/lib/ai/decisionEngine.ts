@@ -2,7 +2,7 @@ import { CFOContext } from "./cfoContext";
 
 /*
  * ============================================================
- * ARKENONE AI CFO — DECISION ENGINE
+ * DhanarkOS AI CFO — DECISION ENGINE
  * ============================================================
  *
  * Phase 4

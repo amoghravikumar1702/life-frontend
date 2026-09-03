@@ -130,7 +130,7 @@ export default function PaymentSetupStep({
 
     if (
       form.paymentMethod ===
-      "razorpay" &&
+        "razorpay" &&
       !form.paymentRazorpayAccountId.trim()
     ) {
       nextErrors.push(
@@ -183,43 +183,33 @@ export default function PaymentSetupStep({
 
     onContinue({
       ...form,
-
       paymentDisplayName:
         form.paymentDisplayName.trim(),
-
       paymentPhone:
         form.paymentPhone.trim(),
-
       paymentUpiId:
         form.paymentUpiId.trim(),
-
       paymentBankName:
         form.paymentBankName.trim(),
-
       paymentBankAccountName:
         form.paymentBankAccountName.trim(),
-
       paymentBankAccountNumber:
         form.paymentBankAccountNumber.trim(),
-
       paymentBankIfsc:
         form.paymentBankIfsc
           .trim()
           .toUpperCase(),
-
       paymentRazorpayAccountId:
         form.paymentRazorpayAccountId.trim(),
     });
   }
 
   return (
-    <section className="relative w-full max-w-3xl overflow-hidden rounded-[28px] border border-[#D4AF37]/15 bg-[#101318] sm:rounded-[32px]">
-      {/* Ambient light */}
+    <section className="mx-auto w-full max-w-3xl overflow-hidden rounded-[28px] border border-[#D4AF37]/15 bg-[#101318]">
+      <div className="pointer-events-none absolute left-1/2 top-[-180px] h-[360px] w-[600px] -translate-x-1/2 rounded-full bg-[#D4AF37]/[0.045] blur-[120px]" />
 
-      <div className="pointer-events-none absolute left-1/2 top-[-180px] h-[360px] w-[600px] max-w-[150vw] -translate-x-1/2 rounded-full bg-[#D4AF37]/[0.045] blur-[120px]" />
-
-      <div className="relative px-5 py-7 sm:px-10 sm:py-10">
-        {/* HEADER */}
+      <div className="relative px-6 py-8 sm:px-10 sm:py-10">
+        {/* Header */}
 
         <div className="flex items-center gap-3">
           <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-[#D4AF37]/20 bg-[#D4AF37]/[0.07]">
@@ -241,23 +231,23 @@ export default function PaymentSetupStep({
           </div>
         </div>
 
-        {/* TITLE */}
+        {/* Title */}
 
-        <div className="mt-8 max-w-2xl">
+        <div className="mx-auto mt-8 max-w-2xl text-center">
           <h1 className="text-2xl font-medium tracking-tight text-white sm:text-3xl">
             How would you like to collect payments?
           </h1>
 
-          <p className="mt-3 text-sm leading-7 text-zinc-500">
-            ArkenOne will use your own payment details
+          <p className="mx-auto mt-3 max-w-xl text-sm leading-7 text-zinc-500">
+            DhanarkOS will use your own payment details
             when generating payment links. Customer
-            payments go directly to you — not to ArkenOne.
+            payments go directly to you — not to DhanarkOS.
           </p>
         </div>
 
-        {/* PAYMENT METHODS */}
+        {/* Payment Methods */}
 
-        <div className="mt-8 grid gap-3 sm:grid-cols-3">
+        <div className="mx-auto mt-8 grid max-w-2xl gap-3 sm:grid-cols-3">
           {paymentMethods.map(
             ({
               id,
@@ -328,24 +318,24 @@ export default function PaymentSetupStep({
           )}
         </div>
 
-        {/* SECURITY / OWNERSHIP NOTE */}
+        {/* Important */}
 
-        <div className="mt-6 rounded-2xl border border-[#D4AF37]/10 bg-[#D4AF37]/[0.025] p-4 sm:p-5">
+        <div className="mx-auto mt-6 max-w-2xl rounded-2xl border border-[#D4AF37]/10 bg-[#D4AF37]/[0.025] p-4 sm:p-5">
           <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#D4AF37]">
             Important
           </p>
 
           <p className="mt-2 text-xs leading-6 text-zinc-500">
             The payment method you choose must belong
-            to your business. ArkenOne only uses these
+            to your business. DhanarkOS only uses these
             details to generate the payment experience
             for your customers.
           </p>
         </div>
 
-        {/* COMMON PAYMENT DETAILS */}
+        {/* Common Payment Details */}
 
-        <div className="mt-8 space-y-5">
+        <div className="mx-auto mt-8 max-w-2xl space-y-5">
           <div>
             <label
               htmlFor="payment-display-name"
@@ -366,7 +356,7 @@ export default function PaymentSetupStep({
                   event.target.value
                 )
               }
-              placeholder="ArkenOne"
+              placeholder="DhanarkOS"
               className="h-14 w-full rounded-xl border border-white/[0.08] bg-black/20 px-4 text-sm text-white outline-none transition placeholder:text-zinc-700 focus:border-[#D4AF37]/35"
             />
 
@@ -407,7 +397,7 @@ export default function PaymentSetupStep({
 
         {form.paymentMethod ===
           "upi" && (
-          <div className="mt-6 rounded-2xl border border-white/[0.06] bg-white/[0.015] p-4 sm:p-5">
+          <div className="mx-auto mt-6 max-w-2xl rounded-2xl border border-white/[0.06] bg-white/[0.015] p-4 sm:p-5">
             <div className="flex items-center gap-3">
               <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-[#D4AF37]/15 bg-[#D4AF37]/[0.05]">
                 <Smartphone
@@ -461,11 +451,11 @@ export default function PaymentSetupStep({
           </div>
         )}
 
-        {/* RAZORPAY */}
+        {/* Razorpay */}
 
         {form.paymentMethod ===
           "razorpay" && (
-          <div className="mt-6 rounded-2xl border border-white/[0.06] bg-white/[0.015] p-4 sm:p-5">
+          <div className="mx-auto mt-6 max-w-2xl rounded-2xl border border-white/[0.06] bg-white/[0.015] p-4 sm:p-5">
             <div className="flex items-center gap-3">
               <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-[#D4AF37]/15 bg-[#D4AF37]/[0.05]">
                 <CreditCard
@@ -513,18 +503,18 @@ export default function PaymentSetupStep({
 
               <p className="mt-2 text-[11px] leading-5 text-zinc-700">
                 This should be your business's Razorpay
-                account. ArkenOne does not use its own
+                account. DhanarkOS does not use its own
                 Razorpay account for your collections.
               </p>
             </div>
           </div>
         )}
 
-        {/* BANK TRANSFER */}
+        {/* Bank Transfer */}
 
         {form.paymentMethod ===
           "bank_transfer" && (
-          <div className="mt-6 rounded-2xl border border-white/[0.06] bg-white/[0.015] p-4 sm:p-5">
+          <div className="mx-auto mt-6 max-w-2xl rounded-2xl border border-white/[0.06] bg-white/[0.015] p-4 sm:p-5">
             <div className="flex items-center gap-3">
               <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-[#D4AF37]/15 bg-[#D4AF37]/[0.05]">
                 <Banknote
@@ -643,8 +633,7 @@ export default function PaymentSetupStep({
                   onChange={(event) =>
                     updateField(
                       "paymentBankIfsc",
-                      event.target.value
-                        .toUpperCase()
+                      event.target.value.toUpperCase()
                     )
                   }
                   placeholder="HDFC0001234"
@@ -656,10 +645,10 @@ export default function PaymentSetupStep({
           </div>
         )}
 
-        {/* ERRORS */}
+        {/* Errors */}
 
         {errors.length > 0 && (
-          <div className="mt-6 rounded-2xl border border-red-500/15 bg-red-500/[0.04] p-4">
+          <div className="mx-auto mt-6 max-w-2xl rounded-2xl border border-red-500/15 bg-red-500/[0.04] p-4">
             <p className="text-xs font-medium text-red-300">
               Please complete the following:
             </p>
@@ -679,9 +668,9 @@ export default function PaymentSetupStep({
           </div>
         )}
 
-        {/* ACTION */}
+        {/* Action */}
 
-        <div className="mt-8 flex justify-end">
+        <div className="mx-auto mt-8 flex max-w-2xl justify-end">
           <button
             type="button"
             onClick={
@@ -698,7 +687,7 @@ export default function PaymentSetupStep({
           </button>
         </div>
 
-        <p className="mt-4 text-center text-[10px] leading-5 text-zinc-700 sm:text-right">
+        <p className="mx-auto mt-4 max-w-2xl text-center text-[10px] leading-5 text-zinc-700 sm:text-right">
           Your payment details are used to generate
           customer payment instructions for your business.
         </p>

@@ -39,7 +39,7 @@ const sections: WalkthroughSection[] = [
     eyebrow: "WORKSPACE",
     title: "Mission Control",
     description:
-      "Your starting point inside ArkenOne. See the financial position of your business without digging through multiple screens.",
+      "Your starting point inside DhanarkOS. See the financial position of your business without digging through multiple screens.",
     details:
       "Use Mission Control to understand the current state of your business first. Revenue, expenses, profit, cash proxy, receivables, customers, financial health, and trend are brought together here.",
     icon: LayoutDashboard,
@@ -61,7 +61,7 @@ const sections: WalkthroughSection[] = [
     description:
       "Keep your customer information organized and connected to the rest of your financial workflow.",
     details:
-      "Add customers individually or bring an existing customer list into ArkenOne. Your customer records become the foundation for invoices and payment workflows.",
+      "Add customers individually or bring an existing customer list into DhanarkOS. Your customer records become the foundation for invoices and payment workflows.",
     icon: Users,
     href: "/customers",
     action: "Open Customers",
@@ -79,7 +79,7 @@ const sections: WalkthroughSection[] = [
     description:
       "Create invoices and keep track of what your customers owe you.",
     details:
-      "Use the invoice workspace to create and manage invoices. Once an invoice exists, ArkenOne can keep the amount due and payment status visible in your financial picture.",
+      "Use the invoice workspace to create and manage invoices. Once an invoice exists, DhanarkOS can keep the amount due and payment status visible in your financial picture.",
     icon: FileText,
     href: "/invoices",
     action: "Open Invoices",
@@ -115,7 +115,7 @@ const sections: WalkthroughSection[] = [
     description:
       "Bring business spending into the same financial picture as your revenue.",
     details:
-      "Record your business expenses so ArkenOne can account for spending when presenting your profitability and financial health.",
+      "Record your business expenses so DhanarkOS can account for spending when presenting your profitability and financial health.",
     icon: Receipt,
     href: "/expenses",
     action: "Open Expenses",
@@ -133,7 +133,7 @@ const sections: WalkthroughSection[] = [
     description:
       "Go beyond numbers and use your financial information to support better decisions.",
     details:
-      "The AI CFO is ArkenOne's intelligence layer. It is designed to interpret the financial information available in your workspace and turn it into useful business context.",
+      "The AI CFO is DhanarkOS's intelligence layer. It is designed to interpret the financial information available in your workspace and turn it into useful business context.",
     icon: Brain,
     href: "/dashboard/ai-cfo",
     action: "Open AI CFO",
@@ -185,9 +185,9 @@ const sections: WalkthroughSection[] = [
     eyebrow: "COMPANY",
     title: "Company",
     description:
-      "Manage the business information that powers your ArkenOne workspace.",
+      "Manage the business information that powers your DhanarkOS workspace.",
     details:
-      "Use the Company area when you need to review or update your business profile and the information associated with your ArkenOne account.",
+      "Use the Company area when you need to review or update your business profile and the information associated with your DhanarkOS account.",
     icon: Building2,
     href: "/company",
     action: "Open Company",
@@ -203,9 +203,9 @@ const sections: WalkthroughSection[] = [
     eyebrow: "CONFIGURATION",
     title: "Settings",
     description:
-      "Control the configuration of your ArkenOne workspace.",
+      "Control the configuration of your DhanarkOS workspace.",
     details:
-      "Settings is where you can manage the configuration and preferences available for your account as ArkenOne continues to expand.",
+      "Settings is where you can manage the configuration and preferences available for your account as DhanarkOS continues to expand.",
     icon: Settings,
     href: "/settings",
     action: "Open Settings",
@@ -312,7 +312,7 @@ export default function WalkthroughPage() {
               </span>
             </div>
 
-            ArkenOne
+            DhanarkOS
           </Link>
 
           <Link
@@ -383,7 +383,7 @@ export default function WalkthroughPage() {
               sm:text-base
             "
           >
-            A practical guide to ArkenOne.
+            A practical guide to DhanarkOS.
             Explore each part of the platform,
             understand what it does, and open
             the right workspace when you're
@@ -926,7 +926,7 @@ export default function WalkthroughPage() {
               text-zinc-700
             "
           >
-            ArkenOne
+            DhanarkOS
           </p>
 
           <p

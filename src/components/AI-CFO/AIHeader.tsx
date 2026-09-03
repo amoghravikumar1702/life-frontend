@@ -18,7 +18,7 @@ export default function AIHeader() {
             Intelligence
           </p>
 
-          <h1 className="ArkenOne-gold mt-2 text-5xl font-bold">
+          <h1 className="DhanarkOS-gold mt-2 text-5xl font-bold">
             AI CFO
           </h1>
         </div>

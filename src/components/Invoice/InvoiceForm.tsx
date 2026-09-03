@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { CalendarDays } from "lucide-react";
+import { CalendarDays, AlertCircle } from "lucide-react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 
@@ -39,14 +39,11 @@ export default function InvoiceForm({
 }: InvoiceFormProps) {
   const isEdit = mode === "edit";
 
-  const createMutation =
-    useCreateInvoice();
+  const createMutation = useCreateInvoice();
+  const updateMutation = useUpdateInvoice();
 
-  const updateMutation =
-    useUpdateInvoice();
-
-  const [customers, setCustomers] =
-    useState<Customer[]>([]);
+  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [formError, setFormError] = useState("");
 
   const {
     customerId,
@@ -97,20 +94,18 @@ export default function InvoiceForm({
    * ============================================================
    */
 
-  function handleCustomerChange(
-    value: string
-  ) {
+  function handleCustomerChange(value: string) {
+    setFormError("");
+
     if (!value) {
       setCustomerId(null);
       setCustomer("");
       return;
     }
 
-    const selectedCustomer =
-      customers.find(
-        (item) =>
-          String(item.id) === value
-      );
+    const selectedCustomer = customers.find(
+      (item) => String(item.id) === value
+    );
 
     if (!selectedCustomer) {
       setCustomerId(null);
@@ -118,20 +113,12 @@ export default function InvoiceForm({
       return;
     }
 
-    if (
-      typeof selectedCustomer.id !==
-      "number"
-    ) {
+    if (typeof selectedCustomer.id !== "number") {
       return;
     }
 
-    setCustomerId(
-      selectedCustomer.id
-    );
-
-    setCustomer(
-      selectedCustomer.customer_name
-    );
+    setCustomerId(selectedCustomer.id);
+    setCustomer(selectedCustomer.customer_name);
   }
 
   /*
@@ -141,28 +128,17 @@ export default function InvoiceForm({
    */
 
   const selectedCustomer =
-    customers.find(
-      (item) =>
-        item.id === customerId
-    ) ?? null;
+    customers.find((item) => item.id === customerId) ?? null;
 
   /*
    * ============================================================
    * CUSTOMER DROPDOWN VALUE
-   *
-   * For existing invoices, the loader still gives us the
-   * customer name. Resolve that name back to its ID after
-   * customers have loaded.
    * ============================================================
    */
 
   const resolvedCustomerId =
     customerId ??
-    customers.find(
-      (item) =>
-        item.customer_name ===
-        customer
-    )?.id ??
+    customers.find((item) => item.customer_name === customer)?.id ??
     null;
 
   /*
@@ -172,50 +148,90 @@ export default function InvoiceForm({
    */
 
   async function handleSaveInvoice() {
+    setFormError("");
+
+    const resolvedCustomer =
+      selectedCustomer ??
+      customers.find((item) => item.id === resolvedCustomerId);
+
+    /*
+     * ----------------------------------------------------------
+     * VALIDATION
+     * ----------------------------------------------------------
+     */
+
+    if (
+      !resolvedCustomer ||
+      typeof resolvedCustomer.id !== "number"
+    ) {
+      setFormError("Please select a customer before saving the invoice.");
+      return;
+    }
+
+    if (!invoiceDate) {
+      setFormError("Please select an invoice date.");
+      return;
+    }
+
+    if (!dueDate) {
+      setFormError("Please select a due date.");
+      return;
+    }
+
+    if (new Date(dueDate) < new Date(invoiceDate)) {
+      setFormError(
+        "Due date cannot be earlier than the invoice date."
+      );
+      return;
+    }
+
+    if (!items.length) {
+      setFormError("Please add at least one invoice item.");
+      return;
+    }
+
+    const invalidItem = items.find(
+      (item) =>
+        !item.name.trim() ||
+        item.quantity <= 0 ||
+        item.price < 0
+    );
+
+    if (invalidItem) {
+      setFormError(
+        "Please check your invoice items. Each item needs a name, a quantity greater than 0, and a valid price."
+      );
+      return;
+    }
+
+    if (total <= 0) {
+      setFormError(
+        "Invoice total must be greater than ₹0 before saving."
+      );
+      return;
+    }
+
+    /*
+     * ----------------------------------------------------------
+     * SAVE
+     * ----------------------------------------------------------
+     */
+
     try {
-      const resolvedCustomer =
-        selectedCustomer ??
-        customers.find(
-          (item) =>
-            item.id ===
-            resolvedCustomerId
-        );
-
-      if (
-        !resolvedCustomer ||
-        typeof resolvedCustomer.id !==
-          "number"
-      ) {
-        alert(
-          "Please select a customer."
-        );
-
-        return;
-      }
-
       const invoice = {
-        customer_id:
-          resolvedCustomer.id,
+        customer_id: resolvedCustomer.id,
 
-        customer:
-          resolvedCustomer.customer_name,
+        customer: resolvedCustomer.customer_name,
 
-        customer_phone:
-          resolvedCustomer.phone ??
-          null,
+        customer_phone: resolvedCustomer.phone ?? null,
 
-        customer_email:
-          resolvedCustomer.email ??
-          null,
+        customer_email: resolvedCustomer.email ?? null,
 
-        invoice_number:
-          invoiceNumber,
+        invoice_number: invoiceNumber,
 
-        invoice_date:
-          invoiceDate,
+        invoice_date: invoiceDate,
 
-        due_date:
-          dueDate,
+        due_date: dueDate,
 
         total,
 
@@ -226,17 +242,13 @@ export default function InvoiceForm({
         status: "Pending",
       };
 
-      const invoiceItems =
-        items.map((item) => ({
-          name: item.name,
-          quantity: item.quantity,
-          price: item.price,
-        }));
+      const invoiceItems = items.map((item) => ({
+        name: item.name.trim(),
+        quantity: item.quantity,
+        price: item.price,
+      }));
 
-      if (
-        isEdit &&
-        invoiceId
-      ) {
+      if (isEdit && invoiceId) {
         await updateMutation.mutateAsync({
           id: invoiceId,
           invoice,
@@ -257,22 +269,18 @@ export default function InvoiceForm({
 
       resetForm();
     } catch (error) {
-      console.error(
-        "[InvoiceForm] Save error:",
-        error
-      );
+      console.error("[InvoiceForm] Save error:", error);
 
-      alert(
+      setFormError(
         error instanceof Error
           ? error.message
-          : "Failed to save invoice."
+          : "Something went wrong while saving the invoice. Please try again."
       );
     }
   }
 
   const isSaving =
-    createMutation.isPending ||
-    updateMutation.isPending;
+    createMutation.isPending || updateMutation.isPending;
 
   return (
     <motion.section
@@ -299,19 +307,50 @@ export default function InvoiceForm({
         </Link>
 
         <h1 className="bg-gradient-to-r from-[#FFF3C4] via-[#E6C15A] to-[#C99A1A] bg-clip-text text-5xl font-semibold tracking-tight text-transparent drop-shadow-[0_0_18px_rgba(212,175,55,0.16)]">
-          {isEdit
-            ? "Edit Invoice"
-            : "New Invoice"}
+          {isEdit ? "Edit Invoice" : "New Invoice"}
         </h1>
 
         <p className="mt-4 max-w-2xl text-[15px] leading-7 text-zinc-500">
-          Create and send a professional
-          invoice with ArkenOne.
+          Create and send a professional invoice with DhanarkOS.
         </p>
       </div>
 
       <div className="space-y-10">
         <section className="rounded-[28px] border border-white/[0.06] bg-[#101214] p-8 md:p-10">
+          {/* ====================================================
+              FORM ERROR
+          ===================================================== */}
+
+          {formError && (
+            <motion.div
+              initial={{
+                opacity: 0,
+                y: -8,
+              }}
+              animate={{
+                opacity: 1,
+                y: 0,
+              }}
+              className="mb-8 flex items-start gap-3 rounded-2xl border border-red-500/20 bg-red-500/[0.06] px-5 py-4"
+              role="alert"
+            >
+              <AlertCircle
+                size={18}
+                className="mt-0.5 shrink-0 text-red-400"
+              />
+
+              <div>
+                <p className="text-sm font-semibold text-red-300">
+                  Unable to save invoice
+                </p>
+
+                <p className="mt-1 text-sm leading-6 text-red-200/70">
+                  {formError}
+                </p>
+              </div>
+            </motion.div>
+          )}
+
           {/* ====================================================
               BILL TO
           ===================================================== */}
@@ -331,8 +370,7 @@ export default function InvoiceForm({
                 </h2>
 
                 <p className="mt-2 text-sm leading-6 text-zinc-500">
-                  Select the customer
-                  receiving this invoice.
+                  Select the customer receiving this invoice.
                 </p>
               </div>
             </div>
@@ -343,46 +381,34 @@ export default function InvoiceForm({
                 required
                 value={
                   resolvedCustomerId
-                    ? String(
-                        resolvedCustomerId
-                      )
+                    ? String(resolvedCustomerId)
                     : ""
                 }
                 onChange={(event) =>
-                  handleCustomerChange(
-                    event.target.value
-                  )
+                  handleCustomerChange(event.target.value)
                 }
               >
-                <option value="">
-                  Select Customer
-                </option>
+                <option value="">Select Customer</option>
 
-                {customers.map(
-                  (item) => (
-                    <option
-                      key={item.id}
-                      value={
-                        item.id !==
-                        undefined
-                          ? String(
-                              item.id
-                            )
-                          : ""
-                      }
-                    >
-                      {item.customer_name}
+                {customers.map((item) => (
+                  <option
+                    key={item.id}
+                    value={
+                      item.id !== undefined
+                        ? String(item.id)
+                        : ""
+                    }
+                  >
+                    {item.customer_name}
 
-                      {item.business_name
-                        ? ` • ${item.business_name}`
-                        : ""}
-                    </option>
-                  )
-                )}
+                    {item.business_name
+                      ? ` • ${item.business_name}`
+                      : ""}
+                  </option>
+                ))}
               </Select>
 
-              {customers.length ===
-                0 && (
+              {customers.length === 0 && (
                 <div className="flex items-center justify-between gap-4 rounded-2xl border border-[#D4AF37]/10 bg-[#D4AF37]/[0.03] px-4 py-3">
                   <div>
                     <p className="text-xs font-medium text-zinc-300">
@@ -390,8 +416,7 @@ export default function InvoiceForm({
                     </p>
 
                     <p className="mt-1 text-[11px] text-zinc-600">
-                      Add a customer before
-                      creating this invoice.
+                      Add a customer before creating this invoice.
                     </p>
                   </div>
 
@@ -399,10 +424,7 @@ export default function InvoiceForm({
                     href="/customers"
                     className="inline-flex shrink-0 items-center gap-2 rounded-xl border border-[#D4AF37]/20 bg-[#D4AF37]/10 px-3 py-2 text-xs font-medium text-[#D4AF37] transition hover:bg-[#D4AF37]/20"
                   >
-                    <UserPlus
-                      size={14}
-                    />
-
+                    <UserPlus size={14} />
                     Add Customer
                   </Link>
                 </div>
@@ -417,9 +439,7 @@ export default function InvoiceForm({
                       </p>
 
                       <p className="mt-1 text-sm font-medium text-white">
-                        {
-                          selectedCustomer.customer_name
-                        }
+                        {selectedCustomer.customer_name}
                       </p>
                     </div>
 
@@ -430,9 +450,7 @@ export default function InvoiceForm({
                         </p>
 
                         <p className="mt-1 text-xs text-zinc-400">
-                          {
-                            selectedCustomer.email
-                          }
+                          {selectedCustomer.email}
                         </p>
                       </div>
                     )}
@@ -444,9 +462,7 @@ export default function InvoiceForm({
                         </p>
 
                         <p className="mt-1 text-xs text-zinc-400">
-                          {
-                            selectedCustomer.phone
-                          }
+                          {selectedCustomer.phone}
                         </p>
                       </div>
                     )}
@@ -458,9 +474,7 @@ export default function InvoiceForm({
                         </p>
 
                         <p className="mt-1 text-xs text-zinc-400">
-                          {
-                            selectedCustomer.gst_number
-                          }
+                          {selectedCustomer.gst_number}
                         </p>
                       </div>
                     )}
@@ -491,8 +505,7 @@ export default function InvoiceForm({
                 </h2>
 
                 <p className="mt-2 text-sm leading-6 text-zinc-500">
-                  Invoice information and
-                  payment dates.
+                  Invoice information and payment dates.
                 </p>
               </div>
             </div>
@@ -507,8 +520,7 @@ export default function InvoiceForm({
                       </p>
 
                       <h3 className="mt-3 font-mono text-3xl font-semibold tracking-wider text-[#F4D675]">
-                        {invoiceNumber ||
-                          "INV-2026-01"}
+                        {invoiceNumber || "INV-2026-01"}
                       </h3>
                     </div>
 
@@ -516,8 +528,7 @@ export default function InvoiceForm({
                       type="button"
                       onClick={() =>
                         navigator.clipboard.writeText(
-                          invoiceNumber ||
-                            "INV-2026-01"
+                          invoiceNumber || "INV-2026-01"
                         )
                       }
                       className="rounded-xl border border-white/[0.06] bg-white/[0.03] p-2 transition hover:border-[#D4AF37]/20 hover:bg-[#D4AF37]/10"
@@ -533,9 +544,7 @@ export default function InvoiceForm({
                   <div className="mt-5 h-px bg-gradient-to-r from-[#D4AF37]/20 via-white/10 to-transparent" />
 
                   <p className="mt-4 text-sm leading-6 text-zinc-500">
-                    Automatically generated
-                    and unique for every
-                    invoice.
+                    Automatically generated and unique for every invoice.
                   </p>
                 </div>
               </div>
@@ -558,34 +567,25 @@ export default function InvoiceForm({
                   required
                   value={invoiceDate}
                   onChange={(event) => {
-                    const value =
-                      event.target.value;
+                    setFormError("");
 
-                    setInvoiceDate(
-                      value
-                    );
+                    const value = event.target.value;
+
+                    setInvoiceDate(value);
 
                     if (!value) {
                       setDueDate("");
                       return;
                     }
 
-                    const date =
-                      new Date(
-                        `${value}T12:00:00`
-                      );
-
-                    date.setDate(
-                      date.getDate() +
-                        30
+                    const date = new Date(
+                      `${value}T12:00:00`
                     );
 
+                    date.setDate(date.getDate() + 30);
+
                     setDueDate(
-                      date
-                        .toISOString()
-                        .split(
-                          "T"
-                        )[0]
+                      date.toISOString().split("T")[0]
                     );
                   }}
                 />
@@ -608,11 +608,10 @@ export default function InvoiceForm({
                   type="date"
                   required
                   value={dueDate}
-                  onChange={(event) =>
-                    setDueDate(
-                      event.target.value
-                    )
-                  }
+                  onChange={(event) => {
+                    setFormError("");
+                    setDueDate(event.target.value);
+                  }}
                 />
               </div>
             </div>
@@ -632,14 +631,16 @@ export default function InvoiceForm({
                 </h2>
 
                 <p className="mt-2 text-sm leading-6 text-zinc-500">
-                  Add products or services
-                  included in this invoice.
+                  Add products or services included in this invoice.
                 </p>
               </div>
 
               <button
                 type="button"
-                onClick={addItem}
+                onClick={() => {
+                  setFormError("");
+                  addItem();
+                }}
                 className="rounded-2xl border border-[#D4AF37]/20 bg-[#D4AF37]/10 px-5 py-3 text-sm font-semibold text-[#D4AF37] transition-all duration-200 hover:bg-[#D4AF37]/20"
               >
                 + Add Line Item
@@ -647,112 +648,88 @@ export default function InvoiceForm({
             </div>
 
             <div className="space-y-5">
-              {items.map(
-                (item) => (
-                  <motion.div
-                    key={item.id}
-                    layout
-                    className="rounded-3xl border border-white/[0.06] bg-[#14171B] p-6"
-                  >
-                    <div className="grid grid-cols-1 gap-5 lg:grid-cols-4">
-                      <Input
-                        label="Item / Service"
-                        placeholder="Website Design"
-                        value={
-                          item.name
-                        }
-                        onChange={(
-                          event
-                        ) =>
-                          updateItem(
-                            item.id,
-                            "name",
-                            event.target
-                              .value
-                          )
-                        }
-                      />
+              {items.map((item) => (
+                <motion.div
+                  key={item.id}
+                  layout
+                  className="rounded-3xl border border-white/[0.06] bg-[#14171B] p-6"
+                >
+                  <div className="grid grid-cols-1 gap-5 lg:grid-cols-4">
+                    <Input
+                      label="Item / Service"
+                      placeholder="Website Design"
+                      value={item.name}
+                      onChange={(event) => {
+                        setFormError("");
 
-                      <Input
-                        label="Quantity"
-                        type="number"
-                        placeholder="1"
-                        value={
-                          item.quantity ===
-                          0
-                            ? ""
-                            : String(
-                                item.quantity
-                              )
-                        }
-                        onChange={(
-                          event
-                        ) =>
-                          updateItem(
-                            item.id,
-                            "quantity",
-                            event.target
-                              .value ===
-                              ""
-                              ? 0
-                              : Number(
-                                  event
-                                    .target
-                                    .value
-                                )
-                          )
-                        }
-                      />
+                        updateItem(
+                          item.id,
+                          "name",
+                          event.target.value
+                        );
+                      }}
+                    />
 
-                      <Input
-                        label="Unit Price"
-                        type="number"
-                        placeholder="0.00"
-                        value={
-                          item.price ===
-                          0
-                            ? ""
-                            : String(
-                                item.price
-                              )
-                        }
-                        onChange={(
-                          event
-                        ) =>
-                          updateItem(
-                            item.id,
-                            "price",
-                            event.target
-                              .value ===
-                              ""
-                              ? 0
-                              : Number(
-                                  event
-                                    .target
-                                    .value
-                                )
-                          )
-                        }
-                      />
+                    <Input
+                      label="Quantity"
+                      type="number"
+                      placeholder="1"
+                      value={
+                        item.quantity === 0
+                          ? ""
+                          : String(item.quantity)
+                      }
+                      onChange={(event) => {
+                        setFormError("");
 
-                      <div>
-                        <label className="mb-2 flex text-sm font-medium text-zinc-200">
-                          Line Total
-                        </label>
+                        updateItem(
+                          item.id,
+                          "quantity",
+                          event.target.value === ""
+                            ? 0
+                            : Number(event.target.value)
+                        );
+                      }}
+                    />
 
-                        <div className="flex h-14 items-center rounded-2xl border border-[#D4AF37]/20 bg-[#D4AF37]/10 px-5">
-                          <span className="text-base font-semibold text-[#D4AF37]">
-                            {formatCurrency(
-                              item.quantity *
-                                item.price
-                            )}
-                          </span>
-                        </div>
+                    <Input
+                      label="Unit Price"
+                      type="number"
+                      placeholder="0.00"
+                      value={
+                        item.price === 0
+                          ? ""
+                          : String(item.price)
+                      }
+                      onChange={(event) => {
+                        setFormError("");
+
+                        updateItem(
+                          item.id,
+                          "price",
+                          event.target.value === ""
+                            ? 0
+                            : Number(event.target.value)
+                        );
+                      }}
+                    />
+
+                    <div>
+                      <label className="mb-2 flex text-sm font-medium text-zinc-200">
+                        Line Total
+                      </label>
+
+                      <div className="flex h-14 items-center rounded-2xl border border-[#D4AF37]/20 bg-[#D4AF37]/10 px-5">
+                        <span className="text-base font-semibold text-[#D4AF37]">
+                          {formatCurrency(
+                            item.quantity * item.price
+                          )}
+                        </span>
                       </div>
                     </div>
-                  </motion.div>
-                )
-              )}
+                  </div>
+                </motion.div>
+              ))}
             </div>
           </div>
 
@@ -777,8 +754,7 @@ export default function InvoiceForm({
                 </h2>
 
                 <p className="mt-2 text-sm leading-6 text-zinc-500">
-                  Review the totals before
-                  creating the invoice.
+                  Review the totals before creating the invoice.
                 </p>
               </div>
             </div>
@@ -790,9 +766,7 @@ export default function InvoiceForm({
                 </span>
 
                 <span className="font-medium text-white">
-                  {formatCurrency(
-                    subtotal
-                  )}
+                  {formatCurrency(subtotal)}
                 </span>
               </div>
 
@@ -802,9 +776,7 @@ export default function InvoiceForm({
                 </span>
 
                 <span className="font-medium text-white">
-                  {formatCurrency(
-                    tax
-                  )}
+                  {formatCurrency(tax)}
                 </span>
               </div>
 
@@ -823,9 +795,7 @@ export default function InvoiceForm({
 
                 <div className="text-right">
                   <p className="text-4xl font-bold tracking-tight text-[#D4AF37]">
-                    {formatCurrency(
-                      total
-                    )}
+                    {formatCurrency(total)}
                   </p>
                 </div>
               </div>
@@ -842,15 +812,12 @@ export default function InvoiceForm({
             <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
               <div>
                 <h3 className="text-lg font-semibold text-white">
-                  Ready to create your
-                  invoice?
+                  Ready to create your invoice?
                 </h3>
 
                 <p className="mt-2 max-w-xl text-sm leading-6 text-zinc-500">
-                  ArkenOne will save your
-                  invoice, calculate totals,
-                  and prepare it for payment
-                  collection.
+                  DhanarkOS will save your invoice, calculate totals,
+                  and prepare it for payment collection.
                 </p>
               </div>
 
@@ -871,9 +838,7 @@ export default function InvoiceForm({
                     !dueDate ||
                     total <= 0
                   }
-                  onClick={
-                    handleSaveInvoice
-                  }
+                  onClick={handleSaveInvoice}
                   className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-[#D4AF37] px-8 text-sm font-semibold text-[#090909] transition hover:scale-[1.02] hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   <Save size={18} />

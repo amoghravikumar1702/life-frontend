@@ -243,7 +243,7 @@ export default function PendingPaymentPopup() {
 
       window.dispatchEvent(
         new CustomEvent(
-          "arkenone-payment-reviewed"
+          "DhanarkOS-payment-reviewed"
         )
       );
 

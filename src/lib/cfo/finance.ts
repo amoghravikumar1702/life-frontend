@@ -360,7 +360,7 @@ const cashFlow =
    * WORKING CAPITAL
    * ==========================================================
    *
-   * ArkenOne does not yet have a complete balance sheet.
+   * DhanarkOS does not yet have a complete balance sheet.
    *
    * Therefore this is an operational indicator rather than
    * formal accounting working capital.

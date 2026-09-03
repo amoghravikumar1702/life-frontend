@@ -234,7 +234,7 @@ export default function AskYourCFO({
                     text-[#D4AF37]
                   "
                 >
-                  ArkenOne Intelligence Engine
+                  DhanarkOS Intelligence Engine
                 </p>
 
                 <p className="mt-1.5 text-sm text-zinc-500">
@@ -311,7 +311,7 @@ export default function AskYourCFO({
                 text-zinc-500
               "
             >
-              Ask ArkenOne to evaluate your
+              Ask DhanarkOS to evaluate your
               financial position and determine
               your next move.
             </p>

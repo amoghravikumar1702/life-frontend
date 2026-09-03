@@ -1,4 +1,4 @@
-# ArkenOne UI V2
+# DhanarkOS UI V2
 
 Version 1.0
 
@@ -6,7 +6,7 @@ Version 1.0
 
 # Philosophy
 
-ArkenOne is Mission Control.
+DhanarkOS is Mission Control.
 
 Not a dashboard.
 

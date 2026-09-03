@@ -207,7 +207,7 @@ export default async function PaymentPage({
 
         <div className="text-center">
           <p className="text-[10px] font-semibold uppercase tracking-[0.35em] text-[#B08D22]">
-            ARKENONE
+            DhanarkOS
           </p>
 
           <h1 className="mt-3 text-3xl font-bold text-slate-900">

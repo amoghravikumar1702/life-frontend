@@ -1,802 +1,1106 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import {
   ArrowRight,
-  BrainCircuit,
   Check,
-  CircleDollarSign,
-  FileText,
-  Lock,
-  Sparkles,
-  Users,
+  Loader2,
+  LockKeyhole,
+  ShieldCheck,
   X,
-  Zap,
 } from "lucide-react";
 
-type Plan = {
-  name: string;
-  eyebrow: string;
-  price: string;
-  period: string;
-  description: string;
-  featured?: boolean;
-  badge?: string;
-  cta: string;
-  href: string;
-  features: string[];
-  limitations?: string[];
+import { createClient } from "@/lib/supabase/client";
+import DhanarkLogo from "@/components/brand/DhanarkLogo";
+
+type PlanKey = "beginner" | "professional" | "advanced";
+
+type BillingCycle = "monthly" | "yearly";
+
+type RazorpayResponse = {
+  razorpay_payment_id?: string;
+  razorpay_subscription_id?: string;
+  razorpay_signature?: string;
 };
 
-const plans: Plan[] = [
+type RazorpayInstance = {
+  open: () => void;
+};
+
+type RazorpayConstructor = new (
+  options: Record<string, unknown>
+) => RazorpayInstance;
+
+type SubscriptionResponse = {
+  subscriptionId?: string;
+  keyId?: string;
+  plan?: PlanKey;
+  planName?: string;
+  planId?: string;
+  billingCycle?: BillingCycle;
+  amount?: number;
+  currency?: string;
+  trialDays?: number;
+  status?: string;
+  trialEndsAt?: string | null;
+  startAt?: number | null;
+  reused?: boolean;
+  alreadyAuthorized?: boolean;
+};
+
+declare global {
+  interface Window {
+    Razorpay?: RazorpayConstructor;
+  }
+}
+
+const RAZORPAY_CHECKOUT_URL =
+  "https://checkout.razorpay.com/v1/checkout.js";
+
+const plans = [
   {
-    name: "Free",
-    eyebrow: "Get started",
-    price: "₹0",
-    period: "forever",
+    key: "beginner" as PlanKey,
+    name: "Beginner",
+    monthly: 799,
+    yearly: 7999,
     description:
-      "A simple way to experience ArkenOne and get your business set up.",
-    cta: "Start free",
-    href: "/onboarding",
+      "A focused financial workspace for businesses getting started.",
     features: [
-      "Business profile",
-      "Basic customer management",
-      "Limited invoice management",
-      "Basic payment records",
-      "Basic financial overview",
-    ],
-    limitations: [
-      "Limited AI CFO insights",
-      "No advanced automation",
-      "Limited financial history",
-      "Advanced features locked",
-    ],
-  },
-  {
-    name: "Pro",
-    eyebrow: "For growing businesses",
-    price: "₹1,499",
-    period: "/ month",
-    description:
-      "The everyday financial workspace for businesses that want more control.",
-    featured: true,
-    badge: "Most popular",
-    cta: "Choose Pro",
-    href: "/onboarding",
-    features: [
-      "Everything in Free",
-      "Unlimited customers",
-      "Unlimited invoices",
-      "Payment collection tools",
+      "Customers & invoices",
+      "Payment tracking",
+      "Expense management",
       "Financial overview",
+      "Core DhanarkOS intelligence",
+    ],
+  },
+
+  {
+    key: "professional" as PlanKey,
+    name: "Professional",
+    monthly: 1699,
+    yearly: 16999,
+    description:
+      "The complete financial operating layer for growing businesses.",
+    features: [
+      "Everything in Beginner",
       "AI CFO insights",
-      "Financial notifications",
-      "Payment follow-ups",
-      "Expanded financial history",
+      "Advanced cash-flow visibility",
+      "Financial analysis",
+      "Reports & business intelligence",
     ],
+    featured: true,
   },
+
   {
-    name: "Business",
-    eyebrow: "For established businesses",
-    price: "₹14,999",
-    period: "/ year",
-    description:
-      "A complete financial operating layer for businesses ready to run with greater clarity.",
-    cta: "Choose Business",
-    href: "/onboarding",
-    features: [
-      "Everything in Pro",
-      "Advanced AI CFO insights",
-      "Advanced financial analytics",
-      "Cash-flow intelligence",
-      "Priority financial alerts",
-      "Advanced payment workflows",
-      "Business performance insights",
-      "Extended financial history",
-      "Priority support",
-    ],
-  },
-  {
+    key: "advanced" as PlanKey,
     name: "Advanced",
-    eyebrow: "For businesses going further",
-    price: "₹17,999",
-    period: "/ year",
+    monthly: 1999,
+    yearly: 19999,
     description:
-      "The most powerful ArkenOne experience for businesses that want deeper intelligence and automation.",
-    badge: "Advanced",
-    cta: "Choose Advanced",
-    href: "/onboarding",
+      "Maximum financial intelligence for businesses ready to scale.",
     features: [
-      "Everything in Business",
-      "Advanced AI CFO capabilities",
-      "Deeper financial intelligence",
-      "Advanced automation",
-      "Priority action recommendations",
-      "Advanced business insights",
-      "Enhanced financial monitoring",
-      "Early access to new capabilities",
-      "Priority support",
+      "Everything in Professional",
+      "Advanced AI CFO intelligence",
+      "Deeper financial analysis",
+      "Priority capabilities",
+      "Built for scaling operations",
     ],
   },
 ];
 
-const comparisonRows = [
-  {
-    label: "Business profile",
-    free: true,
-    pro: true,
-    business: true,
-    advanced: true,
-  },
-  {
-    label: "Customer management",
-    free: "Limited",
-    pro: true,
-    business: true,
-    advanced: true,
-  },
-  {
-    label: "Invoice management",
-    free: "Limited",
-    pro: true,
-    business: true,
-    advanced: true,
-  },
-  {
-    label: "Payment collection",
-    free: "Basic",
-    pro: true,
-    business: true,
-    advanced: true,
-  },
-  {
-    label: "AI CFO",
-    free: "Basic",
-    pro: true,
-    business: "Advanced",
-    advanced: "Advanced+",
-  },
-  {
-    label: "Financial analytics",
-    free: false,
-    pro: "Basic",
-    business: true,
-    advanced: "Advanced",
-  },
-  {
-    label: "Financial automation",
-    free: false,
-    pro: "Basic",
-    business: true,
-    advanced: "Advanced",
-  },
-  {
-    label: "Priority support",
-    free: false,
-    pro: false,
-    business: true,
-    advanced: true,
-  },
-];
+function formatINR(amount: number) {
+  return `₹${amount.toLocaleString("en-IN")}`;
+}
 
-function FeatureIcon({
-  included,
-}: {
-  included: boolean | string;
-}) {
-  if (included === false) {
-    return (
-      <X
-        size={14}
-        className="text-zinc-700"
-      />
+function getYearlySavings(monthly: number, yearly: number) {
+  const normalYearly = monthly * 12;
+
+  const savings = normalYearly - yearly;
+
+  const percentage =
+    normalYearly > 0
+      ? Math.round((savings / normalYearly) * 100)
+      : 0;
+
+  return {
+    amount: savings,
+    percentage,
+  };
+}
+
+function loadRazorpay(): Promise<boolean> {
+  return new Promise((resolve) => {
+    if (typeof window === "undefined") {
+      resolve(false);
+      return;
+    }
+
+    if (window.Razorpay) {
+      resolve(true);
+      return;
+    }
+
+    const existingScript = document.querySelector(
+      `script[src="${RAZORPAY_CHECKOUT_URL}"]`
     );
-  }
 
-  if (included === true) {
-    return (
-      <Check
-        size={14}
-        className="text-[#D4AF37]"
-      />
-    );
-  }
+    if (existingScript) {
+      const handleLoad = () => {
+        resolve(Boolean(window.Razorpay));
+      };
 
-  return (
-    <span className="text-[10px] text-zinc-500">
-      {included}
-    </span>
-  );
+      const handleError = () => {
+        resolve(false);
+      };
+
+      existingScript.addEventListener("load", handleLoad, {
+        once: true,
+      });
+
+      existingScript.addEventListener("error", handleError, {
+        once: true,
+      });
+
+      return;
+    }
+
+    const script = document.createElement("script");
+
+    script.src = RAZORPAY_CHECKOUT_URL;
+    script.async = true;
+
+    script.onload = () => {
+      resolve(Boolean(window.Razorpay));
+    };
+
+    script.onerror = () => {
+      resolve(false);
+    };
+
+    document.body.appendChild(script);
+  });
 }
 
 export default function PricingPage() {
-  return (
-    <main className="min-h-screen overflow-x-hidden bg-[#08090A] text-white">
-      {/* ============================================================
-          NAVIGATION
-      ============================================================ */}
+  const [billingCycle, setBillingCycle] =
+    useState<BillingCycle>("monthly");
 
-      <header className="border-b border-white/[0.06]">
+  const [selectedPlan, setSelectedPlan] =
+    useState<PlanKey | null>(null);
+
+  const [isProcessing, setIsProcessing] =
+    useState(false);
+
+  const [isCheckingAuth, setIsCheckingAuth] =
+    useState(true);
+
+  const [errorMessage, setErrorMessage] =
+    useState("");
+
+  /*
+   * ============================================================
+   * AUTHENTICATION GATE
+   * ============================================================
+   */
+
+  useEffect(() => {
+    let mounted = true;
+
+    async function checkAuthentication() {
+      try {
+        const supabase = createClient();
+
+        const {
+          data: { user },
+          error,
+        } = await supabase.auth.getUser();
+
+        if (!mounted) {
+          return;
+        }
+
+        if (error) {
+          console.error(
+            "[DhanarkOS Pricing] Authentication check error:",
+            error
+          );
+        }
+
+        if (!user) {
+          window.location.replace("/signup");
+          return;
+        }
+
+        setIsCheckingAuth(false);
+      } catch (error) {
+        console.error(
+          "[DhanarkOS Pricing] Authentication check failed:",
+          error
+        );
+
+        if (mounted) {
+          window.location.replace("/signup");
+        }
+      }
+    }
+
+    checkAuthentication();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  /*
+   * ============================================================
+   * SUBSCRIBE
+   * ============================================================
+   */
+
+  async function handleSubscribe(plan: PlanKey) {
+    if (isProcessing || isCheckingAuth) {
+      return;
+    }
+
+    setErrorMessage("");
+    setSelectedPlan(plan);
+    setIsProcessing(true);
+
+    try {
+      /*
+       * --------------------------------------------------------
+       * FINAL AUTH CHECK
+       * --------------------------------------------------------
+       */
+
+      const supabase = createClient();
+
+      const {
+        data: { user },
+        error: authError,
+      } = await supabase.auth.getUser();
+
+      if (authError) {
+        console.error(
+          "[DhanarkOS Pricing] Final auth check failed:",
+          authError
+        );
+      }
+
+      if (!user) {
+        window.location.replace("/signup");
+        return;
+      }
+
+      /*
+       * --------------------------------------------------------
+       * CREATE / RECOVER SUBSCRIPTION
+       * --------------------------------------------------------
+       *
+       * IMPORTANT:
+       *
+       * We intentionally call our backend BEFORE loading or
+       * opening Razorpay.
+       *
+       * The backend knows whether the existing Razorpay
+       * subscription is already authenticated.
+       */
+
+      const createResponse = await fetch(
+        "/api/subscription/create-order",
+        {
+          method: "POST",
+
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+          },
+
+          credentials: "include",
+
+          cache: "no-store",
+
+          body: JSON.stringify({
+            plan,
+            billingCycle,
+          }),
+        }
+      );
+
+      let createResult: {
+        data?: SubscriptionResponse;
+        error?: string;
+        message?: string;
+      } = {};
+
+      try {
+        createResult = await createResponse.json();
+      } catch {
+        throw new Error(
+          `Unable to create your DhanarkOS subscription. (${createResponse.status})`
+        );
+      }
+
+      if (!createResponse.ok || !createResult.data) {
+        throw new Error(
+          createResult.error ??
+            createResult.message ??
+            `Unable to create your DhanarkOS subscription. (${createResponse.status})`
+        );
+      }
+
+      const subscription = createResult.data;
+
+      /*
+       * ========================================================
+       * CRITICAL: ALREADY AUTHORIZED
+       * ========================================================
+       *
+       * Razorpay has already authenticated this subscription.
+       *
+       * DO NOT:
+       *
+       * - Load Razorpay Checkout
+       * - Create a new subscription
+       * - Call new window.Razorpay(...)
+       * - Call /api/subscription/verify
+       *
+       * The authorization step is already complete.
+       *
+       * Go directly to onboarding.
+       *
+       * We check BOTH flags intentionally:
+       *
+       * 1. alreadyAuthorized === true
+       * 2. status === "authenticated"
+       *
+       * This makes the frontend defensive even if the backend
+       * response changes slightly in the future.
+       */
+
+      const alreadyAuthorized =
+        subscription.alreadyAuthorized === true ||
+        subscription.status === "authenticated";
+
+      if (alreadyAuthorized) {
+        console.log(
+          "[DhanarkOS] Subscription already authenticated. Skipping Razorpay Checkout.",
+          {
+            subscriptionId:
+              subscription.subscriptionId,
+
+            status:
+              subscription.status,
+
+            reused:
+              subscription.reused,
+
+            alreadyAuthorized:
+              subscription.alreadyAuthorized,
+
+            plan:
+              subscription.plan,
+
+            billingCycle:
+              subscription.billingCycle,
+
+            trialEndsAt:
+              subscription.trialEndsAt,
+          }
+        );
+
+        /*
+         * Stop the loading state before navigation.
+         */
+
+        setIsProcessing(false);
+        setSelectedPlan(null);
+
+        /*
+         * IMPORTANT:
+         *
+         * No Razorpay code runs from this point.
+         */
+
+        window.location.replace("/onboarding");
+
+        return;
+      }
+
+      /*
+       * --------------------------------------------------------
+       * VALIDATE SUBSCRIPTION
+       * --------------------------------------------------------
+       */
+
+      if (!subscription.subscriptionId) {
+        throw new Error(
+          "Razorpay did not return a subscription ID."
+        );
+      }
+
+      if (!subscription.keyId) {
+        throw new Error(
+          "Razorpay public key is not configured."
+        );
+      }
+
+      /*
+       * --------------------------------------------------------
+       * LOAD RAZORPAY
+       * --------------------------------------------------------
+       *
+       * We only reach this point when Checkout is actually
+       * required.
+       */
+
+      const razorpayLoaded = await loadRazorpay();
+
+      if (!razorpayLoaded || !window.Razorpay) {
+        throw new Error(
+          "Unable to load secure payment checkout. Please disable ad blockers or privacy extensions and try again."
+        );
+      }
+
+      /*
+       * --------------------------------------------------------
+       * DEBUG
+       * --------------------------------------------------------
+       */
+
+      console.log(
+        "[DhanarkOS DEBUG] Opening Razorpay Checkout:",
+        {
+          keyId: subscription.keyId,
+
+          subscriptionId:
+            subscription.subscriptionId,
+
+          planId:
+            subscription.planId,
+
+          plan:
+            subscription.plan,
+
+          billingCycle:
+            subscription.billingCycle,
+
+          status:
+            subscription.status,
+
+          reused:
+            subscription.reused,
+
+          alreadyAuthorized:
+            subscription.alreadyAuthorized,
+        }
+      );
+
+      /*
+       * --------------------------------------------------------
+       * OPEN RAZORPAY
+       * --------------------------------------------------------
+       *
+       * This block can ONLY be reached when the subscription
+       * is NOT already authenticated.
+       */
+
+      const razorpay = new window.Razorpay({
+        key: subscription.keyId,
+
+        subscription_id:
+          subscription.subscriptionId,
+
+        name: "DhanarkOS",
+
+        description:
+          `${
+            subscription.planName ?? "DhanarkOS"
+          } — ${
+            billingCycle === "yearly"
+              ? "Yearly"
+              : "Monthly"
+          } — 7-day free trial`,
+
+        notes: {
+          product: "DhanarkOS",
+
+          plan:
+            subscription.plan ?? plan,
+
+          planId:
+            subscription.planId ?? "",
+
+          billingCycle:
+            subscription.billingCycle ??
+            billingCycle,
+
+          trialDays: String(
+            subscription.trialDays ?? 7
+          ),
+        },
+
+        theme: {
+          color: "#D4AF37",
+        },
+
+        modal: {
+          ondismiss: () => {
+            console.log(
+              "[DhanarkOS] Razorpay checkout dismissed."
+            );
+
+            setIsProcessing(false);
+            setSelectedPlan(null);
+          },
+        },
+
+        handler: async function (
+          response: RazorpayResponse
+        ) {
+          try {
+            /*
+             * ------------------------------------------------
+             * VALIDATE RESPONSE
+             * ------------------------------------------------
+             */
+
+            if (
+              !response?.razorpay_payment_id ||
+              !response?.razorpay_subscription_id ||
+              !response?.razorpay_signature
+            ) {
+              throw new Error(
+                "Razorpay did not return complete subscription authorization data."
+              );
+            }
+
+            /*
+             * ------------------------------------------------
+             * SERVER VERIFICATION
+             * ------------------------------------------------
+             *
+             * This route is ONLY used for a fresh Checkout
+             * authorization.
+             *
+             * Already-authenticated subscriptions never reach
+             * this handler because Checkout is never opened.
+             */
+
+            const verifyResponse =
+              await fetch(
+                "/api/subscription/verify",
+                {
+                  method: "POST",
+
+                  headers: {
+                    "Content-Type":
+                      "application/json",
+
+                    Accept:
+                      "application/json",
+                  },
+
+                  credentials:
+                    "include",
+
+                  cache: "no-store",
+
+                  body: JSON.stringify({
+                    razorpay_payment_id:
+                      response.razorpay_payment_id,
+
+                    razorpay_subscription_id:
+                      response.razorpay_subscription_id,
+
+                    razorpay_signature:
+                      response.razorpay_signature,
+                  }),
+                }
+              );
+
+            let verifyResult: {
+              data?: {
+                activated?: boolean;
+
+                trialStatus?: string;
+
+                subscriptionStatus?: string;
+
+                subscriptionId?: string;
+
+                paymentId?: string;
+
+                trialEndsAt?: string;
+
+                plan?: string | null;
+
+                billingCycle?: string;
+              };
+
+              error?: string;
+
+              message?: string;
+            } = {};
+
+            try {
+              verifyResult =
+                await verifyResponse.json();
+            } catch {
+              throw new Error(
+                `Payment verification failed. (${verifyResponse.status})`
+              );
+            }
+
+            if (
+              !verifyResponse.ok ||
+              !verifyResult.data?.activated
+            ) {
+              throw new Error(
+                verifyResult.error ??
+                  verifyResult.message ??
+                  "Your Razorpay subscription authorization could not be verified."
+              );
+            }
+
+            console.log(
+              "[DhanarkOS] Subscription authorization verified:",
+              {
+                subscriptionId:
+                  verifyResult.data
+                    ?.subscriptionId,
+
+                paymentId:
+                  verifyResult.data
+                    ?.paymentId,
+
+                trialEndsAt:
+                  verifyResult.data
+                    ?.trialEndsAt,
+              }
+            );
+
+            window.location.replace(
+              "/onboarding"
+            );
+          } catch (error) {
+            console.error(
+              "[DhanarkOS] Subscription verification failed:",
+              error
+            );
+
+            setErrorMessage(
+              error instanceof Error
+                ? error.message
+                : "We could not verify your subscription authorization. If you were charged, please contact support."
+            );
+
+            setIsProcessing(false);
+            setSelectedPlan(null);
+          }
+        },
+      });
+
+      razorpay.open();
+    } catch (error) {
+      console.error(
+        "[DhanarkOS] Subscription checkout failed:",
+        error
+      );
+
+      setErrorMessage(
+        error instanceof Error
+          ? error.message
+          : "Unable to start secure checkout."
+      );
+
+      setIsProcessing(false);
+      setSelectedPlan(null);
+    }
+  }
+
+  /*
+   * ============================================================
+   * AUTH CHECK SCREEN
+   * ============================================================
+   */
+
+  if (isCheckingAuth) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-[#08090A] text-white">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2
+            size={22}
+            className="animate-spin text-[#D4AF37]"
+          />
+
+          <p className="text-xs text-zinc-600">
+            Securing your workspace...
+          </p>
+        </div>
+      </main>
+    );
+  }
+
+  /*
+   * ============================================================
+   * PAGE
+   * ============================================================
+   */
+
+  return (
+    <main className="relative min-h-screen overflow-hidden bg-[#08090A] text-white">
+      <div className="pointer-events-none absolute left-1/2 top-[-260px] h-[560px] w-[900px] -translate-x-1/2 rounded-full bg-[#D4AF37]/[0.035] blur-[150px]" />
+
+      <div className="pointer-events-none absolute bottom-[-260px] right-[-180px] h-[500px] w-[500px] rounded-full bg-[#D4AF37]/[0.02] blur-[140px]" />
+
+      <header className="relative z-10 border-b border-white/[0.06]">
         <div className="mx-auto flex h-20 w-full max-w-7xl items-center justify-between px-5 sm:px-8 lg:px-10">
+          <DhanarkLogo
+            variant="full"
+            href="/"
+            className="h-10 w-auto"
+            priority
+          />
+
           <Link
             href="/"
-            className="flex items-center gap-3"
+            className="rounded-xl px-4 py-2.5 text-sm font-medium text-zinc-500 transition hover:bg-white/[0.03] hover:text-zinc-200"
           >
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-[#D4AF37]/25 bg-[#D4AF37]/[0.07]">
-              <span className="text-sm font-semibold text-[#D4AF37]">
-                A
-              </span>
-            </div>
-
-            <span className="text-[15px] font-semibold tracking-tight">
-              ArkenOne
-            </span>
+            Back
           </Link>
-
-          <nav className="hidden items-center gap-8 md:flex">
-            <Link
-              href="/"
-              className="text-sm text-zinc-500 transition hover:text-white"
-            >
-              Product
-            </Link>
-
-            <Link
-              href="/#how-it-works"
-              className="text-sm text-zinc-500 transition hover:text-white"
-            >
-              How it works
-            </Link>
-
-            <Link
-              href="/pricing"
-              className="text-sm text-white"
-            >
-              Pricing
-            </Link>
-          </nav>
-
-          <div className="flex items-center gap-2 sm:gap-3">
-            <Link
-              href="/login"
-              className="rounded-xl px-3 py-2.5 text-sm font-medium text-zinc-500 transition hover:text-white sm:px-4"
-            >
-              Sign in
-            </Link>
-
-            <Link
-              href="/onboarding"
-              className="flex items-center gap-2 rounded-xl bg-[#D4AF37] px-4 py-2.5 text-sm font-semibold text-black transition hover:bg-[#E2C04A]"
-            >
-              Get started
-              <ArrowRight size={15} />
-            </Link>
-          </div>
         </div>
       </header>
 
-      {/* ============================================================
-          HERO
-      ============================================================ */}
+      <div className="relative z-10 mx-auto w-full max-w-7xl px-5 py-16 sm:px-8 sm:py-20 lg:px-10 lg:py-24">
+        <div className="mx-auto max-w-3xl text-center">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-[#D4AF37]/20 bg-[#D4AF37]/[0.06] shadow-[0_0_50px_rgba(212,175,55,0.06)]">
+            <LockKeyhole
+              size={22}
+              strokeWidth={1.5}
+              className="text-[#D4AF37]"
+            />
+          </div>
 
-      <section className="relative overflow-hidden">
-        <div className="pointer-events-none absolute left-1/2 top-0 h-[500px] w-[900px] -translate-x-1/2 rounded-full bg-[#D4AF37]/[0.035] blur-[140px]" />
+          <p className="mt-7 text-[10px] font-semibold uppercase tracking-[0.35em] text-[#D4AF37]">
+            Start your journey
+          </p>
 
-        <div className="relative mx-auto max-w-4xl px-5 pb-14 pt-20 text-center sm:px-8 sm:pb-20 sm:pt-28">
-          <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/[0.08] bg-white/[0.025] px-3.5 py-2">
-            <Sparkles
-              size={13}
+          <h1 className="mt-4 text-4xl font-light tracking-[-0.045em] text-white sm:text-5xl lg:text-6xl">
+            Choose your level of control.
+          </h1>
+
+          <p className="mx-auto mt-6 max-w-xl text-sm leading-7 text-zinc-500 sm:text-base">
+            Select the DhanarkOS plan that fits
+            your business. Every plan begins with
+            a 7-day free trial.
+          </p>
+        </div>
+
+        <div className="mt-10 flex justify-center">
+          <div className="inline-flex rounded-2xl border border-white/[0.08] bg-white/[0.025] p-1.5">
+            <button
+              type="button"
+              onClick={() =>
+                setBillingCycle("monthly")
+              }
+              disabled={isProcessing}
+              className={`rounded-xl px-6 py-2.5 text-sm font-medium transition ${
+                billingCycle === "monthly"
+                  ? "bg-white/[0.09] text-white shadow-sm"
+                  : "text-zinc-500 hover:text-zinc-300"
+              }`}
+            >
+              Monthly
+            </button>
+
+            <button
+              type="button"
+              onClick={() =>
+                setBillingCycle("yearly")
+              }
+              disabled={isProcessing}
+              className={`flex items-center gap-2 rounded-xl px-6 py-2.5 text-sm font-medium transition ${
+                billingCycle === "yearly"
+                  ? "bg-[#D4AF37] text-black shadow-[0_8px_30px_rgba(212,175,55,0.12)]"
+                  : "text-zinc-500 hover:text-zinc-300"
+              }`}
+            >
+              Yearly
+
+              <span
+                className={`rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider ${
+                  billingCycle === "yearly"
+                    ? "bg-black/10 text-black"
+                    : "bg-[#D4AF37]/10 text-[#D4AF37]"
+                }`}
+              >
+                Save
+              </span>
+            </button>
+          </div>
+        </div>
+
+        <div className="mx-auto mt-8 flex max-w-2xl flex-col items-center justify-center gap-4 text-center sm:flex-row sm:gap-7">
+          <div className="flex items-center gap-2">
+            <ShieldCheck
+              size={14}
               className="text-[#D4AF37]"
             />
 
-            <span className="text-[10px] font-medium uppercase tracking-[0.24em] text-zinc-500">
-              Simple pricing. Serious control.
+            <span className="text-[11px] text-zinc-600">
+              7-day free trial
             </span>
           </div>
 
-          <h1 className="text-4xl font-semibold tracking-[-0.045em] text-white sm:text-6xl">
-            Choose the level of
-            <span className="block text-zinc-500">
-              control your business needs.
+          <div className="hidden h-3 w-px bg-white/[0.08] sm:block" />
+
+          <div className="flex items-center gap-2">
+            <ShieldCheck
+              size={14}
+              className="text-[#D4AF37]"
+            />
+
+            <span className="text-[11px] text-zinc-600">
+              Secure Razorpay billing
             </span>
-          </h1>
+          </div>
 
-          <p className="mx-auto mt-6 max-w-2xl text-sm leading-7 text-zinc-500 sm:text-base">
-            Start with the essentials. Upgrade when your
-            business needs deeper financial intelligence,
-            automation, and control.
-          </p>
+          <div className="hidden h-3 w-px bg-white/[0.08] sm:block" />
+
+          <div className="flex items-center gap-2">
+            <ShieldCheck
+              size={14}
+              className="text-[#D4AF37]"
+            />
+
+            <span className="text-[11px] text-zinc-600">
+              Cancel anytime
+            </span>
+          </div>
         </div>
-      </section>
 
-      {/* ============================================================
-          PRICING CARDS
-      ============================================================ */}
+        <div className="mx-auto mt-14 grid max-w-6xl gap-4 lg:grid-cols-3">
+          {plans.map((plan) => {
+            const loading =
+              isProcessing &&
+              selectedPlan === plan.key;
 
-      <section className="mx-auto w-full max-w-7xl px-5 pb-20 sm:px-8 lg:px-10">
-        <div className="grid gap-3 lg:grid-cols-4">
-          {plans.map((plan) => (
-            <div
-              key={plan.name}
-              className={`relative flex flex-col overflow-hidden rounded-[24px] border p-6 transition ${
-                plan.featured
-                  ? "border-[#D4AF37]/35 bg-[#111214] shadow-[0_30px_90px_rgba(212,175,55,0.07)]"
-                  : "border-white/[0.07] bg-white/[0.018]"
-              }`}
-            >
-              {plan.badge && (
-                <div className="absolute right-5 top-5 rounded-full border border-[#D4AF37]/20 bg-[#D4AF37]/[0.07] px-2.5 py-1 text-[9px] font-medium uppercase tracking-[0.15em] text-[#D4AF37]">
-                  {plan.badge}
-                </div>
-              )}
+            const price =
+              billingCycle === "yearly"
+                ? plan.yearly
+                : plan.monthly;
 
-              <p className="text-[9px] font-medium uppercase tracking-[0.25em] text-[#D4AF37]">
-                {plan.eyebrow}
-              </p>
+            const savings =
+              getYearlySavings(
+                plan.monthly,
+                plan.yearly
+              );
 
-              <h2 className="mt-3 text-xl font-semibold tracking-tight text-white">
-                {plan.name}
-              </h2>
-
-              <p className="mt-3 min-h-[60px] text-xs leading-5 text-zinc-600">
-                {plan.description}
-              </p>
-
-              <div className="mt-7 flex items-end gap-1">
-                <span className="text-3xl font-semibold tracking-[-0.04em] text-white">
-                  {plan.price}
-                </span>
-
-                <span className="mb-1 text-[10px] text-zinc-600">
-                  {plan.period}
-                </span>
-              </div>
-
-              <Link
-                href={plan.href}
-                className={`mt-6 flex min-h-11 items-center justify-center gap-2 rounded-xl px-4 text-xs font-semibold transition ${
+            return (
+              <div
+                key={plan.key}
+                className={`relative flex flex-col rounded-[24px] border p-6 transition duration-300 sm:p-7 ${
                   plan.featured
-                    ? "bg-[#D4AF37] text-black hover:bg-[#E2C04A]"
-                    : "border border-white/[0.09] bg-white/[0.025] text-zinc-200 hover:bg-white/[0.05] hover:text-white"
+                    ? "border-[#D4AF37]/30 bg-[#D4AF37]/[0.035] shadow-[0_25px_80px_rgba(0,0,0,0.35)]"
+                    : "border-white/[0.07] bg-white/[0.018] hover:border-white/[0.12]"
                 }`}
               >
-                {plan.cta}
-                <ArrowRight size={14} />
-              </Link>
+                {plan.featured && (
+                  <div className="absolute right-5 top-5 rounded-full border border-[#D4AF37]/20 bg-[#D4AF37]/[0.07] px-3 py-1 text-[9px] font-semibold uppercase tracking-[0.16em] text-[#D4AF37]">
+                    Recommended
+                  </div>
+                )}
 
-              <div className="my-6 h-px bg-white/[0.06]" />
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-[#D4AF37]">
+                    {plan.name}
+                  </p>
 
-              <p className="text-[9px] font-medium uppercase tracking-[0.2em] text-zinc-600">
-                Includes
-              </p>
+                  <h2 className="mt-4 text-xl font-medium tracking-tight text-white">
+                    {plan.name}
+                  </h2>
 
-              <div className="mt-4 space-y-3">
-                {plan.features.map(
-                  (feature) => (
-                    <div
-                      key={feature}
-                      className="flex items-start gap-2.5"
-                    >
-                      <Check
-                        size={13}
-                        className="mt-0.5 shrink-0 text-[#D4AF37]"
+                  <p className="mt-3 min-h-[60px] text-xs leading-5 text-zinc-600">
+                    {plan.description}
+                  </p>
+                </div>
+
+                <div className="mt-7">
+                  <div className="flex items-end gap-1">
+                    <span className="text-3xl font-medium tracking-[-0.04em] text-white">
+                      {formatINR(price)}
+                    </span>
+
+                    <span className="mb-1 text-xs text-zinc-600">
+                      /
+                      {billingCycle === "yearly"
+                        ? "year"
+                        : "month"}
+                    </span>
+                  </div>
+
+                  {billingCycle === "yearly" ? (
+                    <p className="mt-2 text-[10px] text-zinc-600">
+                      Save{" "}
+                      <span className="text-[#D4AF37]">
+                        {formatINR(
+                          savings.amount
+                        )}
+                      </span>{" "}
+                      / year
+                      <span className="ml-1 text-zinc-500">
+                        ({savings.percentage}%)
+                      </span>
+                    </p>
+                  ) : (
+                    <p className="mt-2 text-[10px] text-zinc-700">
+                      7 days free, then{" "}
+                      <span className="text-zinc-400">
+                        {formatINR(
+                          plan.monthly
+                        )}
+                      </span>{" "}
+                      / month
+                    </p>
+                  )}
+                </div>
+
+                <button
+                  type="button"
+                  disabled={isProcessing}
+                  onClick={() =>
+                    handleSubscribe(plan.key)
+                  }
+                  className={`mt-7 flex min-h-12 items-center justify-center gap-2 rounded-xl px-5 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 ${
+                    plan.featured
+                      ? "bg-[#D4AF37] text-black hover:bg-[#E2C04A]"
+                      : "border border-white/[0.08] bg-white/[0.025] text-zinc-300 hover:border-white/[0.15] hover:bg-white/[0.04] hover:text-white"
+                  }`}
+                >
+                  {loading ? (
+                    <>
+                      <Loader2
+                        size={15}
+                        className="animate-spin"
                       />
 
-                      <span className="text-xs leading-4 text-zinc-400">
-                        {feature}
-                      </span>
-                    </div>
-                  )
-                )}
-              </div>
+                      Opening secure checkout...
+                    </>
+                  ) : (
+                    <>
+                      Start free trial
 
-              {plan.limitations && (
-                <>
-                  <div className="my-5 h-px bg-white/[0.05]" />
+                      <ArrowRight size={15} />
+                    </>
+                  )}
+                </button>
 
-                  <p className="text-[9px] font-medium uppercase tracking-[0.2em] text-zinc-700">
-                    Free plan limits
+                <div className="mt-7 border-t border-white/[0.06] pt-6">
+                  <p className="text-[9px] font-semibold uppercase tracking-[0.2em] text-zinc-700">
+                    Includes
                   </p>
 
                   <div className="mt-4 space-y-3">
-                    {plan.limitations.map(
+                    {plan.features.map(
                       (feature) => (
                         <div
                           key={feature}
                           className="flex items-start gap-2.5"
                         >
-                          <Lock
-                            size={12}
-                            className="mt-0.5 shrink-0 text-zinc-700"
-                          />
+                          <div className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-[#D4AF37]/[0.08]">
+                            <Check
+                              size={10}
+                              strokeWidth={2}
+                              className="text-[#D4AF37]"
+                            />
+                          </div>
 
-                          <span className="text-xs leading-4 text-zinc-600">
+                          <span className="text-xs leading-5 text-zinc-500">
                             {feature}
                           </span>
                         </div>
                       )
                     )}
                   </div>
-                </>
-              )}
-            </div>
-          ))}
-        </div>
-
-        <p className="mt-5 text-center text-[10px] text-zinc-700">
-          Pricing shown for the current ArkenOne
-          launch structure. Taxes, if applicable,
-          are charged separately.
-        </p>
-      </section>
-
-      {/* ============================================================
-          VALUE SECTION
-      ============================================================ */}
-
-      <section className="border-y border-white/[0.06] bg-[#0A0B0C]">
-        <div className="mx-auto grid w-full max-w-7xl gap-10 px-5 py-20 sm:px-8 sm:py-24 lg:grid-cols-[0.9fr_1.1fr] lg:items-center lg:px-10">
-          <div>
-            <p className="text-[10px] font-medium uppercase tracking-[0.3em] text-[#D4AF37]">
-              Why upgrade
-            </p>
-
-            <h2 className="mt-4 text-3xl font-semibold tracking-[-0.04em] text-white sm:text-4xl">
-              Don't pay for more
-              software.
-              <span className="block text-zinc-500">
-                Pay for more control.
-              </span>
-            </h2>
-
-            <p className="mt-5 max-w-xl text-sm leading-7 text-zinc-500">
-              ArkenOne is designed so that upgrading
-              gives your business more financial capability
-              — not just more storage or cosmetic features.
-            </p>
-          </div>
-
-          <div className="grid gap-3 sm:grid-cols-3">
-            <div className="rounded-2xl border border-white/[0.06] bg-white/[0.018] p-5">
-              <CircleDollarSign
-                size={18}
-                className="text-[#D4AF37]"
-              />
-
-              <h3 className="mt-5 text-sm font-medium text-white">
-                More visibility
-              </h3>
-
-              <p className="mt-2 text-xs leading-5 text-zinc-600">
-                Go beyond basic records and understand
-                your financial position.
-              </p>
-            </div>
-
-            <div className="rounded-2xl border border-white/[0.06] bg-white/[0.018] p-5">
-              <BrainCircuit
-                size={18}
-                className="text-[#D4AF37]"
-              />
-
-              <h3 className="mt-5 text-sm font-medium text-white">
-                More intelligence
-              </h3>
-
-              <p className="mt-2 text-xs leading-5 text-zinc-600">
-                Unlock deeper AI CFO capabilities as
-                your business grows.
-              </p>
-            </div>
-
-            <div className="rounded-2xl border border-white/[0.06] bg-white/[0.018] p-5">
-              <Zap
-                size={18}
-                className="text-[#D4AF37]"
-              />
-
-              <h3 className="mt-5 text-sm font-medium text-white">
-                More automation
-              </h3>
-
-              <p className="mt-2 text-xs leading-5 text-zinc-600">
-                Reduce repetitive financial work and
-                focus on running the business.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ============================================================
-          COMPARISON
-      ============================================================ */}
-
-      <section className="mx-auto w-full max-w-7xl px-5 py-20 sm:px-8 sm:py-28 lg:px-10">
-        <div className="text-center">
-          <p className="text-[10px] font-medium uppercase tracking-[0.3em] text-[#D4AF37]">
-            Compare plans
-          </p>
-
-          <h2 className="mt-4 text-3xl font-semibold tracking-[-0.035em] text-white sm:text-4xl">
-            Everything you need.
-            Clearly defined.
-          </h2>
-        </div>
-
-        <div className="mt-12 overflow-x-auto rounded-[22px] border border-white/[0.07]">
-          <table className="w-full min-w-[760px] border-collapse">
-            <thead>
-              <tr className="border-b border-white/[0.06] bg-white/[0.018]">
-                <th className="w-[32%] px-5 py-5 text-left text-[10px] font-medium uppercase tracking-[0.18em] text-zinc-600">
-                  Capability
-                </th>
-
-                {[
-                  "Free",
-                  "Pro",
-                  "Business",
-                  "Advanced",
-                ].map(
-                  (plan) => (
-                    <th
-                      key={plan}
-                      className={`px-4 py-5 text-center text-[10px] font-medium uppercase tracking-[0.18em] ${
-                        plan === "Pro"
-                          ? "text-[#D4AF37]"
-                          : "text-zinc-600"
-                      }`}
-                    >
-                      {plan}
-                    </th>
-                  )
-                )}
-              </tr>
-            </thead>
-
-            <tbody>
-              {comparisonRows.map(
-                (row) => (
-                  <tr
-                    key={row.label}
-                    className="border-b border-white/[0.05] last:border-0"
-                  >
-                    <td className="px-5 py-4 text-xs text-zinc-400">
-                      {row.label}
-                    </td>
-
-                    <td className="px-4 py-4 text-center">
-                      <div className="flex justify-center">
-                        <FeatureIcon
-                          included={
-                            row.free
-                          }
-                        />
-                      </div>
-                    </td>
-
-                    <td className="px-4 py-4 text-center">
-                      <div className="flex justify-center">
-                        <FeatureIcon
-                          included={
-                            row.pro
-                          }
-                        />
-                      </div>
-                    </td>
-
-                    <td className="px-4 py-4 text-center">
-                      <div className="flex justify-center">
-                        <FeatureIcon
-                          included={
-                            row.business
-                          }
-                        />
-                      </div>
-                    </td>
-
-                    <td className="px-4 py-4 text-center">
-                      <div className="flex justify-center">
-                        <FeatureIcon
-                          included={
-                            row.advanced
-                          }
-                        />
-                      </div>
-                    </td>
-                  </tr>
-                )
-              )}
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      {/* ============================================================
-          FAQ / REASSURANCE
-      ============================================================ */}
-
-      <section className="border-y border-white/[0.06] bg-[#0A0B0C]">
-        <div className="mx-auto max-w-4xl px-5 py-20 sm:px-8 sm:py-24">
-          <div className="text-center">
-            <p className="text-[10px] font-medium uppercase tracking-[0.3em] text-[#D4AF37]">
-              Before you start
-            </p>
-
-            <h2 className="mt-4 text-3xl font-semibold tracking-[-0.035em] text-white">
-              Start simple. Upgrade when
-              you need more.
-            </h2>
-          </div>
-
-          <div className="mt-10 space-y-3">
-            <div className="rounded-2xl border border-white/[0.06] bg-white/[0.018] p-6">
-              <div className="flex items-start gap-4">
-                <FileText
-                  size={17}
-                  className="mt-0.5 shrink-0 text-[#D4AF37]"
-                />
-
-                <div>
-                  <h3 className="text-sm font-medium text-zinc-200">
-                    Can I start without paying?
-                  </h3>
-
-                  <p className="mt-2 text-xs leading-5 text-zinc-600">
-                    Yes. The Free plan lets you set up
-                    your business and experience the
-                    core ArkenOne workflow before
-                    upgrading.
-                  </p>
                 </div>
               </div>
-            </div>
-
-            <div className="rounded-2xl border border-white/[0.06] bg-white/[0.018] p-6">
-              <div className="flex items-start gap-4">
-                <BrainCircuit
-                  size={17}
-                  className="mt-0.5 shrink-0 text-[#D4AF37]"
-                />
-
-                <div>
-                  <h3 className="text-sm font-medium text-zinc-200">
-                    Why are AI CFO features limited
-                    on Free?
-                  </h3>
-
-                  <p className="mt-2 text-xs leading-5 text-zinc-600">
-                    ArkenOne's deeper financial
-                    intelligence is one of its core
-                    value drivers. Paid plans unlock
-                    progressively more advanced
-                    intelligence and automation.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="rounded-2xl border border-white/[0.06] bg-white/[0.018] p-6">
-              <div className="flex items-start gap-4">
-                <Users
-                  size={17}
-                  className="mt-0.5 shrink-0 text-[#D4AF37]"
-                />
-
-                <div>
-                  <h3 className="text-sm font-medium text-zinc-200">
-                    Which plan should I choose?
-                  </h3>
-
-                  <p className="mt-2 text-xs leading-5 text-zinc-600">
-                    Pro is the natural starting point
-                    for most growing businesses. Business
-                    and Advanced are designed for teams
-                    that want deeper financial intelligence
-                    and automation.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
+            );
+          })}
         </div>
-      </section>
 
-      {/* ============================================================
-          FINAL CTA
-      ============================================================ */}
-
-      <section className="relative overflow-hidden">
-        <div className="pointer-events-none absolute left-1/2 top-1/2 h-[400px] w-[700px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#D4AF37]/[0.035] blur-[120px]" />
-
-        <div className="relative mx-auto max-w-4xl px-5 py-24 text-center sm:px-8 sm:py-32">
-          <p className="text-[10px] font-medium uppercase tracking-[0.3em] text-[#D4AF37]">
-            Ready when you are
-          </p>
-
-          <h2 className="mt-5 text-4xl font-semibold tracking-[-0.045em] text-white sm:text-5xl">
-            Your business deserves
-            <span className="block text-zinc-500">
-              better financial visibility.
-            </span>
-          </h2>
-
-          <p className="mx-auto mt-6 max-w-xl text-sm leading-7 text-zinc-500">
-            Start with the essentials and unlock
-            more as your business grows.
-          </p>
-
-          <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
-            <Link
-              href="/onboarding"
-              className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#D4AF37] px-6 text-sm font-semibold text-black transition hover:bg-[#E2C04A] sm:w-auto"
-            >
-              Start with ArkenOne
-              <ArrowRight size={16} />
-            </Link>
-
-            <Link
-              href="/"
-              className="flex min-h-12 w-full items-center justify-center rounded-xl border border-white/[0.09] bg-white/[0.025] px-6 text-sm font-medium text-zinc-300 transition hover:bg-white/[0.04] hover:text-white sm:w-auto"
-            >
-              Learn about ArkenOne
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* ============================================================
-          FOOTER
-      ============================================================ */}
-
-      <footer className="border-t border-white/[0.06]">
-        <div className="mx-auto flex w-full max-w-7xl flex-col gap-5 px-5 py-8 sm:px-8 md:flex-row md:items-center md:justify-between lg:px-10">
-          <div className="flex items-center gap-3">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#D4AF37]/20 bg-[#D4AF37]/[0.05]">
-              <span className="text-xs font-semibold text-[#D4AF37]">
-                A
-              </span>
-            </div>
+        {errorMessage && (
+          <div className="mx-auto mt-8 flex max-w-xl items-start gap-3 rounded-2xl border border-red-500/15 bg-red-500/[0.035] px-5 py-4">
+            <X
+              size={16}
+              className="mt-0.5 shrink-0 text-red-400"
+            />
 
             <div>
-              <p className="text-xs font-medium text-zinc-300">
-                ArkenOne
+              <p className="text-xs font-medium text-red-300">
+                Subscription setup could not be completed
               </p>
 
-              <p className="mt-0.5 text-[10px] text-zinc-700">
-                Financial clarity for growing businesses.
+              <p className="mt-1 text-xs leading-5 text-red-400/70">
+                {errorMessage}
               </p>
             </div>
           </div>
+        )}
 
-          <div className="flex flex-wrap items-center gap-5">
+        <div className="mx-auto mt-12 max-w-xl text-center">
+          <p className="text-[10px] leading-5 text-zinc-700">
+            Your 7-day trial begins after
+            secure Razorpay authorization.
+            Your selected{" "}
+            {billingCycle === "yearly"
+              ? "yearly"
+              : "monthly"}{" "}
+            plan begins billing after the
+            trial period.
+          </p>
+
+          <div className="mt-5 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-[10px] text-zinc-600">
             <Link
-              href="/"
-              className="text-[10px] text-zinc-600 transition hover:text-zinc-300"
+              href="/terms"
+              className="transition hover:text-zinc-300"
             >
-              Product
+              Terms of Service
             </Link>
 
-            <Link
-              href="/#how-it-works"
-              className="text-[10px] text-zinc-600 transition hover:text-zinc-300"
-            >
-              How it works
-            </Link>
+            <span className="text-zinc-800">
+              •
+            </span>
 
             <Link
-              href="/login"
-              className="text-[10px] text-zinc-600 transition hover:text-zinc-300"
+              href="/privacy"
+              className="transition hover:text-zinc-300"
             >
-              Sign in
+              Privacy Policy
+            </Link>
+
+            <span className="text-zinc-800">
+              •
+            </span>
+
+            <Link
+              href="/refund-policy"
+              className="transition hover:text-[#D4AF37]"
+            >
+              Refund Policy
             </Link>
           </div>
 
-          <p className="text-[10px] text-zinc-700">
-            © {new Date().getFullYear()} ArkenOne
+          <p className="mt-4 text-[10px] leading-5 text-zinc-700">
+            Subscriptions are non-refundable.
+            Cancelling your subscription does not
+            create an entitlement to a refund for
+            the current billing period, except where
+            a refund is required by applicable law.
           </p>
         </div>
-      </footer>
+      </div>
     </main>
   );
 }

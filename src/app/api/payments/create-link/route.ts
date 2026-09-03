@@ -5,23 +5,94 @@ import { ApiResponse } from "@/lib/api-response";
 import { handleApiError } from "@/lib/error-handler";
 import { supabaseAdmin } from "@/lib/server/supabase";
 
-export async function POST(
-  request: NextRequest
-) {
+export async function POST(request: NextRequest) {
   try {
+    /*
+     * =========================================================
+     * AUTHENTICATION
+     * =========================================================
+     *
+     * The client sends the Supabase access token through:
+     *
+     * Authorization: Bearer <access_token>
+     *
+     * We validate that token server-side using Supabase.
+     */
+
+    const authorization =
+      request.headers.get("authorization");
+
+    if (
+      !authorization ||
+      !authorization.startsWith("Bearer ")
+    ) {
+      return ApiResponse.error(
+        "Unauthorized",
+        401
+      );
+    }
+
+    const accessToken =
+      authorization.substring(7).trim();
+
+    if (!accessToken) {
+      return ApiResponse.error(
+        "Unauthorized",
+        401
+      );
+    }
+
+    const {
+      data: {
+        user,
+      },
+      error: authError,
+    } = await supabaseAdmin.auth.getUser(
+      accessToken
+    );
+
+    if (authError || !user) {
+      console.error(
+        "Payment link authentication failed:",
+        authError
+      );
+
+      return ApiResponse.error(
+        "Unauthorized",
+        401
+      );
+    }
+
+    /*
+     * =========================================================
+     * INPUT
+     * =========================================================
+     */
+
     const {
       invoiceId,
     } = await request.json();
 
-    const id =
-      Number(invoiceId);
+    const id = Number(invoiceId);
 
-    if (!id) {
+    if (
+      !Number.isInteger(id) ||
+      id <= 0
+    ) {
       return ApiResponse.error(
-        "Invoice ID is required",
+        "Invalid invoice ID",
         400
       );
     }
+
+    /*
+     * =========================================================
+     * LOAD INVOICE
+     * =========================================================
+     *
+     * IMPORTANT:
+     * The invoice MUST belong to the authenticated user.
+     */
 
     const {
       data: invoice,
@@ -30,10 +101,19 @@ export async function POST(
       .from("invoices")
       .select("*")
       .eq("id", id)
+      .eq("owner_id", user.id)
       .maybeSingle();
 
     if (error) {
-      throw error;
+      console.error(
+        "Invoice lookup failed:",
+        error
+      );
+
+      return ApiResponse.error(
+        "Failed to find invoice",
+        500
+      );
     }
 
     if (!invoice) {
@@ -42,6 +122,12 @@ export async function POST(
         404
       );
     }
+
+    /*
+     * =========================================================
+     * PAYMENT STATE
+     * =========================================================
+     */
 
     if (
       invoice.status === "Paid" ||
@@ -52,6 +138,12 @@ export async function POST(
         400
       );
     }
+
+    /*
+     * =========================================================
+     * PAYMENT TOKEN
+     * =========================================================
+     */
 
     let token =
       invoice.payment_token;
@@ -64,7 +156,8 @@ export async function POST(
 
     if (!token || expired) {
       token =
-        crypto.randomBytes(32)
+        crypto
+          .randomBytes(32)
           .toString("hex");
 
       const expiresAt =
@@ -91,12 +184,30 @@ export async function POST(
         .eq(
           "id",
           invoice.id
+        )
+        .eq(
+          "owner_id",
+          user.id
         );
 
       if (updateError) {
-        throw updateError;
+        console.error(
+          "Payment token update failed:",
+          updateError
+        );
+
+        return ApiResponse.error(
+          "Failed to create payment link",
+          500
+        );
       }
     }
+
+    /*
+     * =========================================================
+     * PAYMENT URL
+     * =========================================================
+     */
 
     const baseUrl =
       process.env.NEXT_PUBLIC_APP_URL ??
@@ -107,10 +218,13 @@ export async function POST(
 
     return ApiResponse.success({
       paymentUrl,
+
       invoiceId:
         invoice.id,
+
       invoiceNumber:
         invoice.invoice_number,
+
       balanceDue:
         Number(
           invoice.balance_due
