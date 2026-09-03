@@ -485,45 +485,48 @@ export default function DailyCEOBrief({
         ===================================================== */}
 
         <div
-          aria-hidden="true"
-          className="
-            pointer-events-none
-            absolute
-            bottom-[-28px]
-            right-[-42px]
-            z-20
-            hidden
-            h-[590px]
-            w-[50%]
-            sm:block
-            sm:right-[-34px]
-            sm:h-[610px]
-            sm:w-[49%]
-            lg:right-[-25px]
-            lg:h-[625px]
-            lg:w-[50%]
-            xl:right-[-12px]
-            xl:h-[640px]
-            xl:w-[50%]
-          "
-        >
-          <Image
-            src="/images/dhaar/dhaar-mascot.png"
-            alt=""
-            fill
-            priority
-            sizes="
-              (max-width: 640px) 0px,
-              (max-width: 1024px) 49vw,
-              50vw
-            "
-            className="
-              select-none
-              object-contain
-              object-bottom
-            "
-          />
-        </div>
+  aria-hidden="true"
+  className="
+    pointer-events-none
+    absolute
+    bottom-[-105px]
+    right-[-42px]
+    z-20
+    hidden
+    h-[590px]
+    w-[50%]
+    sm:block
+    sm:right-[-34px]
+    sm:bottom-[-90px]
+    sm:h-[610px]
+    sm:w-[49%]
+    lg:right-[-25px]
+    lg:bottom-[-72px]
+    lg:h-[625px]
+    lg:w-[50%]
+    xl:right-[-12px]
+    xl:bottom-[-58px]
+    xl:h-[640px]
+    xl:w-[50%]
+  "
+>
+  <Image
+    src="/images/dhaar/dhaar-mascot.png"
+    alt=""
+    fill
+    priority
+    sizes="
+      (max-width: 640px) 0px,
+      (max-width: 1024px) 49vw,
+      50vw
+    "
+    className="
+      select-none
+      object-contain
+      object-bottom
+    "
+  />
+</div>
 
         {/* =====================================================
             CARD EDGE
