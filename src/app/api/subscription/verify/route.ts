@@ -50,10 +50,7 @@ function getSubscriptionNote(
   notes: unknown,
   key: keyof SubscriptionNotes
 ): string {
-  if (
-    !notes ||
-    typeof notes !== "object"
-  ) {
+  if (!notes || typeof notes !== "object") {
     return "";
   }
 
@@ -400,9 +397,48 @@ export async function POST(
         paymentRecord.status
       ).toLowerCase();
 
+    const subscriptionStatus =
+      cleanString(
+        subscription.status
+      ).toLowerCase();
+
+    const subscriptionStartAt =
+      Number(
+        subscription.start_at ??
+          0
+      );
+
+    const nowUnix =
+      Math.floor(
+        Date.now() / 1000
+      );
+
+    /*
+     * A Razorpay subscription with a future start_at represents
+     * a trial/future-start subscription.
+     *
+     * Razorpay may create an authorization transaction for this
+     * subscription and immediately refund that authorization
+     * amount. The subscription itself remains "authenticated"
+     * and will begin billing at start_at.
+     */
+    const isFutureStartSubscription =
+      Number.isFinite(
+        subscriptionStartAt
+      ) &&
+      subscriptionStartAt >
+        nowUnix;
+
+    const isExpectedTrialAuthorizationRefund =
+      paymentStatus ===
+        "refunded" &&
+      subscriptionStatus ===
+        "authenticated" &&
+      isFutureStartSubscription;
+
     /*
      * ============================================================
-     * 9. DEBUG PAYMENT STATE
+     * 9. DEBUG PAYMENT / SUBSCRIPTION STATE
      * ============================================================
      */
 
@@ -431,6 +467,8 @@ export async function POST(
         refundStatus:
           paymentRecord.refund_status ??
           null,
+        expectedTrialAuthorizationRefund:
+          isExpectedTrialAuthorizationRefund,
       }
     );
 
@@ -453,6 +491,7 @@ export async function POST(
         currentEnd:
           subscription.current_end ??
           null,
+        isFutureStartSubscription,
       }
     );
 
@@ -487,28 +526,59 @@ export async function POST(
      * ============================================================
      * 11. VERIFY PAYMENT STATUS
      * ============================================================
+     *
+     * IMPORTANT:
+     *
+     * A refunded payment is NOT automatically invalid.
+     *
+     * Razorpay can intentionally refund the authorization
+     * transaction for a future-start subscription/trial.
+     *
+     * We therefore allow a refund ONLY when all of these are true:
+     *
+     *   1. Payment status = refunded
+     *   2. Subscription status = authenticated
+     *   3. Subscription start_at is still in the future
+     *
+     * Any other refunded payment remains invalid.
      */
 
     if (
       paymentStatus ===
       "refunded"
     ) {
-      console.error(
-        "[Subscription Verify] Payment has been refunded:",
+      if (
+        !isExpectedTrialAuthorizationRefund
+      ) {
+        console.error(
+          "[Subscription Verify] Unexpected refunded payment:",
+          {
+            userId: user.id,
+            paymentId,
+            subscriptionId,
+            paymentStatus,
+            subscriptionStatus,
+            subscriptionStartAt,
+          }
+        );
+
+        return ApiResponse.error(
+          "This Razorpay payment has been refunded and cannot activate your DhanarkOS subscription.",
+          400
+        );
+      }
+
+      console.log(
+        "[Subscription Verify] Expected Razorpay trial authorization refund accepted:",
         {
           userId: user.id,
           paymentId,
           subscriptionId,
+          subscriptionStatus,
+          subscriptionStartAt,
         }
       );
-
-      return ApiResponse.error(
-        "This Razorpay payment has been refunded and cannot activate your DhanarkOS subscription.",
-        400
-      );
-    }
-
-    if (
+    } else if (
       paymentStatus !==
         "captured" &&
       paymentStatus !==
