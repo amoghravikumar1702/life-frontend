@@ -3,7 +3,6 @@
 import Image from "next/image";
 
 import PageContainer from "@/components/ui/PageContainer";
-import DailyCEOBrief from "@/components/AI-CFO/DailyCEOBrief";
 import WorkforceManagement from "@/components/AI-CFO/WorkforceManagement";
 import AskYourCFO from "@/components/AI-CFO/AskYourCFO";
 
@@ -32,6 +31,39 @@ function getGreeting() {
   return "Good evening";
 }
 
+function formatCurrency(value: number) {
+  return new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+    maximumFractionDigits: 0,
+  }).format(value);
+}
+
+function getMetricStatus(
+  type: "revenue" | "expenses" | "profit" | "receivables",
+  value: number
+) {
+  if (type === "revenue") {
+    return value > 0 ? "Strong activity" : "No revenue yet";
+  }
+
+  if (type === "expenses") {
+    return value === 0 ? "No expenses recorded" : "Under review";
+  }
+
+  if (type === "profit") {
+    if (value > 0) return "Positive";
+    if (value < 0) return "Needs attention";
+    return "Break-even";
+  }
+
+  if (value > 0) {
+    return "Needs attention";
+  }
+
+  return "Clear";
+}
+
 export default async function AICFOPage() {
   const report = await buildExecutiveReport();
 
@@ -41,225 +73,355 @@ export default async function AICFOPage() {
 
   const greeting = getGreeting();
 
+  const revenue = Number(report.finance.revenue ?? 0);
+  const expenses = Number(report.finance.expenses ?? 0);
+  const profit = Number(report.finance.profit ?? 0);
+  const receivables = Number(
+    report.finance.outstandingReceivables ?? 0
+  );
+
   return (
     <PageContainer>
-      <div className="mx-auto max-w-7xl">
+      <div className="mx-auto w-full max-w-7xl">
 
-        <DailyCEOBrief
-          greeting={`${greeting}, ${report.company.name}`}
-          executiveBrief={aiBrief.executiveBrief}
-          recommendation={aiBrief.recommendation}
-          finance={{
-            revenue: report.finance.revenue ?? 0,
-            expenses: report.finance.expenses ?? 0,
-            profit: report.finance.profit ?? 0,
-            outstandingReceivables:
-              report.finance.outstandingReceivables ?? 0,
-          }}
-        />
+        {/* =====================================================
+            DHAAR EXECUTIVE HERO
+        ====================================================== */}
 
-        <div className="mt-10">
-          <AskYourCFO />
-        </div>
-
-        <div className="mt-10">
-          <section
+        <section
+          className="
+            relative
+            isolate
+            overflow-hidden
+            rounded-[32px]
+            border
+            border-[#D4AF37]/20
+            bg-[#0B0E13]
+            px-6
+            py-7
+            sm:px-8
+            sm:py-9
+            lg:px-10
+            lg:py-10
+          "
+        >
+          {/* Gold atmospheric light */}
+          <div
+            aria-hidden="true"
             className="
-              relative
-              overflow-hidden
-              rounded-[32px]
-              border
-              border-[#D4AF37]/12
-              bg-[#101318]
-              px-7
-              py-8
-              sm:px-9
-              sm:py-10
-              lg:px-11
-              lg:py-11
+              pointer-events-none
+              absolute
+              right-[-120px]
+              top-[-140px]
+              h-[520px]
+              w-[520px]
+              rounded-full
+              bg-[#D4AF37]/[0.055]
+              blur-[150px]
+            "
+          />
+
+          {/* Secondary ambient light */}
+          <div
+            aria-hidden="true"
+            className="
+              pointer-events-none
+              absolute
+              bottom-[-180px]
+              right-[15%]
+              h-[360px]
+              w-[360px]
+              rounded-full
+              bg-[#D4AF37]/[0.025]
+              blur-[130px]
+            "
+          />
+
+          {/* Dhaar */}
+          <div
+            aria-hidden="true"
+            className="
+              pointer-events-none
+              absolute
+              right-[-55px]
+              top-[-45px]
+              hidden
+              h-[440px]
+              w-[430px]
+              sm:block
+              lg:right-[-15px]
+              lg:top-[-70px]
+              lg:h-[520px]
+              lg:w-[510px]
+              xl:right-0
+              xl:h-[560px]
+              xl:w-[550px]
             "
           >
-            {/* Dhaar atmospheric glow */}
-            <div
+            <Image
+              src="/images/dhaar/dhaar-mascot.png"
+              alt=""
+              fill
+              priority
+              sizes="550px"
               className="
-                pointer-events-none
-                absolute
-                right-[-80px]
-                top-[-110px]
-                h-[360px]
-                w-[360px]
-                rounded-full
-                bg-[#D4AF37]/[0.045]
-                blur-[120px]
+                object-contain
+                object-center
               "
             />
+          </div>
 
-            {/* Dhaar mascot */}
-            <div
-              className="
-                pointer-events-none
-                absolute
-                right-[-10px]
-                top-[-55px]
-                hidden
-                h-[280px]
-                w-[280px]
-                sm:block
-                lg:right-4
-                lg:top-[-70px]
-                lg:h-[330px]
-                lg:w-[330px]
-              "
-            >
-              <Image
-                src="/images/dhaar/dhaar-mascot.png"
-                alt=""
-                fill
-                priority
-                sizes="330px"
-                className="
-                  object-contain
-                  object-center
-                  opacity-95
-                "
-                unoptimized
-              />
-            </div>
+          {/* Content */}
+          <div
+            className="
+              relative
+              z-10
+              max-w-4xl
+              lg:pr-[340px]
+              xl:pr-[410px]
+            "
+          >
 
-            <div className="relative z-10">
+            {/* Identity */}
+            <div className="flex items-center gap-4">
 
-              {/* CFO identity */}
-              <div className="flex items-center gap-4">
-                <div
-                  className="
-                    flex
-                    h-11
-                    w-11
-                    shrink-0
-                    items-center
-                    justify-center
-                    rounded-xl
-                    border
-                    border-[#D4AF37]/15
-                    bg-[#D4AF37]/[0.06]
-                  "
-                >
-                  <span
-                    className="
-                      text-[11px]
-                      font-semibold
-                      tracking-[0.08em]
-                      text-[#D4AF37]
-                    "
-                  >
-                    AI
-                  </span>
-                </div>
-
-                <div>
-                  <p
-                    className="
-                      text-[10px]
-                      font-medium
-                      uppercase
-                      tracking-[0.38em]
-                      text-[#D4AF37]
-                    "
-                  >
-                    DHAAR / AI CFO
-                  </p>
-
-                  <p className="mt-1 text-xs text-zinc-500">
-                    Executive recommendation
-                  </p>
-                </div>
-              </div>
-
-              {/* Recommendation */}
               <div
                 className="
-                  relative
-                  mt-8
-                  max-w-3xl
-                  pr-0
-                  sm:pr-44
-                  lg:pr-56
+                  flex
+                  h-11
+                  w-11
+                  shrink-0
+                  items-center
+                  justify-center
+                  rounded-xl
+                  border
+                  border-[#D4AF37]/20
+                  bg-[#D4AF37]/[0.06]
                 "
               >
-                <p
+                <span
                   className="
-                    text-[18px]
-                    leading-9
-                    text-zinc-200
-                    sm:text-[19px]
+                    text-[11px]
+                    font-semibold
+                    tracking-[0.12em]
+                    text-[#D4AF37]
                   "
                 >
-                  {aiBrief.recommendation}
-                </p>
+                  AI
+                </span>
               </div>
 
-              {/* Decision Framework */}
-              <div
-                className="
-                  mt-9
-                  border-t
-                  border-white/[0.05]
-                  pt-7
-                "
-              >
+              <div>
                 <p
                   className="
                     text-[10px]
-                    font-medium
+                    font-semibold
                     uppercase
-                    tracking-[0.35em]
-                    text-zinc-500
+                    tracking-[0.38em]
+                    text-[#D4AF37]
                   "
                 >
-                  Decision Framework
+                  DHAAR / AI CFO
                 </p>
 
-                <div className="mt-5 grid gap-5 md:grid-cols-3">
-
-                  <div>
-                    <p className="text-xs text-zinc-600">
-                      Decision
-                    </p>
-
-                    <p className="mt-2 text-sm leading-6 text-zinc-300">
-                      Based on current financial and operational evidence.
-                    </p>
-                  </div>
-
-                  <div>
-                    <p className="text-xs text-zinc-600">
-                      Financial Impact
-                    </p>
-
-                    <p className="mt-2 text-sm leading-6 text-zinc-300">
-                      Prioritizes profitability, cash generation, and sustainability.
-                    </p>
-                  </div>
-
-                  <div>
-                    <p className="text-xs text-zinc-600">
-                      Growth Impact
-                    </p>
-
-                    <p className="mt-2 text-sm leading-6 text-zinc-300">
-                      Designed to support sustainable business growth.
-                    </p>
-                  </div>
-
-                </div>
+                <p className="mt-1 text-xs text-zinc-500">
+                  Executive intelligence
+                </p>
               </div>
 
             </div>
-          </section>
+
+            {/* Greeting */}
+            <div className="mt-8">
+
+              <h1
+                className="
+                  text-3xl
+                  font-medium
+                  tracking-[-0.025em]
+                  text-white
+                  sm:text-4xl
+                  lg:text-[44px]
+                  lg:leading-[1.1]
+                "
+              >
+                {greeting},{" "}
+                <span className="text-[#D4AF37]">
+                  {report.company.name}
+                </span>
+              </h1>
+
+              <p
+                className="
+                  mt-5
+                  max-w-2xl
+                  text-[15px]
+                  leading-7
+                  text-zinc-400
+                  sm:text-base
+                  sm:leading-8
+                "
+              >
+                {aiBrief.executiveBrief}
+              </p>
+
+            </div>
+
+            {/* Financial Metrics */}
+            <div
+              className="
+                mt-8
+                grid
+                grid-cols-2
+                gap-3
+                sm:grid-cols-4
+              "
+            >
+
+              {/* Revenue */}
+              <div
+                className="
+                  rounded-2xl
+                  border
+                  border-white/[0.07]
+                  bg-white/[0.025]
+                  px-4
+                  py-4
+                  backdrop-blur-sm
+                "
+              >
+                <p className="text-[10px] uppercase tracking-[0.18em] text-zinc-600">
+                  Revenue
+                </p>
+
+                <p className="mt-2 text-sm font-medium text-zinc-200">
+                  {formatCurrency(revenue)}
+                </p>
+
+                <p className="mt-2 text-[10px] text-zinc-500">
+                  {getMetricStatus("revenue", revenue)}
+                </p>
+              </div>
+
+              {/* Expenses */}
+              <div
+                className="
+                  rounded-2xl
+                  border
+                  border-white/[0.07]
+                  bg-white/[0.025]
+                  px-4
+                  py-4
+                  backdrop-blur-sm
+                "
+              >
+                <p className="text-[10px] uppercase tracking-[0.18em] text-zinc-600">
+                  Expenses
+                </p>
+
+                <p className="mt-2 text-sm font-medium text-zinc-200">
+                  {formatCurrency(expenses)}
+                </p>
+
+                <p className="mt-2 text-[10px] text-zinc-500">
+                  {getMetricStatus("expenses", expenses)}
+                </p>
+              </div>
+
+              {/* Profit */}
+              <div
+                className="
+                  rounded-2xl
+                  border
+                  border-white/[0.07]
+                  bg-white/[0.025]
+                  px-4
+                  py-4
+                  backdrop-blur-sm
+                "
+              >
+                <p className="text-[10px] uppercase tracking-[0.18em] text-zinc-600">
+                  Profit
+                </p>
+
+                <p className="mt-2 text-sm font-medium text-zinc-200">
+                  {formatCurrency(profit)}
+                </p>
+
+                <p className="mt-2 text-[10px] text-zinc-500">
+                  {getMetricStatus("profit", profit)}
+                </p>
+              </div>
+
+              {/* Receivables */}
+              <div
+                className="
+                  rounded-2xl
+                  border
+                  border-white/[0.07]
+                  bg-white/[0.025]
+                  px-4
+                  py-4
+                  backdrop-blur-sm
+                "
+              >
+                <p className="text-[10px] uppercase tracking-[0.18em] text-zinc-600">
+                  Receivables
+                </p>
+
+                <p className="mt-2 text-sm font-medium text-zinc-200">
+                  {formatCurrency(receivables)}
+                </p>
+
+                <p className="mt-2 text-[10px] text-zinc-500">
+                  {getMetricStatus(
+                    "receivables",
+                    receivables
+                  )}
+                </p>
+              </div>
+
+            </div>
+
+          </div>
+
+          {/* Mobile Dhaar */}
+          <div
+            aria-hidden="true"
+            className="
+              relative
+              mx-auto
+              mt-6
+              h-[300px]
+              w-full
+              max-w-[360px]
+              sm:hidden
+            "
+          >
+            <Image
+              src="/images/dhaar/dhaar-mascot.png"
+              alt=""
+              fill
+              sizes="360px"
+              className="object-contain"
+            />
+          </div>
+
+        </section>
+
+        {/* =====================================================
+            ASK YOUR CFO
+        ====================================================== */}
+
+        <div className="mt-8 sm:mt-10">
+          <AskYourCFO />
         </div>
 
-        {/* Workforce */}
-        <div className="mt-10">
+        {/* =====================================================
+            WORKFORCE
+        ====================================================== */}
+
+        <div className="mt-8 sm:mt-10">
           <WorkforceManagement
             initialEmployees={
               report.workforce.currentEmployees
@@ -275,7 +437,10 @@ export default async function AICFOPage() {
           />
         </div>
 
-        {/* Footer */}
+        {/* =====================================================
+            FOOTER
+        ====================================================== */}
+
         <footer
           className="
             mx-auto
