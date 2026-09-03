@@ -79,110 +79,113 @@ export default async function AICFOPage() {
               lg:py-11
             "
           >
-            {/* Dhaar ambient presence */}
+            {/* Dhaar atmospheric glow */}
             <div
               className="
                 pointer-events-none
                 absolute
-                right-[-90px]
-                top-[-90px]
-                h-[300px]
-                w-[300px]
+                right-[-80px]
+                top-[-110px]
+                h-[360px]
+                w-[360px]
                 rounded-full
-                bg-[#D4AF37]/[0.018]
-                blur-[110px]
+                bg-[#D4AF37]/[0.045]
+                blur-[120px]
               "
             />
 
-            <div className="relative">
-
-              {/* CFO Identity */}
-              <div
+            {/* Dhaar mascot */}
+            <div
+              className="
+                pointer-events-none
+                absolute
+                right-[-10px]
+                top-[-55px]
+                hidden
+                h-[280px]
+                w-[280px]
+                sm:block
+                lg:right-4
+                lg:top-[-70px]
+                lg:h-[330px]
+                lg:w-[330px]
+              "
+            >
+              <Image
+                src="/images/dhaar/dhaar-mascot.png"
+                alt=""
+                fill
+                priority
+                sizes="330px"
                 className="
-                  flex
-                  items-center
-                  justify-between
-                  gap-6
+                  object-contain
+                  object-center
+                  opacity-95
                 "
-              >
-                <div className="flex items-center gap-4">
+                unoptimized
+              />
+            </div>
 
-                  <div
-                    className="
-                      relative
-                      flex
-                      h-14
-                      w-14
-                      shrink-0
-                      items-center
-                      justify-center
-                      overflow-hidden
-                      rounded-2xl
-                      border
-                      border-[#D4AF37]/20
-                      bg-[#0B0D10]
-                    "
-                  >
-                    <Image
-                      src="/images/dhaar/dhaar-mascot.png"
-                      alt="Dhaar — Dhanark AI CFO"
-                      width={56}
-                      height={56}
-                      priority
-                      className="
-                        h-full
-                        w-full
-                        object-cover
-                      "
-                    />
-                  </div>
+            <div className="relative z-10">
 
-                  <div>
-                    <p
-                      className="
-                        text-[10px]
-                        font-medium
-                        uppercase
-                        tracking-[0.38em]
-                        text-[#D4AF37]
-                      "
-                    >
-                      DHAAR / AI CFO
-                    </p>
-
-                    <p className="mt-1 text-xs text-zinc-500">
-                      Executive recommendation
-                    </p>
-                  </div>
-
-                </div>
-
+              {/* CFO identity */}
+              <div className="flex items-center gap-4">
                 <div
                   className="
-                    hidden
-                    text-right
-                    sm:block
+                    flex
+                    h-11
+                    w-11
+                    shrink-0
+                    items-center
+                    justify-center
+                    rounded-xl
+                    border
+                    border-[#D4AF37]/15
+                    bg-[#D4AF37]/[0.06]
                   "
                 >
-                  <p
+                  <span
                     className="
-                      text-[9px]
-                      uppercase
-                      tracking-[0.3em]
-                      text-zinc-700
+                      text-[11px]
+                      font-semibold
+                      tracking-[0.08em]
+                      text-[#D4AF37]
                     "
                   >
-                    Dhanark Intelligence
+                    AI
+                  </span>
+                </div>
+
+                <div>
+                  <p
+                    className="
+                      text-[10px]
+                      font-medium
+                      uppercase
+                      tracking-[0.38em]
+                      text-[#D4AF37]
+                    "
+                  >
+                    DHAAR / AI CFO
                   </p>
 
-                  <p className="mt-1 text-[10px] text-zinc-600">
-                    CFO Decision Engine
+                  <p className="mt-1 text-xs text-zinc-500">
+                    Executive recommendation
                   </p>
                 </div>
               </div>
 
               {/* Recommendation */}
-              <div className="mt-8 max-w-4xl">
+              <div
+                className="
+                  relative
+                  mt-8
+                  max-w-3xl
+                  pr-0
+                  sm:pr-44
+                  lg:pr-56
+                "
+              >
                 <p
                   className="
                     text-[18px]
