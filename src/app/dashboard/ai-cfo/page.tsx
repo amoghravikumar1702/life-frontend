@@ -1,5 +1,7 @@
 // src/app/dashboard/ai-cfo/page.tsx
 
+import Image from "next/image";
+
 import PageContainer from "@/components/ui/PageContainer";
 import DailyCEOBrief from "@/components/AI-CFO/DailyCEOBrief";
 import WorkforceManagement from "@/components/AI-CFO/WorkforceManagement";
@@ -10,19 +12,38 @@ import { generateProtectedAICFOBrief } from "@/lib/ai/openaiCFO";
 
 export const dynamic = "force-dynamic";
 
+function getGreeting() {
+  const hour = Number(
+    new Intl.DateTimeFormat("en-IN", {
+      hour: "numeric",
+      hour12: false,
+      timeZone: "Asia/Kolkata",
+    }).format(new Date())
+  );
+
+  if (hour < 12) {
+    return "Good morning";
+  }
+
+  if (hour < 17) {
+    return "Good afternoon";
+  }
+
+  return "Good evening";
+}
+
 export default async function AICFOPage() {
   const report = await buildExecutiveReport();
 
-  const aiBrief = await generateProtectedAICFOBrief(
-    report
-  );
+  const aiBrief = await generateProtectedAICFOBrief(report);
+
+  const greeting = getGreeting();
 
   return (
     <PageContainer>
       <div className="mx-auto max-w-7xl">
-
         <DailyCEOBrief
-          greeting={`Good day, ${report.company.name}`}
+          greeting={`${greeting}, ${report.company.name}`}
           executiveBrief={aiBrief.executiveBrief}
           recommendation={aiBrief.recommendation}
           finance={{
@@ -46,7 +67,7 @@ export default async function AICFOPage() {
               rounded-[32px]
               border
               border-[#D4AF37]/12
-              bg-[#111419]
+              bg-[#101318]
               px-7
               py-8
               sm:px-9
@@ -70,44 +91,76 @@ export default async function AICFOPage() {
             />
 
             <div className="relative">
-
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-4">
                 <div
                   className="
+                    relative
                     flex
-                    h-10
-                    w-10
+                    h-14
+                    w-14
+                    shrink-0
                     items-center
                     justify-center
-                    rounded-xl
+                    overflow-hidden
+                    rounded-2xl
                     border
-                    border-[#D4AF37]/15
-                    bg-[#D4AF37]/[0.07]
+                    border-[#D4AF37]/18
+                    bg-[#090B0E]
+                    shadow-[0_0_30px_rgba(212,175,55,0.06)]
                   "
                 >
-                  <span
+                  <div
                     className="
-                      text-sm
-                      font-semibold
-                      text-[#D4AF37]
+                      pointer-events-none
+                      absolute
+                      inset-0
+                      rounded-2xl
+                      bg-[#D4AF37]/[0.045]
                     "
-                  >
-                    AI
-                  </span>
+                  />
+
+                  <Image
+                    src="/images/dhaar/dhaar-mascot.png"
+                    alt="Dhaar, DhanarkOS AI CFO"
+                    width={56}
+                    height={56}
+                    className="
+                      relative
+                      h-12
+                      w-12
+                      object-contain
+                    "
+                    priority
+                  />
                 </div>
 
                 <div>
-                  <p
-                    className="
-                      text-[10px]
-                      font-medium
-                      uppercase
-                      tracking-[0.38em]
-                      text-[#D4AF37]
-                    "
-                  >
-                    CFO Decision
-                  </p>
+                  <div className="flex items-center gap-2">
+                    <p
+                      className="
+                        text-[10px]
+                        font-medium
+                        uppercase
+                        tracking-[0.38em]
+                        text-[#D4AF37]
+                      "
+                    >
+                      DHAAR
+                      <span className="ml-2 text-zinc-700">/</span>
+                    </p>
+
+                    <p
+                      className="
+                        text-[10px]
+                        font-medium
+                        uppercase
+                        tracking-[0.28em]
+                        text-zinc-500
+                      "
+                    >
+                      AI CFO
+                    </p>
+                  </div>
 
                   <p className="mt-1 text-xs text-zinc-500">
                     Executive recommendation
@@ -149,7 +202,6 @@ export default async function AICFOPage() {
                 </p>
 
                 <div className="mt-5 grid gap-5 md:grid-cols-3">
-
                   <div>
                     <p className="text-xs text-zinc-600">
                       Decision
@@ -179,7 +231,6 @@ export default async function AICFOPage() {
                       Designed to support sustainable business growth.
                     </p>
                   </div>
-
                 </div>
               </div>
             </div>
@@ -188,9 +239,7 @@ export default async function AICFOPage() {
 
         <div className="mt-10">
           <WorkforceManagement
-            initialEmployees={
-              report.workforce.currentEmployees
-            }
+            initialEmployees={report.workforce.currentEmployees}
             recommendation={
               aiBrief.workforce?.recommendation ??
               "Maintain the current workforce until more financial evidence is available."
@@ -252,7 +301,6 @@ export default async function AICFOPage() {
             and operational data.
           </p>
         </footer>
-
       </div>
     </PageContainer>
   );
