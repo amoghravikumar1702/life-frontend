@@ -10,48 +10,9 @@ export default function PageContainer({
   children,
 }: PageContainerProps) {
   return (
-    <main className="relative min-h-screen overflow-x-hidden bg-[#05070C]">
+    <main className="relative min-h-screen overflow-x-hidden bg-transparent">
       {/* Ambient Background */}
       <AmbientBackground />
-
-      {/* Layer 1 — Executive gradient */}
-      <div
-        className="pointer-events-none absolute inset-0"
-        style={{
-          background: `
-            radial-gradient(
-              circle at top,
-              rgba(255,255,255,.03),
-              transparent 40%
-            ),
-            linear-gradient(
-              180deg,
-              #090C12 0%,
-              #06080D 45%,
-              #040506 100%
-            )
-          `,
-        }}
-      />
-
-      {/* Layer 2 — Subtle grid */}
-      <div
-        className="pointer-events-none absolute inset-0 opacity-[0.22]"
-        style={{
-          backgroundImage: `
-            linear-gradient(
-              rgba(255,255,255,.02) 1px,
-              transparent 1px
-            ),
-            linear-gradient(
-              90deg,
-              rgba(255,255,255,.02) 1px,
-              transparent 1px
-            )
-          `,
-          backgroundSize: "80px 80px",
-        }}
-      />
 
       {/* Content */}
       <div
