@@ -40,15 +40,23 @@ function formatCurrency(value: number) {
 }
 
 function getMetricStatus(
-  type: "revenue" | "expenses" | "profit" | "receivables",
+  type:
+    | "revenue"
+    | "expenses"
+    | "profit"
+    | "receivables",
   value: number
 ) {
   if (type === "revenue") {
-    return value > 0 ? "Strong activity" : "No revenue yet";
+    return value > 0
+      ? "Strong activity"
+      : "No revenue yet";
   }
 
   if (type === "expenses") {
-    return value === 0 ? "No expenses recorded" : "Under review";
+    return value === 0
+      ? "No expenses recorded"
+      : "Under review";
   }
 
   if (type === "profit") {
@@ -57,11 +65,9 @@ function getMetricStatus(
     return "Break-even";
   }
 
-  if (value > 0) {
-    return "Needs attention";
-  }
-
-  return "Clear";
+  return value > 0
+    ? "Needs attention"
+    : "Clear";
 }
 
 export default async function AICFOPage() {
@@ -73,9 +79,18 @@ export default async function AICFOPage() {
 
   const greeting = getGreeting();
 
-  const revenue = Number(report.finance.revenue ?? 0);
-  const expenses = Number(report.finance.expenses ?? 0);
-  const profit = Number(report.finance.profit ?? 0);
+  const revenue = Number(
+    report.finance.revenue ?? 0
+  );
+
+  const expenses = Number(
+    report.finance.expenses ?? 0
+  );
+
+  const profit = Number(
+    report.finance.profit ?? 0
+  );
+
   const receivables = Number(
     report.finance.outstandingReceivables ?? 0
   );
@@ -85,7 +100,7 @@ export default async function AICFOPage() {
       <div className="mx-auto w-full max-w-7xl">
 
         {/* =====================================================
-            DHAAR EXECUTIVE HERO
+            DHAAR / AI CFO EXECUTIVE HERO
         ====================================================== */}
 
         <section
@@ -105,57 +120,61 @@ export default async function AICFOPage() {
             lg:py-10
           "
         >
-          {/* Gold atmospheric light */}
+
+          {/* Subtle gold atmosphere */}
           <div
             aria-hidden="true"
             className="
               pointer-events-none
               absolute
               right-[-120px]
-              top-[-140px]
+              top-[-160px]
               h-[520px]
               w-[520px]
               rounded-full
-              bg-[#D4AF37]/[0.055]
+              bg-[#D4AF37]/[0.045]
               blur-[150px]
             "
           />
 
-          {/* Secondary ambient light */}
           <div
             aria-hidden="true"
             className="
               pointer-events-none
               absolute
               bottom-[-180px]
-              right-[15%]
+              right-[18%]
               h-[360px]
               w-[360px]
               rounded-full
-              bg-[#D4AF37]/[0.025]
+              bg-[#D4AF37]/[0.018]
               blur-[130px]
             "
           />
 
-          {/* Dhaar */}
+          {/* =================================================
+              DHAAR
+          ================================================== */}
+
           <div
             aria-hidden="true"
             className="
               pointer-events-none
               absolute
-              right-[-55px]
-              top-[-45px]
+              right-[-35px]
+              top-[-25px]
               hidden
-              h-[440px]
+              h-[430px]
               w-[430px]
               sm:block
-              lg:right-[-15px]
-              lg:top-[-70px]
-              lg:h-[520px]
-              lg:w-[510px]
-              xl:right-0
-              xl:h-[560px]
-              xl:w-[550px]
+              lg:right-[-5px]
+              lg:top-[-45px]
+              lg:h-[485px]
+              lg:w-[485px]
+              xl:right-[5px]
+              xl:top-[-55px]
+              xl:h-[515px]
+              xl:w-[515px]
             "
           >
             <Image
@@ -163,26 +182,30 @@ export default async function AICFOPage() {
               alt=""
               fill
               priority
-              sizes="550px"
+              sizes="515px"
               className="
                 object-contain
                 object-center
+                mix-blend-screen
               "
             />
           </div>
 
-          {/* Content */}
+          {/* =================================================
+              HERO CONTENT
+          ================================================== */}
+
           <div
             className="
               relative
               z-10
               max-w-4xl
-              lg:pr-[340px]
-              xl:pr-[410px]
+              lg:pr-[330px]
+              xl:pr-[390px]
             "
           >
 
-            {/* Identity */}
+            {/* Dhaar identity */}
             <div className="flex items-center gap-4">
 
               <div
@@ -267,7 +290,10 @@ export default async function AICFOPage() {
 
             </div>
 
-            {/* Financial Metrics */}
+            {/* =================================================
+                FINANCIAL METRICS
+            ================================================== */}
+
             <div
               className="
                 mt-8
@@ -278,7 +304,6 @@ export default async function AICFOPage() {
               "
             >
 
-              {/* Revenue */}
               <div
                 className="
                   rounded-2xl
@@ -287,7 +312,6 @@ export default async function AICFOPage() {
                   bg-white/[0.025]
                   px-4
                   py-4
-                  backdrop-blur-sm
                 "
               >
                 <p className="text-[10px] uppercase tracking-[0.18em] text-zinc-600">
@@ -299,11 +323,13 @@ export default async function AICFOPage() {
                 </p>
 
                 <p className="mt-2 text-[10px] text-zinc-500">
-                  {getMetricStatus("revenue", revenue)}
+                  {getMetricStatus(
+                    "revenue",
+                    revenue
+                  )}
                 </p>
               </div>
 
-              {/* Expenses */}
               <div
                 className="
                   rounded-2xl
@@ -312,7 +338,6 @@ export default async function AICFOPage() {
                   bg-white/[0.025]
                   px-4
                   py-4
-                  backdrop-blur-sm
                 "
               >
                 <p className="text-[10px] uppercase tracking-[0.18em] text-zinc-600">
@@ -324,11 +349,13 @@ export default async function AICFOPage() {
                 </p>
 
                 <p className="mt-2 text-[10px] text-zinc-500">
-                  {getMetricStatus("expenses", expenses)}
+                  {getMetricStatus(
+                    "expenses",
+                    expenses
+                  )}
                 </p>
               </div>
 
-              {/* Profit */}
               <div
                 className="
                   rounded-2xl
@@ -337,7 +364,6 @@ export default async function AICFOPage() {
                   bg-white/[0.025]
                   px-4
                   py-4
-                  backdrop-blur-sm
                 "
               >
                 <p className="text-[10px] uppercase tracking-[0.18em] text-zinc-600">
@@ -349,11 +375,13 @@ export default async function AICFOPage() {
                 </p>
 
                 <p className="mt-2 text-[10px] text-zinc-500">
-                  {getMetricStatus("profit", profit)}
+                  {getMetricStatus(
+                    "profit",
+                    profit
+                  )}
                 </p>
               </div>
 
-              {/* Receivables */}
               <div
                 className="
                   rounded-2xl
@@ -362,7 +390,6 @@ export default async function AICFOPage() {
                   bg-white/[0.025]
                   px-4
                   py-4
-                  backdrop-blur-sm
                 "
               >
                 <p className="text-[10px] uppercase tracking-[0.18em] text-zinc-600">
@@ -391,10 +418,10 @@ export default async function AICFOPage() {
             className="
               relative
               mx-auto
-              mt-6
-              h-[300px]
+              mt-5
+              h-[260px]
               w-full
-              max-w-[360px]
+              max-w-[330px]
               sm:hidden
             "
           >
@@ -402,8 +429,11 @@ export default async function AICFOPage() {
               src="/images/dhaar/dhaar-mascot.png"
               alt=""
               fill
-              sizes="360px"
-              className="object-contain"
+              sizes="330px"
+              className="
+                object-contain
+                mix-blend-screen
+              "
             />
           </div>
 
