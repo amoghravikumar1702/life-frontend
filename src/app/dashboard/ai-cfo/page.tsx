@@ -100,7 +100,7 @@ export default async function AICFOPage() {
       <div className="mx-auto w-full max-w-7xl">
 
         {/* =====================================================
-            DHAAR / AI CFO EXECUTIVE HERO
+            DHAAR / AI CFO HERO
         ====================================================== */}
 
         <section
@@ -121,19 +121,19 @@ export default async function AICFOPage() {
           "
         >
 
-          {/* Subtle gold atmosphere */}
+          {/* Gold atmosphere */}
           <div
             aria-hidden="true"
             className="
               pointer-events-none
               absolute
-              right-[-120px]
-              top-[-160px]
-              h-[520px]
-              w-[520px]
+              right-[-140px]
+              top-[-180px]
+              h-[540px]
+              w-[540px]
               rounded-full
               bg-[#D4AF37]/[0.045]
-              blur-[150px]
+              blur-[155px]
             "
           />
 
@@ -142,18 +142,20 @@ export default async function AICFOPage() {
             className="
               pointer-events-none
               absolute
-              bottom-[-180px]
-              right-[18%]
-              h-[360px]
-              w-[360px]
+              bottom-[-220px]
+              right-[12%]
+              h-[420px]
+              w-[420px]
               rounded-full
               bg-[#D4AF37]/[0.018]
-              blur-[130px]
+              blur-[140px]
             "
           />
 
           {/* =================================================
-              DHAAR
+              DHAAR — LARGE HERO VISUAL
+              Intentionally extends below the card so the
+              hero's overflow-hidden clips the bottom.
           ================================================== */}
 
           <div
@@ -161,20 +163,20 @@ export default async function AICFOPage() {
             className="
               pointer-events-none
               absolute
-              right-[-35px]
-              top-[-25px]
+              bottom-[-115px]
+              right-[-45px]
               hidden
-              h-[430px]
-              w-[430px]
+              h-[530px]
+              w-[510px]
               sm:block
-              lg:right-[-5px]
-              lg:top-[-45px]
-              lg:h-[485px]
-              lg:w-[485px]
-              xl:right-[5px]
-              xl:top-[-55px]
-              xl:h-[515px]
-              xl:w-[515px]
+              lg:bottom-[-135px]
+              lg:right-[-20px]
+              lg:h-[585px]
+              lg:w-[565px]
+              xl:bottom-[-145px]
+              xl:right-[0px]
+              xl:h-[620px]
+              xl:w-[600px]
             "
           >
             <Image
@@ -182,11 +184,10 @@ export default async function AICFOPage() {
               alt=""
               fill
               priority
-              sizes="515px"
+              sizes="600px"
               className="
                 object-contain
                 object-center
-                mix-blend-screen
               "
             />
           </div>
@@ -201,7 +202,7 @@ export default async function AICFOPage() {
               z-10
               max-w-4xl
               lg:pr-[330px]
-              xl:pr-[390px]
+              xl:pr-[395px]
             "
           >
 
@@ -304,6 +305,7 @@ export default async function AICFOPage() {
               "
             >
 
+              {/* Revenue */}
               <div
                 className="
                   rounded-2xl
@@ -312,13 +314,31 @@ export default async function AICFOPage() {
                   bg-white/[0.025]
                   px-4
                   py-4
+                  sm:px-5
+                  sm:py-5
                 "
               >
-                <p className="text-[10px] uppercase tracking-[0.18em] text-zinc-600">
+                <p
+                  className="
+                    text-[10px]
+                    uppercase
+                    tracking-[0.18em]
+                    text-zinc-600
+                  "
+                >
                   Revenue
                 </p>
 
-                <p className="mt-2 text-sm font-medium text-zinc-200">
+                <p
+                  className="
+                    mt-2
+                    text-lg
+                    font-medium
+                    tracking-[-0.01em]
+                    text-zinc-100
+                    sm:text-xl
+                  "
+                >
                   {formatCurrency(revenue)}
                 </p>
 
@@ -330,6 +350,7 @@ export default async function AICFOPage() {
                 </p>
               </div>
 
+              {/* Expenses */}
               <div
                 className="
                   rounded-2xl
@@ -338,13 +359,31 @@ export default async function AICFOPage() {
                   bg-white/[0.025]
                   px-4
                   py-4
+                  sm:px-5
+                  sm:py-5
                 "
               >
-                <p className="text-[10px] uppercase tracking-[0.18em] text-zinc-600">
+                <p
+                  className="
+                    text-[10px]
+                    uppercase
+                    tracking-[0.18em]
+                    text-zinc-600
+                  "
+                >
                   Expenses
                 </p>
 
-                <p className="mt-2 text-sm font-medium text-zinc-200">
+                <p
+                  className="
+                    mt-2
+                    text-lg
+                    font-medium
+                    tracking-[-0.01em]
+                    text-zinc-100
+                    sm:text-xl
+                  "
+                >
                   {formatCurrency(expenses)}
                 </p>
 
@@ -356,6 +395,7 @@ export default async function AICFOPage() {
                 </p>
               </div>
 
+              {/* Profit */}
               <div
                 className="
                   rounded-2xl
@@ -364,13 +404,31 @@ export default async function AICFOPage() {
                   bg-white/[0.025]
                   px-4
                   py-4
+                  sm:px-5
+                  sm:py-5
                 "
               >
-                <p className="text-[10px] uppercase tracking-[0.18em] text-zinc-600">
+                <p
+                  className="
+                    text-[10px]
+                    uppercase
+                    tracking-[0.18em]
+                    text-zinc-600
+                  "
+                >
                   Profit
                 </p>
 
-                <p className="mt-2 text-sm font-medium text-zinc-200">
+                <p
+                  className="
+                    mt-2
+                    text-lg
+                    font-medium
+                    tracking-[-0.01em]
+                    text-zinc-100
+                    sm:text-xl
+                  "
+                >
                   {formatCurrency(profit)}
                 </p>
 
@@ -382,6 +440,7 @@ export default async function AICFOPage() {
                 </p>
               </div>
 
+              {/* Receivables */}
               <div
                 className="
                   rounded-2xl
@@ -390,13 +449,31 @@ export default async function AICFOPage() {
                   bg-white/[0.025]
                   px-4
                   py-4
+                  sm:px-5
+                  sm:py-5
                 "
               >
-                <p className="text-[10px] uppercase tracking-[0.18em] text-zinc-600">
+                <p
+                  className="
+                    text-[10px]
+                    uppercase
+                    tracking-[0.18em]
+                    text-zinc-600
+                  "
+                >
                   Receivables
                 </p>
 
-                <p className="mt-2 text-sm font-medium text-zinc-200">
+                <p
+                  className="
+                    mt-2
+                    text-lg
+                    font-medium
+                    tracking-[-0.01em]
+                    text-zinc-100
+                    sm:text-xl
+                  "
+                >
                   {formatCurrency(receivables)}
                 </p>
 
@@ -412,16 +489,19 @@ export default async function AICFOPage() {
 
           </div>
 
-          {/* Mobile Dhaar */}
+          {/* =================================================
+              MOBILE DHAAR
+          ================================================== */}
+
           <div
             aria-hidden="true"
             className="
               relative
               mx-auto
-              mt-5
-              h-[260px]
+              mt-4
+              h-[280px]
               w-full
-              max-w-[330px]
+              max-w-[340px]
               sm:hidden
             "
           >
@@ -429,10 +509,9 @@ export default async function AICFOPage() {
               src="/images/dhaar/dhaar-mascot.png"
               alt=""
               fill
-              sizes="330px"
+              sizes="340px"
               className="
                 object-contain
-                mix-blend-screen
               "
             />
           </div>

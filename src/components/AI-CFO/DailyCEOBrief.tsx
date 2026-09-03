@@ -479,54 +479,55 @@ export default function DailyCEOBrief({
         {/* =====================================================
             DHAAR / FALCON
 
-            The falcon intentionally extends below the hero
-            boundary. The parent overflow-hidden clips the
-            bottom naturally at the card edge.
+            The falcon is intentionally positioned lower than
+            the hero boundary. The head, eye and beak remain
+            comfortably inside the card while the lower neck
+            naturally disappears through the bottom edge.
         ===================================================== */}
 
         <div
-  aria-hidden="true"
-  className="
-    pointer-events-none
-    absolute
-    bottom-[-105px]
-    right-[-42px]
-    z-20
-    hidden
-    h-[590px]
-    w-[50%]
-    sm:block
-    sm:right-[-34px]
-    sm:bottom-[-90px]
-    sm:h-[610px]
-    sm:w-[49%]
-    lg:right-[-25px]
-    lg:bottom-[-72px]
-    lg:h-[625px]
-    lg:w-[50%]
-    xl:right-[-12px]
-    xl:bottom-[-58px]
-    xl:h-[640px]
-    xl:w-[50%]
-  "
->
-  <Image
-    src="/images/dhaar/dhaar-mascot.png"
-    alt=""
-    fill
-    priority
-    sizes="
-      (max-width: 640px) 0px,
-      (max-width: 1024px) 49vw,
-      50vw
-    "
-    className="
-      select-none
-      object-contain
-      object-bottom
-    "
-  />
-</div>
+          aria-hidden="true"
+          className="
+            pointer-events-none
+            absolute
+            bottom-[-145px]
+            right-[-42px]
+            z-20
+            hidden
+            h-[590px]
+            w-[50%]
+            sm:block
+            sm:right-[-34px]
+            sm:bottom-[-130px]
+            sm:h-[610px]
+            sm:w-[49%]
+            lg:right-[-25px]
+            lg:bottom-[-112px]
+            lg:h-[625px]
+            lg:w-[50%]
+            xl:right-[-12px]
+            xl:bottom-[-100px]
+            xl:h-[640px]
+            xl:w-[50%]
+          "
+        >
+          <Image
+            src="/images/dhaar/dhaar-mascot.png"
+            alt=""
+            fill
+            priority
+            sizes="
+              (max-width: 640px) 0px,
+              (max-width: 1024px) 49vw,
+              50vw
+            "
+            className="
+              select-none
+              object-contain
+              object-bottom
+            "
+          />
+        </div>
 
         {/* =====================================================
             CARD EDGE
