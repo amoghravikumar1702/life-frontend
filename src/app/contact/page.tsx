@@ -110,6 +110,10 @@ export default function ContactPage() {
           </div>
 
           <div className="mt-12 flex flex-wrap gap-5 border-t border-white/[0.055] pt-7 text-xs text-zinc-600">
+            <Link href="/pricing" className="transition hover:text-[#D4AF37]">
+              Pricing
+            </Link>
+
             <Link href="/privacy" className="transition hover:text-white">
               Privacy Policy
             </Link>

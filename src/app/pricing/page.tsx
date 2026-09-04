@@ -1090,6 +1090,17 @@ export default function PricingPage() {
             >
               Refund Policy
             </Link>
+
+            <span className="text-zinc-800">
+              •
+            </span>
+
+            <Link
+              href="/contact"
+              className="transition hover:text-zinc-300"
+            >
+              Contact
+            </Link>
           </div>
 
           <p className="mt-4 text-[10px] leading-5 text-zinc-700">

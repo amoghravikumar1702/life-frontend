@@ -1,5 +1,19 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import DhanarkLogo from "@/components/brand/DhanarkLogo";
+
+export const metadata: Metadata = {
+  title: "Cookie Policy — DhanarkOS",
+  description:
+    "Read the DhanarkOS Cookie Policy to understand how cookies and similar technologies are used for authentication, security, sessions and platform functionality.",
+  alternates: {
+    canonical: "https://dhanark.com/cookies",
+  },
+  robots: {
+    index: false,
+    follow: true,
+  },
+};
 
 export default function CookiesPage() {
   return (
@@ -159,6 +173,14 @@ export default function CookiesPage() {
 
               <Link href="/terms" className="hover:text-white">
                 Terms of Service
+              </Link>
+
+              <Link href="/contact" className="hover:text-white">
+                Contact
+              </Link>
+
+              <Link href="/pricing" className="hover:text-white">
+                Pricing
               </Link>
 
               <Link href="/" className="hover:text-white">

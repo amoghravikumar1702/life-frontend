@@ -169,12 +169,12 @@ export default function HomePage() {
                 </span>
               </a>
 
-              <a
-                href="#pricing"
+              <Link
+                href="/pricing"
                 className="rounded-lg px-4 py-2 text-[11px] text-zinc-500 transition hover:bg-white/[0.04] hover:text-white"
               >
                 Pricing
-              </a>
+              </Link>
             </nav>
 
             {/* Desktop actions */}
@@ -293,6 +293,12 @@ export default function HomePage() {
                 <br />
                 <span className="text-zinc-500">Mastered.</span>
               </h1>
+
+              {/* SEO / accessibility context */}
+              <p className="sr-only">
+                DhanarkOS is an AI financial operating system for growing
+                businesses.
+              </p>
 
               <p className="mt-7 max-w-lg text-[14px] leading-7 text-zinc-500 sm:text-[15px]">
                 DhanarkOS gives growing businesses one intelligent command
@@ -1028,6 +1034,16 @@ export default function HomePage() {
               </div>
             ))}
           </div>
+
+          <div className="mt-6 text-center">
+            <Link
+              href="/pricing"
+              className="inline-flex items-center gap-2 text-[10px] font-medium text-[#D4AF37] transition hover:text-[#E2C04A]"
+            >
+              Explore full pricing
+              <ArrowRight size={12} />
+            </Link>
+          </div>
         </div>
       </section>
 
@@ -1098,6 +1114,13 @@ export default function HomePage() {
               </a>
 
               <Link
+                href="/contact"
+                className="text-zinc-400 transition hover:text-white"
+              >
+                Contact
+              </Link>
+
+              <Link
                 href="/login"
                 className="text-zinc-400 transition hover:text-white"
               >
@@ -1109,6 +1132,34 @@ export default function HomePage() {
                 className="text-zinc-400 transition hover:text-white"
               >
                 Sign Up
+              </Link>
+
+              <Link
+                href="/privacy"
+                className="text-zinc-400 transition hover:text-white"
+              >
+                Privacy
+              </Link>
+
+              <Link
+                href="/terms"
+                className="text-zinc-400 transition hover:text-white"
+              >
+                Terms
+              </Link>
+
+              <Link
+                href="/cookies"
+                className="text-zinc-400 transition hover:text-white"
+              >
+                Cookies
+              </Link>
+
+              <Link
+                href="/refund-policy"
+                className="text-zinc-400 transition hover:text-white"
+              >
+                Refunds
               </Link>
             </div>
 

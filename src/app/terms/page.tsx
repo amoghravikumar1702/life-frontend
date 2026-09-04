@@ -1,5 +1,19 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import DhanarkLogo from "@/components/brand/DhanarkLogo";
+
+export const metadata: Metadata = {
+  title: "Terms of Service — DhanarkOS",
+  description:
+    "Read the DhanarkOS Terms of Service covering account use, business and financial data, AI-powered financial intelligence, subscriptions, payments and acceptable use.",
+  alternates: {
+    canonical: "https://dhanark.com/terms",
+  },
+  robots: {
+    index: false,
+    follow: true,
+  },
+};
 
 export default function TermsPage() {
   return (
@@ -320,6 +334,14 @@ export default function TermsPage() {
 
               <Link href="/cookies" className="hover:text-white">
                 Cookie Policy
+              </Link>
+
+              <Link href="/contact" className="hover:text-white">
+                Contact
+              </Link>
+
+              <Link href="/pricing" className="hover:text-white">
+                Pricing
               </Link>
 
               <Link href="/" className="hover:text-white">

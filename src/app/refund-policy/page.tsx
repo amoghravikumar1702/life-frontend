@@ -1,5 +1,19 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import DhanarkLogo from "@/components/brand/DhanarkLogo";
+
+export const metadata: Metadata = {
+  title: "Refund Policy — DhanarkOS",
+  description:
+    "Read the DhanarkOS Refund Policy covering subscription payments, cancellations, free trials, duplicate charges and payment-related issues.",
+  alternates: {
+    canonical: "https://dhanark.com/refund-policy",
+  },
+  robots: {
+    index: false,
+    follow: true,
+  },
+};
 
 export default function RefundPolicyPage() {
   return (
@@ -198,6 +212,14 @@ export default function RefundPolicyPage() {
 
               <Link href="/cookies" className="hover:text-white">
                 Cookie Policy
+              </Link>
+
+              <Link href="/contact" className="hover:text-white">
+                Contact
+              </Link>
+
+              <Link href="/pricing" className="hover:text-white">
+                Pricing
               </Link>
 
               <Link href="/" className="hover:text-white">
