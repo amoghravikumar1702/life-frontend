@@ -349,7 +349,7 @@ export default function HomePage() {
 
                   <div className="rounded-md border border-white/[0.05] bg-white/[0.02] px-10 py-1">
                     <span className="text-[6px] text-zinc-700">
-                      app.dhanarkos.com
+                      app.dhanark.com
                     </span>
                   </div>
 

@@ -3,7 +3,7 @@ import "./globals.css";
 import QueryProvider from "@/providers/QueryProvider";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://dhanarkos.com"),
+  metadataBase: new URL("https://dhanark.com"),
 
   title: {
     default: "DhanarkOS — Capital. Mastered.",
@@ -27,7 +27,7 @@ export const metadata: Metadata = {
     title: "DhanarkOS — Capital. Mastered.",
     description:
       "The financial operating system for modern businesses.",
-    url: "https://dhanarkos.com",
+    url: "https://dhanark.com",
     siteName: "DhanarkOS",
     type: "website",
     locale: "en_IN",

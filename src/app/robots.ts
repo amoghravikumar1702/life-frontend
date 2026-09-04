@@ -17,6 +17,6 @@ export default function robots(): MetadataRoute.Robots {
         "/signup/",
       ],
     },
-    sitemap: "https://dhanarkos.com/sitemap.xml",
+    sitemap: "https://dhanark.com/sitemap.xml",
   };
 }
