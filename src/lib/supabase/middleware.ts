@@ -7,6 +7,10 @@ const PUBLIC_ROUTES = [
   "/signup",
   "/walkthrough",
 
+  // SEO metadata files
+  "/robots.txt",
+  "/sitemap.xml",
+
   // Legal / trust pages
   "/privacy",
   "/terms",
