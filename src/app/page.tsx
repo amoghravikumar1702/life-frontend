@@ -116,7 +116,10 @@ export default function HomePage() {
         <div className="absolute bottom-[-250px] right-[-200px] h-[500px] w-[500px] rounded-full bg-[#D4AF37]/[0.018] blur-[140px]" />
       </div>
 
+      {/* ========================================================= */}
       {/* NAVIGATION */}
+      {/* ========================================================= */}
+
       <header className="fixed inset-x-0 top-0 z-50">
         <div className="mx-auto max-w-[1380px] px-3 pt-3 sm:px-6 lg:px-8">
           <div className="relative flex h-14 items-center justify-between rounded-2xl border border-white/[0.08] bg-[#090A0B]/95 px-3 shadow-[0_16px_70px_rgba(0,0,0,0.45)] backdrop-blur-2xl sm:h-15 sm:px-4 lg:h-16 lg:px-5">
@@ -158,7 +161,9 @@ export default function HomePage() {
                 className="flex items-center gap-2 rounded-lg border border-[#D4AF37]/15 bg-[#D4AF37]/[0.055] px-4 py-2 text-[11px] text-[#E4C85A]"
               >
                 <span className="h-1.5 w-1.5 rounded-full bg-[#D4AF37] shadow-[0_0_8px_rgba(212,175,55,0.8)]" />
+
                 AI CFO
+
                 <span className="rounded bg-[#D4AF37]/10 px-1.5 py-0.5 text-[6px] font-bold uppercase tracking-wider text-[#D4AF37]">
                   Live
                 </span>
@@ -186,6 +191,7 @@ export default function HomePage() {
                 className="group flex items-center gap-2 rounded-lg bg-[#D4AF37] px-4 py-2.5 text-[11px] font-semibold text-black transition hover:bg-[#E2C04A]"
               >
                 Enter DhanarkOS
+
                 <ArrowRight
                   size={13}
                   className="transition-transform group-hover:translate-x-0.5"
@@ -210,6 +216,7 @@ export default function HomePage() {
                 <div className="mb-2 rounded-xl border border-[#D4AF37]/15 bg-[#D4AF37]/[0.035] p-3">
                   <div className="flex items-center gap-2">
                     <span className="h-2 w-2 rounded-full bg-[#D4AF37]" />
+
                     <span className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#D4AF37]">
                       AI CFO · LIVE
                     </span>
@@ -260,7 +267,10 @@ export default function HomePage() {
         </div>
       </header>
 
+      {/* ========================================================= */}
       {/* HERO */}
+      {/* ========================================================= */}
+
       <section className="px-4 pb-16 pt-32 sm:px-6 sm:pt-36 lg:px-8 lg:pb-24 lg:pt-44">
         <div className="mx-auto max-w-[1380px]">
           <div className="grid items-center gap-12 lg:grid-cols-[0.82fr_1.18fr] xl:gap-16">
@@ -518,7 +528,10 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* ========================================================= */}
       {/* TRUST STRIP */}
+      {/* ========================================================= */}
+
       <section className="border-y border-white/[0.055] bg-[#090A0B]">
         <div className="mx-auto flex max-w-[1380px] flex-wrap items-center justify-center gap-x-8 gap-y-3 px-5 py-5 sm:justify-between sm:px-6 lg:px-8">
           <span className="text-[8px] uppercase tracking-[0.24em] text-zinc-700">
@@ -538,7 +551,10 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* ========================================================= */}
       {/* PLATFORM */}
+      {/* ========================================================= */}
+
       <section
         id="platform"
         className="scroll-mt-28 px-5 py-20 sm:px-6 sm:py-24 lg:px-8 lg:py-28"
@@ -601,7 +617,10 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* ========================================================= */}
       {/* DHAAR / AI CFO INTRO */}
+      {/* ========================================================= */}
+
       <section className="border-y border-white/[0.055] bg-[#090A0B] px-5 py-20 sm:px-6 sm:py-24 lg:px-8 lg:py-28">
         <div className="mx-auto max-w-[1380px]">
           <motion.div
@@ -699,12 +718,16 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* ========================================================= */}
       {/* HOW DHANARK WORKS */}
+      {/* ========================================================= */}
+
       <section
         id="how-it-works"
         className="scroll-mt-28 border-y border-white/[0.055] bg-[#090A0B] px-5 py-20 sm:px-6 sm:py-24 lg:px-8 lg:py-28"
       >
         <div className="mx-auto max-w-[1380px]">
+          {/* Section heading */}
           <div className="mx-auto max-w-3xl text-center">
             <p className="text-[9px] font-bold uppercase tracking-[0.3em] text-[#D4AF37]">
               HOW DHANARK WORKS
@@ -727,6 +750,7 @@ export default function HomePage() {
             </p>
           </div>
 
+          {/* Workflow */}
           <div className="relative mt-12 lg:mt-14">
             <div className="grid gap-4 lg:grid-cols-4 lg:gap-5">
               {howItWorks.map((step, index) => {
@@ -748,6 +772,7 @@ export default function HomePage() {
                         : "border-white/[0.07] bg-white/[0.018]"
                     }`}
                   >
+                    {/* Step header */}
                     <div className="flex items-start justify-between">
                       <span
                         className={`text-[13px] font-semibold tracking-[0.18em] ${
@@ -778,6 +803,7 @@ export default function HomePage() {
                       </div>
                     </div>
 
+                    {/* Content */}
                     <div className="mt-8">
                       <h3 className="text-[17px] font-semibold tracking-[-0.02em] text-zinc-100 sm:text-[18px]">
                         {step.title}
@@ -788,6 +814,7 @@ export default function HomePage() {
                       </p>
                     </div>
 
+                    {/* Captures */}
                     <div
                       className={`absolute bottom-5 left-5 right-5 rounded-xl border p-3 sm:bottom-6 sm:left-6 sm:right-6 ${
                         step.featured
@@ -821,6 +848,7 @@ export default function HomePage() {
                       </div>
                     </div>
 
+                    {/* Desktop connector */}
                     {index < howItWorks.length - 1 && (
                       <div className="pointer-events-none absolute -right-[22px] top-[64px] z-20 hidden items-center lg:flex">
                         <div className="h-px w-5 border-t border-dashed border-[#D4AF37]/35" />
@@ -840,6 +868,7 @@ export default function HomePage() {
             </div>
           </div>
 
+          {/* AI CFO Result */}
           <motion.div
             initial={{ opacity: 0, y: 18 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -848,9 +877,11 @@ export default function HomePage() {
             className="mx-auto mt-5 max-w-[1020px]"
           >
             <div className="relative overflow-hidden rounded-[20px] border border-[#D4AF37]/20 bg-[#0B0D0E] p-5 sm:p-6 lg:p-7">
+              {/* Subtle glow */}
               <div className="pointer-events-none absolute -right-20 -top-20 h-48 w-48 rounded-full bg-[#D4AF37]/[0.045] blur-[70px]" />
 
               <div className="relative flex flex-col gap-5 sm:flex-row sm:items-center">
+                {/* AI icon */}
                 <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-[#D4AF37]/25 bg-[#D4AF37]/[0.06]">
                   <BrainCircuit
                     size={21}
@@ -859,6 +890,7 @@ export default function HomePage() {
                   />
                 </div>
 
+                {/* Result */}
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
                     <p className="text-[8px] font-semibold uppercase tracking-[0.22em] text-[#D4AF37]">
@@ -877,6 +909,7 @@ export default function HomePage() {
                   </p>
                 </div>
 
+                {/* Action */}
                 <Link
                   href="/signup"
                   className="group flex shrink-0 items-center gap-2 text-[10px] font-medium text-[#D4AF37] transition hover:text-[#E2C04A]"
@@ -894,7 +927,10 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* ========================================================= */}
       {/* AI CFO */}
+      {/* ========================================================= */}
+
       <section
         id="intelligence"
         className="scroll-mt-28 px-5 py-20 sm:px-6 sm:py-24 lg:px-8 lg:py-28"
@@ -911,9 +947,7 @@ export default function HomePage() {
           <h2 className="mt-4 text-3xl font-light leading-[1.05] tracking-[-0.04em] sm:text-4xl lg:text-6xl">
             Don&apos;t just see the numbers.
             <br />
-            <span className="text-zinc-500">
-              Know what to do next.
-            </span>
+            <span className="text-zinc-500">Know what to do next.</span>
           </h2>
 
           <p className="mx-auto mt-5 max-w-xl text-[13px] leading-6 text-zinc-600">
@@ -923,7 +957,10 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* ========================================================= */}
       {/* PRICING */}
+      {/* ========================================================= */}
+
       <section
         id="pricing"
         className="scroll-mt-28 px-5 py-20 sm:px-6 sm:py-24 lg:px-8 lg:py-28"
@@ -994,7 +1031,10 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* ========================================================= */}
       {/* FINAL CTA */}
+      {/* ========================================================= */}
+
       <section
         id="about"
         className="scroll-mt-28 border-t border-white/[0.055] px-5 py-24 text-center sm:px-6 sm:py-28 lg:px-8 lg:py-32"
@@ -1005,9 +1045,7 @@ export default function HomePage() {
           <h2 className="mt-6 text-4xl font-light leading-[1] tracking-[-0.045em] sm:text-5xl lg:text-6xl">
             Your business.
             <br />
-            <span className="text-zinc-500">
-              Under your command.
-            </span>
+            <span className="text-zinc-500">Under your command.</span>
           </h2>
 
           <p className="mx-auto mt-5 max-w-md text-[12px] leading-6 text-zinc-600">
@@ -1025,7 +1063,10 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* ========================================================= */}
       {/* FOOTER */}
+      {/* ========================================================= */}
+
       <footer className="border-t border-white/[0.055] px-5 py-8 sm:px-6 lg:px-8">
         <div className="mx-auto flex max-w-[1380px] flex-col gap-7 sm:flex-row sm:items-center sm:justify-between">
           <Link
@@ -1078,7 +1119,10 @@ export default function HomePage() {
         </div>
       </footer>
 
+      {/* ========================================================= */}
       {/* ANIMATION */}
+      {/* ========================================================= */}
+
       <style jsx global>{`
         @keyframes dhanarkSweep {
           0% {
