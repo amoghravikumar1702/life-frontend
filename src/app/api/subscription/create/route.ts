@@ -22,7 +22,7 @@ type PlanConfig = {
 };
 
 type TrialRecord = {
-  id: string;
+  id: number;
   trial_status: string | null;
   subscription_status: string | null;
   razorpay_subscription_id: string | null;
@@ -42,13 +42,12 @@ const PLANS: Record<
   beginner: {
     monthly: {
       name: "DhanarkOS Beginner",
-      planId: "plan_TTUEYNaTgoKvyj",
+      planId: "plan_TY3d3eum1IUML2",
       amount: 799,
     },
-
     yearly: {
       name: "DhanarkOS Beginner",
-      planId: "plan_TTfSh9uUJDH8Cz",
+      planId: "plan_TY3do4zJKcekIw",
       amount: 7999,
     },
   },
@@ -56,13 +55,12 @@ const PLANS: Record<
   professional: {
     monthly: {
       name: "DhanarkOS Professional",
-      planId: "plan_TTUFtLakXhYU9f",
+      planId: "plan_TY3emwzLrCPaZ0",
       amount: 1699,
     },
-
     yearly: {
       name: "DhanarkOS Professional",
-      planId: "plan_TTfTFsiA6BWUdT",
+      planId: "plan_TY3fhuyGO7gpmD",
       amount: 16999,
     },
   },
@@ -70,13 +68,12 @@ const PLANS: Record<
   advanced: {
     monthly: {
       name: "DhanarkOS Advanced",
-      planId: "plan_TTUGnz0LC0upNs",
+      planId: "plan_TY3gpgclmhuPz6",
       amount: 1999,
     },
-
     yearly: {
       name: "DhanarkOS Advanced",
-      planId: "plan_TTfTrv5da1QEuU",
+      planId: "plan_TY3hNosnckAaNg",
       amount: 19999,
     },
   },
@@ -97,14 +94,6 @@ function cleanString(
   return typeof value === "string"
     ? value.trim()
     : "";
-}
-
-function getRazorpayKeyId(): string {
-  return (
-    process.env.RAZORPAY_KEY_ID ??
-    process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID ??
-    ""
-  ).trim();
 }
 
 export async function POST(
@@ -147,26 +136,6 @@ export async function POST(
 
     /*
      * ============================================================
-     * RAZORPAY KEY
-     * ============================================================
-     */
-
-    const razorpayKeyId =
-      getRazorpayKeyId();
-
-    if (!razorpayKeyId) {
-      console.error(
-        "[DhanarkOS Subscription] Razorpay key ID is not configured."
-      );
-
-      return ApiResponse.error(
-        "Razorpay is not configured correctly.",
-        500
-      );
-    }
-
-    /*
-     * ============================================================
      * 2. READ REQUEST
      * ============================================================
      */
@@ -196,7 +165,7 @@ export async function POST(
 
     const requestedBillingCycle =
       cleanString(
-        body?.billingCycle ??
+        body?.billingCycle ||
           "monthly"
       ).toLowerCase();
 
@@ -278,6 +247,11 @@ export async function POST(
      * ============================================================
      * 4. CHECK EXISTING RAZORPAY SUBSCRIPTION
      * ============================================================
+     *
+     * Never assume that an ID stored in Supabase is still usable.
+     *
+     * Fetch the live Razorpay object and inspect its status.
+     * ============================================================
      */
 
     if (
@@ -307,6 +281,11 @@ export async function POST(
             error,
           }
         );
+
+        /*
+         * Razorpay cannot retrieve the stored subscription.
+         * Remove the stale reference.
+         */
 
         const {
           error: clearError,
@@ -356,58 +335,21 @@ export async function POST(
             existingSubscription.status
           ).toLowerCase();
 
-        if (
-          status ===
-            "created" ||
-          status ===
-            "pending"
-        ) {
-          return ApiResponse.success({
-            subscriptionId:
-              existingSubscription.id,
-
-            plan,
-
-            planName:
-              planConfig.name,
-
-            planId:
-              planConfig.planId,
-
-            amount:
-              planConfig.amount,
-
-            currency:
-              "INR",
-
-            billingCycle,
-
-            trialDays:
-              TRIAL_DAYS,
-
-            trialEndsAt:
-              trial?.trial_status ===
-                "trialing"
-                ? null
-                : null,
-
-            startAt:
-              existingSubscription.start_at ??
-              null,
-
-            status,
-
-            keyId:
-              razorpayKeyId,
-
-            reused:
-              true,
-          });
-        }
+        /*
+         * --------------------------------------------------------
+         * CREATED
+         * --------------------------------------------------------
+         *
+         * Reuse an unfinished subscription.
+         *
+         * This is important because creating a second subscription
+         * every time Checkout is opened can produce stale payment
+         * attempts and confusing Checkout states.
+         */
 
         if (
-          status ===
-          "authenticated"
+          status === "created" ||
+          status === "pending"
         ) {
           return ApiResponse.success({
             subscriptionId:
@@ -442,16 +384,74 @@ export async function POST(
             status,
 
             keyId:
-              razorpayKeyId,
+              process.env
+                .NEXT_PUBLIC_RAZORPAY_KEY_ID,
 
             reused:
               true,
           });
         }
 
+        /*
+         * --------------------------------------------------------
+         * AUTHENTICATED
+         * --------------------------------------------------------
+         *
+         * Razorpay has accepted authorization.
+         */
+
         if (
-          status ===
-          "active"
+          status === "authenticated"
+        ) {
+          return ApiResponse.success({
+            subscriptionId:
+              existingSubscription.id,
+
+            plan,
+
+            planName:
+              planConfig.name,
+
+            planId:
+              planConfig.planId,
+
+            amount:
+              planConfig.amount,
+
+            currency:
+              "INR",
+
+            billingCycle,
+
+            trialDays:
+              TRIAL_DAYS,
+
+            trialEndsAt:
+              null,
+
+            startAt:
+              existingSubscription.start_at ??
+              null,
+
+            status,
+
+            keyId:
+              process.env
+                .NEXT_PUBLIC_RAZORPAY_KEY_ID,
+
+            reused:
+              true,
+          });
+        }
+
+        /*
+         * --------------------------------------------------------
+         * ACTIVE
+         * --------------------------------------------------------
+         */
+
+        if (
+          status === "active"
         ) {
           return ApiResponse.error(
             "Your DhanarkOS subscription is already active.",
@@ -459,9 +459,14 @@ export async function POST(
           );
         }
 
+        /*
+         * --------------------------------------------------------
+         * HALTED
+         * --------------------------------------------------------
+         */
+
         if (
-          status ===
-          "halted"
+          status === "halted"
         ) {
           return ApiResponse.error(
             "Your existing DhanarkOS subscription requires payment attention before another subscription can be created.",
@@ -469,9 +474,14 @@ export async function POST(
           );
         }
 
+        /*
+         * --------------------------------------------------------
+         * COMPLETED
+         * --------------------------------------------------------
+         */
+
         if (
-          status ===
-          "completed"
+          status === "completed"
         ) {
           return ApiResponse.error(
             "Your DhanarkOS subscription has already completed.",
@@ -479,11 +489,15 @@ export async function POST(
           );
         }
 
+        /*
+         * --------------------------------------------------------
+         * CANCELLED / EXPIRED
+         * --------------------------------------------------------
+         */
+
         if (
-          status ===
-            "cancelled" ||
-          status ===
-            "expired"
+          status === "cancelled" ||
+          status === "expired"
         ) {
           console.log(
             "[DhanarkOS Subscription] Clearing unusable subscription:",
@@ -573,8 +587,7 @@ export async function POST(
         );
 
       const expectedAmount =
-        planConfig.amount *
-        100;
+        planConfig.amount * 100;
 
       const expectedPeriod =
         billingCycle ===
@@ -607,6 +620,10 @@ export async function POST(
         }
       );
 
+      /*
+       * Razorpay amounts are stored in paise.
+       */
+
       if (
         razorpayAmount !==
         expectedAmount
@@ -618,9 +635,7 @@ export async function POST(
             billingCycle,
             planId:
               planConfig.planId,
-
             expectedAmount,
-
             actualAmount:
               razorpayAmount,
           }
@@ -644,9 +659,7 @@ export async function POST(
             billingCycle,
             planId:
               planConfig.planId,
-
             expectedPeriod,
-
             actualPeriod:
               razorpayPlan.period,
           }
@@ -682,8 +695,8 @@ export async function POST(
      */
 
     let subscription:
-      | RazorpaySubscriptionRecord
-      | null = null;
+      RazorpaySubscriptionRecord | null =
+      null;
 
     try {
       const createdSubscription =
@@ -713,7 +726,8 @@ export async function POST(
             userId:
               user.id,
 
-            plan,
+            plan:
+              plan,
 
             planName:
               planConfig.name,
@@ -769,26 +783,6 @@ export async function POST(
       );
     }
 
-    console.log(
-      "[DhanarkOS DEBUG] CREATED RAZORPAY SUBSCRIPTION:",
-      {
-        id:
-          subscription.id,
-
-        status:
-          subscription.status,
-
-        plan_id:
-          subscription.plan_id,
-
-        checkoutKey:
-          `${razorpayKeyId.slice(
-            0,
-            12
-          )}...`,
-      }
-    );
-
     /*
      * ============================================================
      * 10. SAVE SUBSCRIPTION
@@ -819,20 +813,8 @@ export async function POST(
             subscription_billing_cycle:
               billingCycle,
 
-            /*
-             * IMPORTANT:
-             *
-             * The database constraint only allows:
-             *
-             * trialing
-             * expired
-             * active
-             * cancelled
-             *
-             * Never write "pending" here.
-             */
-            trial_status:
-              "trialing",
+           trial_status:
+  "trialing",
 
             subscription_status:
               "none",
@@ -866,58 +848,105 @@ export async function POST(
     } else {
       /*
        * ==========================================================
-       * CREATE TRIAL RECORD
+       * 11. CREATE TRIAL RECORD IF MISSING
        * ==========================================================
        */
 
+      /*
+       * phone_e164 is NOT NULL in the database according to the
+       * existing DhanarkOS schema.
+       *
+       * Therefore we cannot safely insert a billing record here
+       * without the onboarding phone value.
+       *
+       * Save the verified subscription in auth metadata instead.
+       *
+       * This prevents the database constraint from turning a valid
+       * Razorpay subscription into a broken application state.
+       */
+
       const {
-        error: insertError,
+        data: currentUser,
+        error: currentUserError,
       } =
-        await supabaseAdmin
-          .from(
-            "dhanarkos_trials"
-          )
-          .insert({
-            user_id:
-              user.id,
+        await supabaseAdmin.auth.admin
+          .getUserById(
+            user.id
+          );
 
-            /*
-             * IMPORTANT:
-             * "pending" violates the CHECK constraint.
-             */
-            trial_status:
-              "trialing",
-
-            subscription_status:
-              "none",
-
-            selected_plan:
-              plan,
-
-            subscription_plan:
-              plan,
-
-            subscription_plan_id:
-              planConfig.planId,
-
-            subscription_billing_cycle:
-              billingCycle,
-
-            razorpay_subscription_id:
-              subscription.id,
-
-            trial_ends_at:
-              trialEndsAt.toISOString(),
-          });
-
-      if (insertError) {
+      if (
+        currentUserError ||
+        !currentUser?.user
+      ) {
         console.error(
-          "[DhanarkOS Subscription] Trial creation failed:",
-          insertError
+          "[DhanarkOS Subscription] Unable to read current user metadata:",
+          currentUserError
         );
 
         return ApiResponse.error(
-          "Your Razorpay subscription was created, but DhanarkOS could not save your trial. Please contact support before trying again.",
+          "Your Razorpay subscription was created, but DhanarkOS could not save your account state. Please contact support before trying again.",
+          500
+        );
+      }
+
+      const existingMetadata =
+        currentUser.user
+          .user_metadata ?? {};
+
+      const {
+        error: metadataError,
+      } =
+        await supabaseAdmin.auth.admin
+          .updateUserById(
+            user.id,
+            {
+              user_metadata: {
+                ...existingMetadata,
+
+                dhanarkos_pending_subscription:
+                  {
+                    subscriptionId:
+                      subscription.id,
+
+                    plan,
+
+                    planName:
+                      planConfig.name,
+
+                    planId:
+                      planConfig.planId,
+
+                    billingCycle,
+
+                    amount:
+                      planConfig.amount,
+
+                    trialDays:
+                      TRIAL_DAYS,
+
+                    trialEndsAt:
+                      trialEndsAt.toISOString(),
+
+                    startAt,
+
+                    status:
+                      "pending",
+
+                    createdAt:
+                      new Date().toISOString(),
+                  },
+              },
+            }
+          );
+
+      if (metadataError) {
+        console.error(
+          "[DhanarkOS Subscription] Pending subscription metadata save failed:",
+          metadataError
+        );
+
+        return ApiResponse.error(
+          "Your Razorpay subscription was created, but DhanarkOS could not save your account state. Please contact support before trying again.",
           500
         );
       }
@@ -925,7 +954,7 @@ export async function POST(
 
     /*
      * ============================================================
-     * 11. SUCCESS
+     * 12. SUCCESS
      * ============================================================
      */
 
@@ -950,12 +979,6 @@ export async function POST(
 
         trialEndsAt:
           trialEndsAt.toISOString(),
-
-        checkoutKey:
-          `${razorpayKeyId.slice(
-            0,
-            12
-          )}...`,
       }
     );
 
@@ -991,13 +1014,9 @@ export async function POST(
         subscription.status ??
         "created",
 
-      /*
-       * This MUST be the same Razorpay key
-       * associated with the server-side credentials
-       * that created subscription.id.
-       */
       keyId:
-        razorpayKeyId,
+        process.env
+          .NEXT_PUBLIC_RAZORPAY_KEY_ID,
 
       reused:
         false,

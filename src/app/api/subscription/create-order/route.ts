@@ -8,9 +8,14 @@ import { razorpay } from "@/lib/server/razorpay";
 import { supabaseAdmin } from "@/lib/server/supabase";
 import { createClient } from "@/lib/supabase/server";
 
-type PlanKey = "beginner" | "professional" | "advanced";
+type PlanKey =
+  | "beginner"
+  | "professional"
+  | "advanced";
 
-type BillingCycle = "monthly" | "yearly";
+type BillingCycle =
+  | "monthly"
+  | "yearly";
 
 type PlanConfig = {
   name: string;
@@ -57,12 +62,13 @@ const PLANS: Record<
   beginner: {
     monthly: {
       name: "DhanarkOS Beginner",
-      planId: "plan_TTUEYNaTgoKvyj",
+      planId: "plan_TY3d3eum1IUML2",
       amount: 799,
     },
+
     yearly: {
       name: "DhanarkOS Beginner",
-      planId: "plan_TTfSh9uUJDH8Cz",
+      planId: "plan_TY3do4zJKcekIw",
       amount: 7999,
     },
   },
@@ -70,12 +76,13 @@ const PLANS: Record<
   professional: {
     monthly: {
       name: "DhanarkOS Professional",
-      planId: "plan_TTUFtLakXhYU9f",
+      planId: "plan_TY3emwzLrCPaZ0",
       amount: 1699,
     },
+
     yearly: {
       name: "DhanarkOS Professional",
-      planId: "plan_TTfTFsiA6BWUdT",
+      planId: "plan_TY3fhuyGO7gpmD",
       amount: 16999,
     },
   },
@@ -83,12 +90,13 @@ const PLANS: Record<
   advanced: {
     monthly: {
       name: "DhanarkOS Advanced",
-      planId: "plan_TTUGnz0LC0upNs",
+      planId: "plan_TY3gpgclmhuPz6",
       amount: 1999,
     },
+
     yearly: {
       name: "DhanarkOS Advanced",
-      planId: "plan_TTfTrv5da1QEuU",
+      planId: "plan_TY3hNosnckAaNg",
       amount: 19999,
     },
   },
@@ -97,7 +105,11 @@ const PLANS: Record<
 const TRIAL_DAYS = 7;
 
 const TRIAL_MILLISECONDS =
-  TRIAL_DAYS * 24 * 60 * 60 * 1000;
+  TRIAL_DAYS *
+  24 *
+  60 *
+  60 *
+  1000;
 
 function getRazorpayKeyId(): string {
   return (
@@ -107,19 +119,17 @@ function getRazorpayKeyId(): string {
   );
 }
 
-function normalize(value: unknown): string {
-  return String(value ?? "")
-    .trim()
-    .toLowerCase();
-}
-
 function getSubscriptionNote(
   subscription: RazorpaySubscriptionResult,
   key: string
 ): string | null {
-  const value = subscription.notes?.[key];
+  const value =
+    subscription.notes?.[key];
 
-  if (typeof value === "string" && value.trim()) {
+  if (
+    typeof value === "string" &&
+    value.trim()
+  ) {
     return value.trim();
   }
 
@@ -137,7 +147,8 @@ function getTrialEndFromSubscription(
   subscription: RazorpaySubscriptionResult
 ): string {
   if (
-    typeof subscription.start_at === "number" &&
+    typeof subscription.start_at ===
+      "number" &&
     subscription.start_at > 0
   ) {
     return new Date(
@@ -156,7 +167,8 @@ function getTrialEndFromSubscription(
     );
 
   if (explicitTrialEnd) {
-    const parsed = new Date(explicitTrialEnd);
+    const parsed =
+      new Date(explicitTrialEnd);
 
     if (!Number.isNaN(parsed.getTime())) {
       return parsed.toISOString();
@@ -178,12 +190,14 @@ export async function POST(
      * ============================================================
      */
 
-    const supabase = await createClient();
+    const supabase =
+      await createClient();
 
     const {
       data: { user },
       error: authError,
-    } = await supabase.auth.getUser();
+    } =
+      await supabase.auth.getUser();
 
     if (authError) {
       console.error(
@@ -216,7 +230,8 @@ export async function POST(
     };
 
     try {
-      body = await request.json();
+      body =
+        await request.json();
     } catch {
       return ApiResponse.error(
         "Invalid subscription request.",
@@ -224,19 +239,21 @@ export async function POST(
       );
     }
 
-    const requestedPlan = normalize(
-      body?.plan
-    ) as PlanKey;
+    const plan =
+      String(
+        body?.plan ?? ""
+      ).toLowerCase() as PlanKey;
 
-    const requestedBillingCycle =
-      normalize(
-        body?.billingCycle ?? "monthly"
-      ) as BillingCycle;
+    const billingCycle =
+      String(
+        body?.billingCycle ??
+          "monthly"
+      ).toLowerCase() as BillingCycle;
 
     if (
       !Object.prototype.hasOwnProperty.call(
         PLANS,
-        requestedPlan
+        plan
       )
     ) {
       return ApiResponse.error(
@@ -246,20 +263,14 @@ export async function POST(
     }
 
     if (
-      requestedBillingCycle !== "monthly" &&
-      requestedBillingCycle !== "yearly"
+      billingCycle !== "monthly" &&
+      billingCycle !== "yearly"
     ) {
       return ApiResponse.error(
         "Please select a valid billing cycle.",
         400
       );
     }
-
-    const plan =
-      requestedPlan;
-
-    const billingCycle =
-      requestedBillingCycle;
 
     const planConfig =
       PLANS[plan][billingCycle];
@@ -313,7 +324,10 @@ export async function POST(
             trial_ends_at
           `
         )
-        .eq("user_id", user.id)
+        .eq(
+          "user_id",
+          user.id
+        )
         .maybeSingle();
 
     if (trialLookupError) {
@@ -356,6 +370,14 @@ export async function POST(
         existingSubscription =
           fetchedSubscription as RazorpaySubscriptionResult;
       } catch (error) {
+        /*
+         * The database points to a subscription
+         * Razorpay can no longer retrieve.
+         *
+         * This is safe to clear because Razorpay
+         * itself could not verify the entity.
+         */
+
         console.error(
           "[DhanarkOS Subscription] Existing Razorpay subscription fetch failed:",
           {
@@ -369,17 +391,27 @@ export async function POST(
           error: clearError,
         } =
           await supabaseAdmin
-            .from("dhanarkos_trials")
+            .from(
+              "dhanarkos_trials"
+            )
             .update({
               razorpay_subscription_id:
                 null,
+
               razorpay_payment_id:
                 null,
+
               updated_at:
                 new Date().toISOString(),
             })
-            .eq("id", trial.id)
-            .eq("user_id", user.id);
+            .eq(
+              "id",
+              trial.id
+            )
+            .eq(
+              "user_id",
+              user.id
+            );
 
         if (clearError) {
           console.error(
@@ -402,9 +434,10 @@ export async function POST(
 
       if (existingSubscription) {
         const status =
-          normalize(
-            existingSubscription.status
-          );
+          String(
+            existingSubscription.status ??
+              ""
+          ).toLowerCase();
 
         const razorpayPlanId =
           existingSubscription.plan_id ??
@@ -416,104 +449,34 @@ export async function POST(
             "userId"
           );
 
-        const subscriptionPlanNote =
+        const subscriptionPlan =
           getSubscriptionNote(
             existingSubscription,
             "plan"
           );
 
-        const subscriptionBillingCycleNote =
+        const subscriptionBillingCycle =
           getSubscriptionNote(
             existingSubscription,
             "billingCycle"
           );
 
-        /*
-         * --------------------------------------------------------
-         * NORMALIZED EXISTING VALUES
-         * --------------------------------------------------------
-         */
-
-        const existingPlanFromNote =
-          normalize(
-            subscriptionPlanNote
-          );
-
-        const existingPlanFromDatabase =
-          normalize(
-            trial.subscription_plan
-          );
-
-        const existingPlanIdFromDatabase =
-          normalize(
-            trial.subscription_plan_id
-          );
-
-        const existingBillingFromNote =
-          normalize(
-            subscriptionBillingCycleNote
-          );
-
-        const existingBillingFromDatabase =
-          normalize(
-            trial.subscription_billing_cycle
-          );
-
-        const requestedPlanId =
-          normalize(
-            planConfig.planId
-          );
-
-        const normalizedRazorpayPlanId =
-          normalize(
-            razorpayPlanId
-          );
-
-        /*
-         * --------------------------------------------------------
-         * DEBUG — THIS WILL TELL US EXACTLY WHAT RAZORPAY AND
-         * SUPABASE THINK THE EXISTING SUBSCRIPTION IS.
-         * --------------------------------------------------------
-         */
-
         console.log(
-          "[DhanarkOS Subscription] EXISTING SUBSCRIPTION COMPARISON:",
+          "[DhanarkOS Subscription] Existing subscription found:",
           {
-            userId: user.id,
-
+            userId:
+              user.id,
             subscriptionId:
               existingSubscription.id,
-
             status,
-
-            requested: {
+            razorpayPlanId,
+            subscriptionUserId,
+            subscriptionPlan,
+            subscriptionBillingCycle,
+            requestedPlan:
               plan,
+            requestedBillingCycle:
               billingCycle,
-              planId:
-                planConfig.planId,
-            },
-
-            razorpay: {
-              planId:
-                razorpayPlanId,
-              normalizedPlanId:
-                normalizedRazorpayPlanId,
-              notesPlan:
-                subscriptionPlanNote,
-              notesBillingCycle:
-                subscriptionBillingCycleNote,
-              notesUserId:
-                subscriptionUserId,
-            },
-
-            database: {
-              subscriptionPlan:
-                trial.subscription_plan,
-              subscriptionPlanId:
-                trial.subscription_plan_id,
-              subscriptionBillingCycle:
-                trial.subscription_billing_cycle,
-            },
           }
         );
 
@@ -525,7 +488,8 @@ export async function POST(
 
         if (
           subscriptionUserId &&
-          subscriptionUserId !== user.id
+          subscriptionUserId !==
+            user.id
         ) {
           console.error(
             "[DhanarkOS Subscription] Subscription ownership mismatch:",
@@ -546,285 +510,52 @@ export async function POST(
 
         /*
          * --------------------------------------------------------
-         * ROBUST PLAN MATCH
+         * PLAN CONSISTENCY CHECK
          * --------------------------------------------------------
          *
-         * Primary source:
-         * Razorpay plan_id.
-         *
-         * Secondary confirmation:
-         * DhanarkOS stored plan information.
-         *
-         * This prevents a valid authenticated subscription from
-         * being incorrectly rejected simply because Razorpay
-         * notes/database metadata are incomplete.
+         * Never allow an existing subscription for one
+         * plan to be silently reused for another plan.
          */
-
-        const razorpayPlanMatches =
-          normalizedRazorpayPlanId ===
-          requestedPlanId;
-
-        const databasePlanMatches =
-          existingPlanFromDatabase ===
-            normalize(plan) ||
-          existingPlanIdFromDatabase ===
-            requestedPlanId;
-
-        const notePlanMatches =
-          existingPlanFromNote ===
-          normalize(plan);
 
         const existingPlanMatches =
-          razorpayPlanMatches ||
-          databasePlanMatches ||
-          notePlanMatches;
+          razorpayPlanId ===
+          planConfig.planId;
 
-        /*
-         * --------------------------------------------------------
-         * BILLING CYCLE MATCH
-         * --------------------------------------------------------
-         */
-
-        const billingCycleMatches =
-          !existingBillingFromNote &&
-          !existingBillingFromDatabase
-            ? true
-            : existingBillingFromNote ===
-                normalize(
-                  billingCycle
-                ) ||
-              existingBillingFromDatabase ===
-                normalize(
-                  billingCycle
-                );
-
-        console.log(
-          "[DhanarkOS Subscription] MATCH RESULT:",
-          {
-            subscriptionId:
-              existingSubscription.id,
-
-            existingPlanMatches,
-
-            razorpayPlanMatches,
-
-            databasePlanMatches,
-
-            notePlanMatches,
-
-            billingCycleMatches,
-
-            requestedPlan:
-              plan,
-
-            requestedBillingCycle:
-              billingCycle,
-
-            requestedPlanId:
-              planConfig.planId,
-
-            razorpayPlanId,
-
-            existingPlanFromDatabase,
-
-            existingPlanIdFromDatabase,
-
-            existingPlanFromNote,
-
-            existingBillingFromDatabase,
-
-            existingBillingFromNote,
-          }
-        );
-
-        /*
-         * --------------------------------------------------------
-         * AUTHENTICATED
-         * --------------------------------------------------------
-         *
-         * If this exact subscription is already authenticated,
-         * NEVER reopen Razorpay Checkout.
-         */
+        const existingBillingCycleMatches =
+          !subscriptionBillingCycle ||
+          subscriptionBillingCycle ===
+            billingCycle;
 
         if (
           status ===
-          "authenticated"
+            "authenticated" &&
+          (
+            !existingPlanMatches ||
+            !existingBillingCycleMatches
+          )
         ) {
-          /*
-           * Exact matching subscription.
-           */
-
-          if (
-            existingPlanMatches &&
-            billingCycleMatches
-          ) {
-            const trialEndsAt =
-              getTrialEndFromSubscription(
-                existingSubscription
-              );
-
-            if (trial) {
-              const {
-                error: syncError,
-              } =
-                await supabaseAdmin
-                  .from(
-                    "dhanarkos_trials"
-                  )
-                  .update({
-                    razorpay_subscription_id:
-                      existingSubscription.id,
-
-                    selected_plan:
-                      plan,
-
-                    subscription_plan:
-                      plan,
-
-                    subscription_plan_id:
-                      planConfig.planId,
-
-                    subscription_billing_cycle:
-                      billingCycle,
-
-                    trial_status:
-                      "trialing",
-
-                    subscription_status:
-                      "none",
-
-                    trial_ends_at:
-                      trialEndsAt,
-
-                    updated_at:
-                      new Date().toISOString(),
-                  })
-                  .eq(
-                    "id",
-                    trial.id
-                  )
-                  .eq(
-                    "user_id",
-                    user.id
-                  );
-
-              if (syncError) {
-                console.error(
-                  "[DhanarkOS Subscription] Failed to synchronize authenticated subscription:",
-                  syncError
-                );
-
-                return ApiResponse.error(
-                  "Your Razorpay authorization is complete, but DhanarkOS could not synchronize your account. Please try again.",
-                  500
-                );
-              }
-            }
-
-            console.log(
-              "[DhanarkOS Subscription] MATCHED AUTHENTICATED SUBSCRIPTION. CHECKOUT WILL NOT OPEN.",
-              {
-                userId:
-                  user.id,
-
-                subscriptionId:
-                  existingSubscription.id,
-
-                plan,
-
-                billingCycle,
-
-                planId:
-                  planConfig.planId,
-
-                trialEndsAt,
-              }
-            );
-
-            return ApiResponse.success({
+          console.warn(
+            "[DhanarkOS Subscription] Existing authenticated subscription does not match requested plan:",
+            {
               subscriptionId:
                 existingSubscription.id,
-
-              plan,
-
-              planName:
-                planConfig.name,
-
-              planId:
-                planConfig.planId,
-
-              amount:
-                planConfig.amount,
-
-              currency:
-                "INR",
-
-              billingCycle,
-
-              trialDays:
-                TRIAL_DAYS,
-
-              trialEndsAt,
-
-              startAt:
-                existingSubscription.start_at ??
-                null,
-
-              status,
-
-              keyId:
-                razorpayKeyId,
-
-              reused:
-                true,
-
-              alreadyAuthorized:
-                true,
-            });
-          }
-
-          /*
-           * Existing authenticated subscription genuinely does
-           * not match the requested plan/cycle.
-           */
-
-          console.warn(
-            "[DhanarkOS Subscription] AUTHENTICATED SUBSCRIPTION DOES NOT MATCH REQUEST:",
-            {
-              existing: {
-                plan:
-                  existingPlanFromNote ||
-                  existingPlanFromDatabase ||
-                  "unknown",
-
-                billingCycle:
-                  existingBillingFromNote ||
-                  existingBillingFromDatabase ||
-                  "unknown",
-
-                planId:
-                  razorpayPlanId,
-              },
-
-              requested: {
+              existingPlan:
+                subscriptionPlan,
+              existingBillingCycle:
+                subscriptionBillingCycle,
+              existingPlanId:
+                razorpayPlanId,
+              requestedPlan:
                 plan,
+              requestedBillingCycle:
                 billingCycle,
-                planId:
-                  planConfig.planId,
-              },
+              requestedPlanId:
+                planConfig.planId,
             }
           );
 
           return ApiResponse.error(
-            `You already have an authorized DhanarkOS subscription. Existing subscription: ${
-              existingPlanFromDatabase ||
-              existingPlanFromNote ||
-              "unknown"
-            } ${
-              existingBillingFromDatabase ||
-              existingBillingFromNote ||
-              ""
-            }. Please manage your existing subscription before selecting another plan.`,
+            "You already have an authorized DhanarkOS subscription for a different plan. Please manage your existing subscription before selecting another plan.",
             409
           );
         }
@@ -833,28 +564,19 @@ export async function POST(
          * --------------------------------------------------------
          * CREATED / PENDING
          * --------------------------------------------------------
+         *
+         * These states still require Razorpay Checkout.
          */
 
         if (
           status === "created" ||
           status === "pending"
         ) {
-          if (
-            !existingPlanMatches ||
-            !billingCycleMatches
-          ) {
-            return ApiResponse.error(
-              "You already have a DhanarkOS subscription being set up for another plan. Please complete or cancel that subscription first.",
-              409
-            );
-          }
-
           return ApiResponse.success({
             subscriptionId:
               existingSubscription.id,
 
             plan,
-
             planName:
               planConfig.name,
 
@@ -894,12 +616,154 @@ export async function POST(
 
         /*
          * --------------------------------------------------------
+         * AUTHENTICATED
+         * --------------------------------------------------------
+         *
+         * THIS IS THE CRITICAL FIX.
+         *
+         * An authenticated subscription has already completed
+         * the authorization step.
+         *
+         * DO NOT send it back to Razorpay Checkout.
+         *
+         * Synchronize DhanarkOS and tell the frontend that
+         * authorization is already complete.
+         */
+
+        if (
+          status ===
+          "authenticated"
+        ) {
+          const trialEndsAt =
+            getTrialEndFromSubscription(
+              existingSubscription
+            );
+
+          if (trial) {
+            const {
+              error: syncError,
+            } =
+              await supabaseAdmin
+                .from(
+                  "dhanarkos_trials"
+                )
+                .update({
+                  razorpay_subscription_id:
+                    existingSubscription.id,
+
+                  /*
+                   * Do NOT overwrite an existing
+                   * payment ID with null.
+                   */
+                  selected_plan:
+                    plan,
+
+                  subscription_plan:
+                    plan,
+
+                  subscription_plan_id:
+                    planConfig.planId,
+
+                  subscription_billing_cycle:
+                    billingCycle,
+
+                  trial_status:
+                    "trialing",
+
+                  subscription_status:
+                    "none",
+
+                  trial_ends_at:
+                    trialEndsAt,
+
+                  updated_at:
+                    new Date().toISOString(),
+                })
+                .eq(
+                  "id",
+                  trial.id
+                )
+                .eq(
+                  "user_id",
+                  user.id
+                );
+
+            if (syncError) {
+              console.error(
+                "[DhanarkOS Subscription] Failed to synchronize authenticated subscription:",
+                syncError
+              );
+
+              return ApiResponse.error(
+                "Your Razorpay authorization is complete, but DhanarkOS could not synchronize your account. Please try again.",
+                500
+              );
+            }
+          }
+
+          console.log(
+            "[DhanarkOS Subscription] Existing subscription is already authenticated. Checkout will NOT be reopened.",
+            {
+              userId:
+                user.id,
+              subscriptionId:
+                existingSubscription.id,
+              plan,
+              billingCycle,
+              trialEndsAt,
+            }
+          );
+
+          return ApiResponse.success({
+            subscriptionId:
+              existingSubscription.id,
+
+            plan,
+            planName:
+              planConfig.name,
+
+            planId:
+              planConfig.planId,
+
+            amount:
+              planConfig.amount,
+
+            currency:
+              "INR",
+
+            billingCycle,
+
+            trialDays:
+              TRIAL_DAYS,
+
+            trialEndsAt,
+
+            startAt:
+              existingSubscription.start_at ??
+              null,
+
+            status,
+
+            keyId:
+              razorpayKeyId,
+
+            reused:
+              true,
+
+            alreadyAuthorized:
+              true,
+          });
+        }
+
+        /*
+         * --------------------------------------------------------
          * ACTIVE
          * --------------------------------------------------------
          */
 
         if (
-          status === "active"
+          status ===
+          "active"
         ) {
           return ApiResponse.error(
             "Your DhanarkOS subscription is already active.",
@@ -914,7 +778,8 @@ export async function POST(
          */
 
         if (
-          status === "halted"
+          status ===
+          "halted"
         ) {
           return ApiResponse.error(
             "Your existing DhanarkOS subscription requires payment attention before another subscription can be created.",
@@ -929,7 +794,8 @@ export async function POST(
          */
 
         if (
-          status === "completed"
+          status ===
+          "completed"
         ) {
           return ApiResponse.error(
             "Your DhanarkOS subscription has already completed.",
@@ -941,6 +807,10 @@ export async function POST(
          * --------------------------------------------------------
          * CANCELLED / EXPIRED
          * --------------------------------------------------------
+         *
+         * These subscriptions can safely be detached from
+         * the DhanarkOS trial record so a fresh subscription
+         * can be created.
          */
 
         if (
@@ -952,10 +822,8 @@ export async function POST(
             {
               userId:
                 user.id,
-
               subscriptionId:
                 existingSubscription.id,
-
               status,
             }
           );
@@ -964,7 +832,9 @@ export async function POST(
             error: clearError,
           } =
             await supabaseAdmin
-              .from("dhanarkos_trials")
+              .from(
+                "dhanarkos_trials"
+              )
               .update({
                 razorpay_subscription_id:
                   null,
@@ -1036,29 +906,34 @@ export async function POST(
           billingCycle,
           planId:
             planConfig.planId,
-
           name:
-            razorpayPlan.item?.name,
-
+            razorpayPlan.item
+              ?.name,
           amount:
-            razorpayPlan.item?.amount,
-
+            razorpayPlan.item
+              ?.amount,
           period:
             razorpayPlan.period,
-
           interval:
             razorpayPlan.interval,
         }
       );
 
+      /*
+       * Verify amount.
+       *
+       * Razorpay amounts are represented in paise.
+       */
+
       const razorpayAmount =
         Number(
-          razorpayPlan.item?.amount ??
-            0
+          razorpayPlan.item
+            ?.amount ?? 0
         );
 
       const expectedAmount =
-        planConfig.amount * 100;
+        planConfig.amount *
+        100;
 
       if (
         razorpayAmount &&
@@ -1083,6 +958,13 @@ export async function POST(
           400
         );
       }
+
+      /*
+       * Verify billing period.
+       *
+       * Razorpay's plan period normally reports
+       * "monthly" or "yearly".
+       */
 
       const expectedPeriod =
         billingCycle ===
@@ -1143,55 +1025,58 @@ export async function POST(
 
     try {
       const createdSubscription =
-        await razorpay.subscriptions.create({
-          plan_id:
-            planConfig.planId,
-
-          total_count:
-            billingCycle ===
-            "monthly"
-              ? 120
-              : 10,
-
-          quantity: 1,
-
-          customer_notify:
-            true,
-
-          start_at:
-            startAt,
-
-          notes: {
-            product:
-              "DhanarkOS",
-
-            userId:
-              user.id,
-
-            plan,
-
-            planName:
-              planConfig.name,
-
-            billingCycle,
-
-            planId:
+        await razorpay.subscriptions.create(
+          {
+            plan_id:
               planConfig.planId,
 
-            amount:
-              String(
-                planConfig.amount
-              ),
+            total_count:
+              billingCycle ===
+              "monthly"
+                ? 120
+                : 10,
 
-            trialDays:
-              String(
-                TRIAL_DAYS
-              ),
+            quantity:
+              1,
 
-            trialEndsAt:
-              trialEndsAt.toISOString(),
-          },
-        });
+            customer_notify:
+              true,
+
+            start_at:
+              startAt,
+
+            notes: {
+              product:
+                "DhanarkOS",
+
+              userId:
+                user.id,
+
+              plan,
+
+              planName:
+                planConfig.name,
+
+              billingCycle,
+
+              planId:
+                planConfig.planId,
+
+              amount:
+                String(
+                  planConfig.amount
+                ),
+
+              trialDays:
+                String(
+                  TRIAL_DAYS
+                ),
+
+              trialEndsAt:
+                trialEndsAt.toISOString(),
+            },
+          }
+        );
 
       subscription =
         createdSubscription as RazorpaySubscriptionResult;
@@ -1227,7 +1112,9 @@ export async function POST(
       }
     );
 
-    if (!subscription?.id) {
+    if (
+      !subscription?.id
+    ) {
       console.error(
         "[DhanarkOS Subscription] Razorpay returned no subscription ID:",
         subscription
@@ -1243,6 +1130,21 @@ export async function POST(
      * ============================================================
      * 11. SAVE SUBSCRIPTION
      * ============================================================
+     *
+     * IMPORTANT:
+     *
+     * The database constraint allows:
+     *
+     * trialing
+     * expired
+     * active
+     * cancelled
+     *
+     * It does NOT allow "pending".
+     *
+     * Therefore we use "trialing" immediately after the
+     * subscription has been created and the trial dates are
+     * established.
      */
 
     if (trial) {
@@ -1250,7 +1152,9 @@ export async function POST(
         error: updateError,
       } =
         await supabaseAdmin
-          .from("dhanarkos_trials")
+          .from(
+            "dhanarkos_trials"
+          )
           .update({
             razorpay_subscription_id:
               subscription.id,
@@ -1307,7 +1211,9 @@ export async function POST(
         error: insertError,
       } =
         await supabaseAdmin
-          .from("dhanarkos_trials")
+          .from(
+            "dhanarkos_trials"
+          )
           .insert({
             user_id:
               user.id,
@@ -1433,6 +1339,8 @@ export async function POST(
       error
     );
 
-    return handleApiError(error);
+    return handleApiError(
+      error
+    );
   }
 }
