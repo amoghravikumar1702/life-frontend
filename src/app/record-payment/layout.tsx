@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+﻿import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   robots: {
@@ -7,7 +7,7 @@ export const metadata: Metadata = {
   },
 };
 
-export default function SettingsLayout({
+export default function PrivateLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
