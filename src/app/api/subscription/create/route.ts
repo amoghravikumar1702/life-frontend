@@ -42,12 +42,12 @@ const PLANS: Record<
   beginner: {
     monthly: {
       name: "DhanarkOS Beginner",
-      planId: "plan_TY3d3eum1IUML2",
+      planId: process.env.RAZORPAY_BEGINNER_MONTHLY_PLAN_ID ?? "",
       amount: 799,
     },
     yearly: {
       name: "DhanarkOS Beginner",
-      planId: "plan_TY3do4zJKcekIw",
+      planId: process.env.RAZORPAY_BEGINNER_YEARLY_PLAN_ID ?? "",
       amount: 7999,
     },
   },
@@ -55,12 +55,12 @@ const PLANS: Record<
   professional: {
     monthly: {
       name: "DhanarkOS Professional",
-      planId: "plan_TY3emwzLrCPaZ0",
+      planId: process.env.RAZORPAY_PROFESSIONAL_MONTHLY_PLAN_ID ?? "",
       amount: 1699,
     },
     yearly: {
       name: "DhanarkOS Professional",
-      planId: "plan_TY3fhuyGO7gpmD",
+      planId: process.env.RAZORPAY_PROFESSIONAL_YEARLY_PLAN_ID ?? "",
       amount: 16999,
     },
   },
@@ -68,12 +68,12 @@ const PLANS: Record<
   advanced: {
     monthly: {
       name: "DhanarkOS Advanced",
-      planId: "plan_TY3gpgclmhuPz6",
+      planId: process.env.RAZORPAY_ADVANCED_MONTHLY_PLAN_ID ?? "",
       amount: 1999,
     },
     yearly: {
       name: "DhanarkOS Advanced",
-      planId: "plan_TY3hNosnckAaNg",
+      planId: process.env.RAZORPAY_ADVANCED_YEARLY_PLAN_ID ?? "",
       amount: 19999,
     },
   },
