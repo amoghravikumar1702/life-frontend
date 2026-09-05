@@ -5,6 +5,8 @@ const PUBLIC_ROUTES = [
   "/",
   "/login",
   "/signup",
+  "/forgot-password",
+  "/reset-password",
   "/walkthrough",
 
   // SEO metadata files
