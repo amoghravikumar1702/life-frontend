@@ -1,6 +1,6 @@
 "use server";
 
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import crypto from "crypto";
 
@@ -12,6 +12,9 @@ import {
 } from "@/lib/server/signup-rate-limit";
 
 const DEVICE_COOKIE = "dhanarkos_device_id";
+
+const TEST_DEVICE_ID =
+  process.env.DHANARK_SIGNUP_TEST_DEVICE_ID?.trim();
 
 const MIN_PASSWORD_LENGTH = 10;
 const MAX_PASSWORD_LENGTH = 128;
@@ -102,6 +105,32 @@ function getPasswordError(password: string): string | null {
 
   if (!/[^A-Za-z0-9]/.test(password)) {
     return "Password must contain at least one special character.";
+  }
+
+  return null;
+}
+
+/**
+ * Resolves the best available client IP.
+ *
+ * x-real-ip is preferred.
+ * x-forwarded-for is only used as a fallback.
+ */
+function getClientIp(requestHeaders: Headers): string | null {
+  const realIp = requestHeaders.get("x-real-ip")?.trim();
+
+  if (realIp) {
+    return realIp;
+  }
+
+  const forwardedFor = requestHeaders.get("x-forwarded-for");
+
+  if (forwardedFor) {
+    const firstIp = forwardedFor.split(",")[0]?.trim();
+
+    if (firstIp) {
+      return firstIp;
+    }
   }
 
   return null;
@@ -208,10 +237,6 @@ export async function signUp(formData: FormData) {
    * ============================================================
    * DEVICE IDENTIFIER
    * ============================================================
-   *
-   * We keep the anonymous device identifier because it provides
-   * an additional abuse-control signal without blocking every
-   * user on the same shared network.
    */
 
   const cookieStore = await cookies();
@@ -246,43 +271,90 @@ export async function signUp(formData: FormData) {
 
   /*
    * ============================================================
-   * SIGNUP RATE LIMIT — DEVICE
+   * PRIVATE TEST DEVICE
    * ============================================================
    *
-   * IP/network-based trial blocking has intentionally been
-   * removed.
+   * Only the exact device identifier configured through
+   * DHANARK_SIGNUP_TEST_DEVICE_ID receives the private testing
+   * exemption.
    *
-   * Shared networks such as offices, homes, colleges, hostels,
-   * coworking spaces, mobile carriers, and VPNs can legitimately
-   * contain many different users.
+   * Email-level protection remains active.
    *
-   * We therefore do NOT use the network/IP as a trial identity.
+   * No other device receives this exemption.
    */
 
-  const deviceLimit =
-    await checkAndRecordSignupAttempt(
-      "device",
-      deviceId
-    );
+  const isTestDevice =
+    Boolean(TEST_DEVICE_ID) &&
+    deviceId === TEST_DEVICE_ID;
 
-  if (!deviceLimit.allowed) {
-    redirectWithError(
-      deviceLimit.reason === "already_used"
-        ? "This device has already been used to create a DhanarkOS trial recently."
-        : "Too many signup attempts from this device. Please try again later."
-    );
+  /*
+   * ============================================================
+   * REQUEST IP
+   * ============================================================
+   */
+
+  const requestHeaders = await headers();
+
+  const ip = getClientIp(requestHeaders);
+
+  /*
+   * ============================================================
+   * ATOMIC RATE LIMIT — IP
+   * ============================================================
+   *
+   * The configured private test device is exempt from the IP
+   * restriction so the owner can create additional test accounts
+   * from the same network.
+   */
+
+  if (ip && !isTestDevice) {
+    const ipLimit =
+      await checkAndRecordSignupAttempt(
+        "ip",
+        ip
+      );
+
+    if (!ipLimit.allowed) {
+      redirectWithError(
+        ipLimit.reason === "already_used"
+          ? "This network has already been used to create a DhanarkOS trial recently."
+          : "Too many signup attempts. Please try again later."
+      );
+    }
   }
 
   /*
    * ============================================================
-   * SIGNUP RATE LIMIT — EMAIL
+   * ATOMIC RATE LIMIT — DEVICE
    * ============================================================
    *
-   * Email remains an important identity signal.
+   * The configured private test device is exempt from the device
+   * restriction.
+   */
+
+  if (!isTestDevice) {
+    const deviceLimit =
+      await checkAndRecordSignupAttempt(
+        "device",
+        deviceId
+      );
+
+    if (!deviceLimit.allowed) {
+      redirectWithError(
+        deviceLimit.reason === "already_used"
+          ? "This device has already been used to create a DhanarkOS trial recently."
+          : "Too many signup attempts from this device. Please try again later."
+      );
+    }
+  }
+
+  /*
+   * ============================================================
+   * ATOMIC RATE LIMIT — EMAIL
+   * ============================================================
    *
-   * This prevents the same email address from repeatedly
-   * attempting to create trials while still allowing legitimate
-   * users on the same network to sign up.
+   * Email protection intentionally remains active even for the
+   * private test device.
    */
 
   const emailLimit =
@@ -342,7 +414,12 @@ export async function signUp(formData: FormData) {
    * Record successful signup only after Supabase has
    * successfully created the user.
    *
-   * We intentionally do NOT record an IP/network identifier.
+   * recordSuccessfulSignup expects:
+   *
+   *   (type, identifier)
+   *
+   * Therefore we record the successful signup against each
+   * identifier independently.
    */
 
   try {
@@ -355,6 +432,13 @@ export async function signUp(formData: FormData) {
       "device",
       deviceId
     );
+
+    if (ip) {
+      await recordSuccessfulSignup(
+        "ip",
+        ip
+      );
+    }
   } catch (recordError) {
     /*
      * The account already exists at this point.
