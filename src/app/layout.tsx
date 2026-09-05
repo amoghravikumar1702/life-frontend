@@ -1,6 +1,7 @@
 ﻿import type { Metadata } from "next";
 import "./globals.css";
 import QueryProvider from "@/providers/QueryProvider";
+import { Analytics } from "@vercel/analytics/next";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://dhanark.com"),
@@ -64,6 +65,7 @@ export default function RootLayout({
     <html lang="en" className="h-full antialiased">
       <body className="min-h-full bg-[#070809] text-white">
         <QueryProvider>{children}</QueryProvider>
+        <Analytics />
       </body>
     </html>
   );
