@@ -19,19 +19,39 @@ export default function DashboardLayout({
   return (
     <div className="min-h-screen bg-[#07090C] text-white">
       <div className="flex min-h-screen">
-        <Sidebar
-          collapsed={sidebarCollapsed}
-          onToggle={() =>
-            setSidebarCollapsed(
-              (current) => !current
-            )
-          }
-          mobileOpen={mobileMenuOpen}
-          onMobileClose={() =>
-            setMobileMenuOpen(false)
-          }
-        />
+        {/* Desktop sidebar spacer.
+            Sidebar itself is fixed 24px from the left,
+            so reserve that space as well. */}
+        <div
+          className={`
+            hidden
+            shrink-0
+            transition-[width]
+            duration-300
+            ease-out
+            lg:block
+            ${
+              sidebarCollapsed
+                ? "w-[100px]"
+                : "w-[252px]"
+            }
+          `}
+        >
+          <Sidebar
+            collapsed={sidebarCollapsed}
+            onToggle={() =>
+              setSidebarCollapsed(
+                (current) => !current
+              )
+            }
+            mobileOpen={mobileMenuOpen}
+            onMobileClose={() =>
+              setMobileMenuOpen(false)
+            }
+          />
+        </div>
 
+        {/* Main application area */}
         <div className="flex min-w-0 flex-1 flex-col">
           <TopBar
             onMobileMenu={() =>
